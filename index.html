@@ -17,28 +17,28 @@
     <form id="ledgerForm" class="space-y-4 text-sm">
       
       <div>
-        <label for="nama" class="block text-gray-700 font-medium mb-1">Nama</label>
+        <label for="nama" class="block text-gray-700 font-medium mb-1">Keterangan Pembayaran</label>
         <select id="nama" required class="w-full border border-gray-300 rounded-lg shadow-sm p-2.5 text-sm"></select>
       </div>
 
       <div>
-        <label for="uraian" class="block text-gray-700 font-medium mb-1">Uraian</label>
+        <label for="uraian" class="block text-gray-700 font-medium mb-1">Nama Pangkalan</label>
         <input list="uraianList" id="uraian" required class="w-full border border-gray-300 rounded-lg shadow-sm p-2.5" />
         <datalist id="uraianList"></datalist>
       </div>
 
       <div>
-        <label for="pos" class="block text-gray-700 font-medium mb-1">Pos</label>
+        <label for="pos" class="block text-gray-700 font-medium mb-1">Nama PT</label>
         <input type="text" id="pos" readonly class="w-full bg-gray-100 border border-gray-300 rounded-lg p-2.5" />
       </div>
 
       <div>
-        <label for="nominal" class="block text-gray-700 font-medium mb-1">Nominal</label>
+        <label for="nominal" class="block text-gray-700 font-medium mb-1">Nominal Pembayaran</label>
         <input type="text" id="nominal" required class="w-full border border-gray-300 rounded-lg p-2.5" />
       </div>
 
       <div>
-        <label class="block text-gray-700 font-medium mb-1">Foto Nota</label>
+        <label class="block text-gray-700 font-medium mb-1">Bukti Transfer</label>
         <input type="file" accept="image/*" id="fotoNotaUpload" class="hidden" />
         <input type="file" accept="image/*" capture="environment" id="fotoNotaCamera" class="hidden" />
         <div class="flex space-x-2">
