@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kelola Data Karyawan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-cyan-100 to-blue-200 min-h-screen p-4">
+  <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-blue-600">Data Karyawan</h2>
+      <a href="dashboard.html" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow">Dashboard</a>
+    </div>
+
+    <div class="flex gap-4 mb-4">
+      <input type="text" id="namaInput" placeholder="Nama Karyawan" oninput="this.value = this.value.toUpperCase()" class="flex-1 border border-gray-300 rounded-md px-3 py-2" />
+      <button onclick="tambahKaryawan()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md px-4 py-2">Tambah</button>
+    </div>
+
+    <div class="overflow-auto rounded-lg border border-gray-200">
+      <table class="w-full text-sm text-left text-gray-700">
+        <thead class="bg-blue-600 text-white">
+          <tr>
+            <th class="p-3">No</th>
+            <th class="p-3">Nama</th>
+            <th class="p-3">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tabelKaryawan" class="bg-white"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    if (localStorage.getItem('loggedIn') !== 'true' || !localStorage.getItem('id_spreadsheet')) {
+      window.location.href = 'login.html';
+    }
+
+    let dataKaryawan = [];
+
+    function loadKaryawan() {
+      fetch(getAPIUrl("get") + "&sheet=namakaryawan")
+        .then(res => res.json())
+        .then(data => {
+          dataKaryawan = data;
+          const tbody = document.getElementById('tabelKaryawan');
+          tbody.innerHTML = '';
+          dataKaryawan.forEach((item, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td class="p-3">${i + 1}</td>
+              <td class="p-3">${item.nama || item}</td>
+              <td class="p-3">
+                <button class="bg-yellow-400 text-black px-3 py-1 rounded-md text-sm mr-2" onclick="editKaryawan(${i})">✏️ Edit</button>
+                <button class="bg-red-500 text-white px-3 py-1 rounded-md text-sm" onclick="hapusKaryawan(${i + 2})">🗑️ Hapus</button>
+              </td>`;
+            tbody.appendChild(tr);
+          });
+        })
+        .catch(err => alert("❌ Gagal load data: " + err.message));
+    }
+
+    function tambahKaryawan() {
+      const nama = document.getElementById("namaInput").value.trim().toUpperCase();
+      if (!nama) return alert("Nama tidak boleh kosong.");
+
+      fetch(getAPIUrl("add"), {
+        method: 'POST',
+        body: JSON.stringify({
+          sheet: "namakaryawan",
+          action: "add",
+          payload: { values: [nama] }
+        })
+      })
+      .then(res => res.json())
+      .then(() => {
+        document.getElementById("namaInput").value = '';
+        loadKaryawan();
+      })
+      .catch(err => alert("❌ Gagal tambah karyawan: " + err.message));
+    }
+
+    function editKaryawan(index) {
+      const current = dataKaryawan[index];
+      const newNama = prompt("Edit Nama:", current.nama || current);
+      if (newNama === null) return;
+      const namaBaru = newNama.trim().toUpperCase();
+      if (!namaBaru) return;
+
+      fetch(getAPIUrl("edit"), {
+        method: 'POST',
+        body: JSON.stringify({
+          sheet: "namakaryawan",
+          action: "edit",
+          payload: {
+            row: index + 2,
+            values: [namaBaru]
+          }
+        })
+      })
+      .then(res => res.json())
+      .then(loadKaryawan)
+      .catch(err => alert("❌ Gagal edit karyawan: " + err.message));
+    }
+
+    function hapusKaryawan(row) {
+      if (!confirm("Yakin ingin menghapus baris " + row + "?")) return;
+      fetch(getAPIUrl("delete"), {
+        method: 'POST',
+        body: JSON.stringify({
+          sheet: "namakaryawan",
+          action: "delete",
+          payload: { row }
+        })
+      })
+      .then(res => res.json())
+      .then(loadKaryawan)
+      .catch(err => alert("❌ Gagal hapus karyawan: " + err.message));
+    }
+
+    loadKaryawan();
+setTimeout(() => {
+  localStorage.clear();
+  window.location.href = "login.html";
+}, 5 * 60 * 1000);
+
+  </script>
+</body>
+</html>
