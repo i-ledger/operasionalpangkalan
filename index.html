@@ -51,15 +51,15 @@
       <div>
         <label for="pembayaran" class="block text-gray-700 font-medium mb-1">Pembayaran</label>
         <select id="pembayaran" class="w-full border border-gray-300 rounded-lg p-2.5">
-          <option value="Cash">Cash</option>
-          <option value="Transfer">Transfer</option>
+          <option value="Cash">Transfer</option>
+          <option value="Transfer">Cash</option>
         </select>
       </div>
 
       <div id="buktiTransferContainer" class="hidden">
         <label for="buktiTransfer" class="block text-gray-700 font-medium mb-1">Bukti Transfer</label>
         <input type="file" accept="image/*" id="buktiTransfer" class="hidden" />
-        <label for="buktiTransfer" class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-block text-sm">Upload Bukti</label>
+        <label for="buktiTransfer" class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-block text-sm">Upload Bukti Serah Terima Pembayaran</label>
         <img id="previewBukti" class="w-full max-h-60 object-cover rounded-lg border mt-2 hidden" />
       </div>
 
