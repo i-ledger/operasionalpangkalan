@@ -89,7 +89,8 @@
       window.location.href = 'login.html';
     }
 
-    document.getElementById("pt-nama").textContent = localStorage.getItem("nama_pt") + " (Form Operasional Pembayaran Pangkalan)";
+    document.getElementById("pt-nama").textContent = localStorage.getItem("nama_pt") + 
+    " (Form Operasional Pembayaran Pangkalan)";
     const id_spreadsheet = localStorage.getItem("id_spreadsheet");
     const API_NAMA = getAPIUrl('nama');
     const API_POS = getAPIUrl('pos');
