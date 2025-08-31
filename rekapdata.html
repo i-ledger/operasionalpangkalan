@@ -11,7 +11,10 @@
     <header class="flex items-center justify-between mb-6">
       <h1 class="text-2xl font-semibold">Rekap Operasional</h1>
       <div id="spinner" class="hidden items-center space-x-2">
-        <svg class="animate-spin h-6 w-6" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" d="M4 12a8 8 0 018-8v8z" fill="currentColor"></path></svg>
+        <svg class="animate-spin h-6 w-6" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+          <path class="opacity-75" d="M4 12a8 8 0 018-8v8z" fill="currentColor"></path>
+        </svg>
         <span>Loading...</span>
       </div>
     </header>
@@ -54,7 +57,6 @@
       <div class="mt-4 flex items-center gap-2">
         <button id="btn-load" class="px-4 py-2 bg-blue-600 text-white rounded">Tampilkan Rekap</button>
         <button id="btn-export-csv" class="px-3 py-2 border rounded">Export CSV</button>
-        <button id="btn-export-pdf" class="px-3 py-2 border rounded">Export PDF (simple)</button>
       </div>
     </section>
 
@@ -74,9 +76,16 @@
               <th class="px-3 py-2 text-left text-xs font-medium">Bayar Lewat Brimola</th>
               <th class="px-3 py-2 text-left text-xs font-medium">Bukti Transfer</th>
               <th class="px-3 py-2 text-left text-xs font-medium">Bagi Hasil</th>
+              <th class="px-3 py-2 text-left text-xs font-medium text-blue-600">Total Pembayaran TBG</th>
             </tr>
           </thead>
           <tbody id="rekap-body" class="bg-white divide-y divide-gray-100"></tbody>
+          <tfoot class="bg-gray-100 font-semibold">
+            <tr>
+              <td colspan="11" class="px-3 py-2 text-right">TOTAL</td>
+              <td id="grand-total" class="px-3 py-2 text-blue-600">Rp 0</td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </section>
@@ -84,56 +93,108 @@
   </div>
 
   <script>
-    // CONFIG: replace with your deployed Apps Script web app URL
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbzAsjSiCT7aCZakABOm7GRjt4tTlnDBtWKu1fB2AA0LWlrdXjFzGz2gVhXPomFplX9u5w/exec';
     const SPINNER = document.getElementById('spinner');
 
     function showSpinner(){ SPINNER.classList.remove('hidden'); }
     function hideSpinner(){ SPINNER.classList.add('hidden'); }
 
-    async function fetchJSON(url){ showSpinner(); try{ const res = await fetch(url); const j = await res.json(); hideSpinner(); return j;}catch(e){ hideSpinner(); console.error(e); alert('Gagal mengambil data'); return null }}
+    async function fetchJSON(url){
+      showSpinner();
+      try{ const res = await fetch(url); const j = await res.json(); hideSpinner(); return j;}
+      catch(e){ hideSpinner(); console.error(e); alert('Gagal mengambil data'); return null }
+    }
 
-    function makeMonthOptions(){ const sel = document.getElementById('select-month'); const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']; months.forEach((m,i)=>{ const opt = document.createElement('option'); opt.value = i+1; opt.textContent = m; sel.appendChild(opt) }); }
-    function makeYearOptions(){ const sel = document.getElementById('select-year'); const yearNow = new Date().getFullYear(); for(let y=yearNow-2;y<=yearNow+1;y++){ const opt=document.createElement('option'); opt.value=y; opt.textContent=y; sel.appendChild(opt);} }
+    function makeMonthOptions(){
+      const sel = document.getElementById('select-month');
+      const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+      months.forEach((m,i)=>{ const opt = document.createElement('option'); opt.value = i+1; opt.textContent = m; sel.appendChild(opt) });
+    }
+    function makeYearOptions(){
+      const sel = document.getElementById('select-year');
+      const yearNow = new Date().getFullYear();
+      for(let y=yearNow-2;y<=yearNow+1;y++){ const opt=document.createElement('option'); opt.value=y; opt.textContent=y; sel.appendChild(opt);}
+    }
 
-    async function loadPTs(){ const url = `${GAS_URL}?action=getPTs`; const data = await fetchJSON(url); if(!data) return; const sel = document.getElementById('select-pt'); sel.innerHTML = ''; data.forEach(pt=>{ const o=document.createElement('option'); o.value=pt; o.textContent=pt; sel.appendChild(o) }); sel.dispatchEvent(new Event('change')); }
+    async function loadPTs(){
+      const url = `${GAS_URL}?action=getPTs`; 
+      const data = await fetchJSON(url); if(!data) return;
+      const sel = document.getElementById('select-pt');
+      sel.innerHTML = '';
+      data.forEach(pt=>{ const o=document.createElement('option'); o.value=pt; o.textContent=pt; sel.appendChild(o) });
+      sel.dispatchEvent(new Event('change'));
+    }
 
-    async function loadPangkalanForPT(pt){ const url = `${GAS_URL}?action=getPangkalan&pt=${encodeURIComponent(pt)}`; const data = await fetchJSON(url); const sel = document.getElementById('select-pangkalan'); sel.innerHTML=''; const empty = document.createElement('option'); empty.value='ALL'; empty.textContent='-- Semua Pangkalan --'; sel.appendChild(empty);
-      data.forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); }); }
+    async function loadPangkalanForPT(pt){
+      const url = `${GAS_URL}?action=getPangkalan&pt=${encodeURIComponent(pt)}`;
+      const data = await fetchJSON(url); 
+      const sel = document.getElementById('select-pangkalan');
+      sel.innerHTML='';
+      const empty = document.createElement('option'); empty.value='ALL'; empty.textContent='-- Semua Pangkalan --'; sel.appendChild(empty);
+      data.forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
+    }
 
-    async function updateDOInfo(pt,pangkalan){ const url = `${GAS_URL}?action=getDOInfo&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalan)}`; const d = await fetchJSON(url); if(!d) return; document.getElementById('do-owned').textContent = d.do_owned ?? '-'; document.getElementById('price').textContent = d.price ? formatRupiah(d.price) : '-'; document.getElementById('total-penerimaan').textContent = d.total_penerimaan ? formatRupiah(d.total_penerimaan) : '-'; }
+    async function updateDOInfo(pt,pangkalan){
+      const url = `${GAS_URL}?action=getDOInfo&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalan)}`;
+      const d = await fetchJSON(url);
+      if(!d) return;
+      document.getElementById('do-owned').textContent = d.do_owned ?? '-';
+      document.getElementById('price').textContent = d.price ? formatRupiah(d.price) : '-';
+      document.getElementById('total-penerimaan').textContent = d.total_penerimaan ? formatRupiah(d.total_penerimaan) : '-';
+    }
 
     function formatRupiah(val){ if(val==null) return '-'; return 'Rp ' + Number(val).toLocaleString('id-ID'); }
 
-    async function loadRekap(){ const pt = document.getElementById('select-pt').value; const pangkalan = document.getElementById('select-pangkalan').value; const month = document.getElementById('select-month').value; const year = document.getElementById('select-year').value; const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalan)}&month=${month}&year=${year}`; const data = await fetchJSON(url); if(!data) return; renderTable(data.rows); document.getElementById('total-penerimaan').textContent = formatRupiah(data.total_penerimaan); document.getElementById('do-owned').textContent = data.do_owned ?? '-'; document.getElementById('price').textContent = data.price ? formatRupiah(data.price) : '-'; }
+    async function loadRekap(){
+      const pt = document.getElementById('select-pt').value;
+      const pangkalan = document.getElementById('select-pangkalan').value;
+      const month = document.getElementById('select-month').value;
+      const year = document.getElementById('select-year').value;
+      const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalan)}&month=${month}&year=${year}`;
+      const data = await fetchJSON(url);
+      if(!data) return;
+      renderTable(data.rows);
+      document.getElementById('total-penerimaan').textContent = formatRupiah(data.total_penerimaan);
+      document.getElementById('do-owned').textContent = data.do_owned ?? '-';
+      document.getElementById('price').textContent = data.price ? formatRupiah(data.price) : '-';
+    }
 
-    function renderTable(rows){ const tbody = document.getElementById('rekap-body'); tbody.innerHTML=''; rows.forEach(r=>{
-      const tr = document.createElement('tr'); tr.innerHTML = `
-        <td class="px-3 py-2 text-sm">${r.tanggal}</td>
-        <td class="px-3 py-2 text-sm">${r.laporan_pengiriman}</td>
-        <td class="px-3 py-2 text-sm">${r.retur}</td>
-        <td class="px-3 py-2 text-sm">${r.dikirim}</td>
-        <td class="px-3 py-2 text-sm">${r.master_sa}</td>
-        <td class="px-3 py-2 text-sm">${r.pengiriman}</td>
-        <td class="px-3 py-2 text-sm">${formatRupiah(r.nominal_harus_dibayar)}</td>
-        <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
-        <td class="px-3 py-2 text-sm">${formatRupiah(r.bayar_lewat_brimola)}</td>
-        <td class="px-3 py-2 text-sm">${formatRupiah(r.bukti_transfer)}</td>
-        <td class="px-3 py-2 text-sm">${formatRupiah(r.bagi_hasil)}</td>
-      `; tbody.appendChild(tr);
-    }) }
+    function renderTable(rows){
+      const tbody = document.getElementById('rekap-body');
+      tbody.innerHTML='';
+      let grandTotal = 0;
 
-    // CSV export
-    function toCSV(rows){ const headers = ['Tanggal','Laporan Pengiriman','Retur','Dikirim','MASTER_SA','Pengiriman','Nominal yang harus dibayar','Brimola Oleh','Bayar Lewat Brimola','Bukti Transfer','Bagi Hasil']; const lines = [headers.join(',')]; rows.forEach(r=>{ lines.push([r.tanggal,r.laporan_pengiriman,r.retur,r.dikirim,`"${r.master_sa}"`,r.pengiriman,r.nominal_harus_dibayar,r.brimola_oleh,r.bayar_lewat_brimola,r.bukti_transfer,r.bagi_hasil].join(',')) }); return lines.join('\n'); }
+      rows.forEach(r=>{
+        const totalTBG = (Number(r.nominal_harus_dibayar)||0) - (Number(r.bayar_lewat_brimola)||0) - (Number(r.bukti_transfer)||0);
+        grandTotal += totalTBG;
+
+        const tr = document.createElement('tr'); 
+        tr.innerHTML = `
+          <td class="px-3 py-2 text-sm">${r.tanggal}</td>
+          <td class="px-3 py-2 text-sm">${r.laporan_pengiriman}</td>
+          <td class="px-3 py-2 text-sm">${r.retur}</td>
+          <td class="px-3 py-2 text-sm">${r.dikirim}</td>
+          <td class="px-3 py-2 text-sm">${r.master_sa}</td>
+          <td class="px-3 py-2 text-sm">${r.pengiriman}</td>
+          <td class="px-3 py-2 text-sm">${formatRupiah(r.nominal_harus_dibayar)}</td>
+          <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
+          <td class="px-3 py-2 text-sm">${formatRupiah(r.bayar_lewat_brimola)}</td>
+          <td class="px-3 py-2 text-sm">${formatRupiah(r.bukti_transfer)}</td>
+          <td class="px-3 py-2 text-sm">${formatRupiah(r.bagi_hasil)}</td>
+          <td class="px-3 py-2 text-sm text-blue-600 font-semibold">${formatRupiah(totalTBG)}</td>
+        `; 
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('grand-total').textContent = formatRupiah(grandTotal);
+    }
 
     document.getElementById('btn-load').addEventListener('click', async ()=>{ await loadRekap(); });
     document.getElementById('select-pt').addEventListener('change', async (e)=>{ await loadPangkalanForPT(e.target.value); await updateDOInfo(e.target.value, document.getElementById('select-pangkalan').value); });
     document.getElementById('select-pangkalan').addEventListener('change', async (e)=>{ await updateDOInfo(document.getElementById('select-pt').value, e.target.value); });
-    document.getElementById('btn-export-csv').addEventListener('click', async ()=>{ const pt=document.getElementById('select-pt').value; const pang=document.getElementById('select-pangkalan').value; const m=document.getElementById('select-month').value; const y=document.getElementById('select-year').value; const url=`${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pang)}&month=${m}&year=${y}`; const data = await fetchJSON(url); if(!data) return; const csv = toCSV(data.rows); const blob = new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`rekap_${pt}_${pangkatalan}_${m}_${y}.csv`; a.click(); });
 
     // init
     makeMonthOptions(); makeYearOptions(); loadPTs();
   </script>
 </body>
 </html>
-
