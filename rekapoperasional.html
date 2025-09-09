@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rekap Operasional — i-Shipping</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-blue-50 min-h-screen p-4 font-sans">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-4">
+      <h1 class="text-xl font-bold text-blue-700">📊 Rekap Operasional</h1>
+      <div class="flex items-center gap-2">
+        <button onclick="window.location.href='dashboard.html'" class="px-3 py-1 bg-blue-500 text-white rounded shadow">
+          Dashboard
+        </button>
+        <div id="spinner" class="hidden items-center space-x-2 text-blue-600">
+          <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+            <path class="opacity-75" d="M4 12a8 8 0 018-8v8z" fill="currentColor"></path>
+          </svg>
+        </div>
+      </div>
+    </header>
+
+    <!-- Filter Section -->
+    <section class="bg-white p-4 rounded-lg shadow mb-6">
+      <div class="grid grid-cols-1 gap-3">
+        <div>
+          <label class="block text-sm font-medium">Nama PT</label>
+          <select id="select-pt" class="mt-1 block w-full rounded-md border-gray-200"></select>
+        </div>
+        
+        <!-- Tambah/Hapus Pangkalan -->
+        <div>
+          <label class="block text-sm font-medium">Pangkalan Terpilih</label>
+          <div id="selected-pangkalan" class="flex flex-wrap gap-2 mt-1"></div>
+          <div class="flex gap-2 mt-2">
+            <select id="select-pangkalan" class="flex-1 rounded-md border-gray-200"></select>
+            <button id="btn-add-pangkalan" class="px-3 py-1 bg-blue-500 text-white rounded">Tambah</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium">Bulan</label>
+            <select id="select-month" class="mt-1 block w-full rounded-md border-gray-200"></select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium">Tahun</label>
+            <select id="select-year" class="mt-1 block w-full rounded-md border-gray-200"></select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info Box -->
+      <div class="mt-4 grid grid-cols-2 gap-3">
+        <div class="bg-blue-100 p-3 rounded shadow">
+          <div class="text-xs text-gray-600">DO yang dimiliki</div>
+          <div id="do-owned" class="text-lg font-semibold">-</div>
+        </div>
+        <div class="bg-blue-100 p-3 rounded shadow">
+          <div class="text-xs text-gray-600">Harga Tabung</div>
+          <div id="price" class="text-lg font-semibold">-</div>
+        </div>
+        <div class="bg-blue-100 p-3 rounded shadow">
+          <div class="text-xs text-gray-600">Harga Bagi Hasil</div>
+          <div id="harga-bagi-hasil" class="text-lg font-semibold">-</div>
+        </div>
+        <div class="bg-blue-100 p-3 rounded shadow">
+          <div class="text-xs text-gray-600">Total Penerimaan</div>
+          <div id="total-penerimaan" class="text-lg font-semibold">-</div>
+        </div>
+        <div class="bg-blue-100 p-3 rounded shadow">
+          <div class="text-xs text-gray-600">Tabung Kerjasama</div>
+          <div id="tabung-kerjasama" class="text-lg font-semibold">-</div>
+        </div>
+        <div class="bg-blue-100 p-3 rounded shadow">
+          <div class="text-xs text-gray-600">Sisa Bagi Hasil</div>
+          <div id="sisa-bagi-hasil" class="text-lg font-semibold">-</div>
+        </div>
+      </div>
+
+      <div class="mt-4 flex gap-2">
+        <button id="btn-load" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded shadow">Tampilkan</button>
+        <button id="btn-export-csv" class="px-4 py-2 bg-gray-200 rounded shadow">Export CSV</button>
+      </div>
+    </section>
+
+    <!-- Table -->
+    <section class="bg-white p-4 rounded-lg shadow">
+      <div class="overflow-x-auto">
+        <table id="rekap-table" class="min-w-full border border-gray-300">
+          <thead class="bg-blue-100">
+            <tr>
+              <th class="px-2 py-2 text-xs font-bold border">Tanggal</th>
+              <th class="px-2 py-2 text-xs font-bold border">Laporan Driver</th>
+              <th class="px-2 py-2 text-xs font-bold border">Retur</th>
+              <th class="px-2 py-2 text-xs font-bold border">Dikirim</th>
+              <th class="px-2 py-2 text-xs font-bold border">MASTER_SA</th>
+              <th class="px-2 py-2 text-xs font-bold border">Pengiriman</th>
+              <th class="px-2 py-2 text-xs font-bold border">Nominal</th>
+              <th class="px-2 py-2 text-xs font-bold border">Brimola Oleh</th>
+              <th class="px-2 py-2 text-xs font-bold border">Bayar Brimola</th>
+              <th class="px-2 py-2 text-xs font-bold border">Bukti TF</th>
+              <th class="px-2 py-2 text-xs font-bold border">Bagi Hasil</th>
+              <th class="px-2 py-2 text-xs font-bold border text-blue-700">Total TBG</th>
+            </tr>
+          </thead>
+          <tbody id="rekap-body" class="divide-y divide-gray-200"></tbody>
+          <tfoot class="bg-blue-50 font-bold">
+            <tr>
+              <td colspan="5" class="px-3 py-2 text-right border">TOTAL</td>
+              <td id="total-pengiriman" class="px-3 py-2 border">0</td>
+              <td></td><td></td><td></td><td></td>
+              <td id="total-bagi-hasil" class="px-3 py-2 border">0</td>
+              <td id="grand-total" class="px-3 py-2 border text-blue-700">0</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbx4VuE2KfU6tbis0cdC3DdpJH2cKB5vrMEQW4mlGZyxRHH6Rff_bTQp1O8cI-wq5Tol6w/exec";
+    const SPINNER = document.getElementById('spinner');
+    let pangkalanTerpilih = [];
+
+    function showSpinner(){ SPINNER.classList.remove('hidden'); }
+    function hideSpinner(){ SPINNER.classList.add('hidden'); }
+    async function fetchJSON(url){ showSpinner(); try{const r=await fetch(url);const j=await r.json();hideSpinner();return j;}catch(e){hideSpinner();alert("Gagal ambil data");return null;}}
+
+    function formatRupiah(val){
+      if(!val || val==0) return ""; 
+      const num = Number(val);
+      const str = "Rp " + num.toLocaleString("id-ID");
+      return `<span class="${num<0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}">${str}</span>`;
+    }
+
+    function renderSelectedPangkalan(){
+      const wrap = document.getElementById('selected-pangkalan');
+      wrap.innerHTML = '';
+      pangkalanTerpilih.forEach((p,i)=>{
+        const chip = document.createElement('div');
+        chip.className = "flex items-center bg-blue-200 text-blue-800 px-2 py-1 rounded text-sm";
+        chip.innerHTML = `${p} <button onclick="hapusPangkalan(${i})" class="ml-1 text-red-600 font-bold">x</button>`;
+        wrap.appendChild(chip);
+      });
+    }
+    function hapusPangkalan(i){ pangkalanTerpilih.splice(i,1); renderSelectedPangkalan(); }
+
+    document.getElementById('btn-add-pangkalan').addEventListener('click',()=>{
+      const val = document.getElementById('select-pangkalan').value;
+      if(val && !pangkalanTerpilih.includes(val)){ pangkalanTerpilih.push(val); renderSelectedPangkalan(); }
+    });
+
+    // TODO: tambahin loadPTs(), loadPangkalanForPT(), loadRekap(), renderTable() seperti versi sebelumnya
+  </script>
+</body>
+</html>
