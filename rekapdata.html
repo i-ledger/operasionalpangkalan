@@ -20,11 +20,11 @@
     </div>
     <div>
       <label class="block mb-1">Bulan</label>
-      <input type="number" id="month" min="1" max="12" class="w-full p-2 border rounded" value="">
+      <input type="number" id="month" min="1" max="12" class="w-full p-2 border rounded">
     </div>
     <div>
       <label class="block mb-1">Tahun</label>
-      <input type="number" id="year" min="2020" class="w-full p-2 border rounded" value="">
+      <input type="number" id="year" min="2020" class="w-full p-2 border rounded">
     </div>
   </div>
 
@@ -54,7 +54,7 @@
   </div>
 
   <!-- Tabel Rekap -->
-  <div class="mt-6">
+  <div class="mt-6 overflow-x-auto">
     <table class="min-w-full bg-white border">
       <thead class="bg-gray-200">
         <tr>
@@ -132,10 +132,10 @@
         const data = await res.json();
 
         // Update ringkasan
-        document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
         document.getElementById('do-owned').textContent = data.do_owned ?? '-';
         document.getElementById('price').textContent = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
         document.getElementById('harga-bagi-hasil').textContent = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
+        document.getElementById('total-penerimaan').textContent = data.total_penerimaan ? formatRupiah(data.total_penerimaan) : '-';
 
         // Tabel rekap
         const tbody = document.getElementById("rekap-body");
@@ -149,11 +149,11 @@
             <td class="border px-2 py-1">${r.dikirim}</td>
             <td class="border px-2 py-1">${r.master_sa}</td>
             <td class="border px-2 py-1">${r.pengiriman}</td>
-            <td class="border px-2 py-1">${r.nominal_harus_dibayar}</td>
+            <td class="border px-2 py-1">${formatRupiah(r.nominal_harus_dibayar)}</td>
             <td class="border px-2 py-1">${r.brimola_oleh}</td>
-            <td class="border px-2 py-1">${r.bayar_lewat_brimola}</td>
+            <td class="border px-2 py-1">${formatRupiah(r.bayar_lewat_brimola)}</td>
             <td class="border px-2 py-1">${r.bukti_transfer}</td>
-            <td class="border px-2 py-1">${r.bagi_hasil}</td>
+            <td class="border px-2 py-1">${formatRupiah(r.bagi_hasil)}</td>
           `;
           tbody.appendChild(tr);
         });
