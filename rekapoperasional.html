@@ -156,7 +156,170 @@
       if(val && !pangkalanTerpilih.includes(val)){ pangkalanTerpilih.push(val); renderSelectedPangkalan(); }
     });
 
-    // TODO: tambahin loadPTs(), loadPangkalanForPT(), loadRekap(), renderTable() seperti versi sebelumnya
+    async function fetchJSON(url){
+      showSpinner();
+      try{ const res = await fetch(url); const j = await res.json(); hideSpinner(); return j;}
+      catch(e){ hideSpinner(); console.error(e); alert('Gagal mengambil data'); return null }
+    }
+
+    function makeMonthOptions(){
+      const sel = document.getElementById('select-month');
+      const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+      const now = new Date();
+      months.forEach((m,i)=>{ 
+        const opt = document.createElement('option'); 
+        opt.value = i+1; opt.textContent = m; 
+        if(i===now.getMonth()) opt.selected = true; 
+        sel.appendChild(opt) 
+      });
+    }
+    function makeYearOptions(){
+      const sel = document.getElementById('select-year');
+      const yearNow = new Date().getFullYear();
+      for(let y=yearNow-2;y<=yearNow+1;y++){ 
+        const opt=document.createElement('option'); 
+        opt.value=y; opt.textContent=y; 
+        if(y===yearNow) opt.selected = true; 
+        sel.appendChild(opt);
+      }
+    }
+
+    async function loadPTs(){
+      const url = `${GAS_URL}?action=getPTs`; 
+      const data = await fetchJSON(url); if(!data) return;
+      const sel = document.getElementById('select-pt');
+      sel.innerHTML = '';
+      data.forEach(pt=>{ const o=document.createElement('option'); o.value=pt; o.textContent=pt; sel.appendChild(o) });
+      sel.dispatchEvent(new Event('change'));
+    }
+
+    async function loadPangkalanForPT(pt){
+      const url = `${GAS_URL}?action=getPangkalan&pt=${encodeURIComponent(pt)}`;
+      const data = await fetchJSON(url); 
+      const sel = document.getElementById('select-pangkalan');
+      sel.innerHTML='';
+      const empty = document.createElement('option'); empty.value='ALL'; empty.textContent='-- Semua Pangkalan --'; empty.selected = true; sel.appendChild(empty);
+      (data||[]).forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
+    }
+
+    function getSelectedPangkalan(){
+      const sel = document.getElementById('select-pangkalan');
+      const vals = Array.from(sel.selectedOptions).map(o=>o.value);
+      if (vals.length === 0) return ['ALL'];
+      if (vals.includes('ALL')) return ['ALL'];
+      return vals;
+    }
+
+    async function updateDOInfo(pt, pangkalanList){
+      const q = Array.isArray(pangkalanList) ? pangkalanList.join(',') : String(pangkalanList||'ALL');
+      const url = `${GAS_URL}?action=getDOInfo&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(q)}`;
+      const d = await fetchJSON(url);
+      if(!d) return;
+      document.getElementById('do-owned').textContent = d.do_owned ?? '-';
+      document.getElementById('price').textContent = d.harga_tabung ? formatRupiah(d.harga_tabung) : '-';
+      document.getElementById('harga-bagi-hasil').textContent = d.harga_bagi_hasil ? formatRupiah(d.harga_bagi_hasil) : '-';
+      document.getElementById('total-penerimaan').textContent = d.total_penerimaan ?? '-';
+    }
+
+    function formatRupiah(val){ if(val==null || val==='') return '-'; return 'Rp ' + Number(val).toLocaleString('id-ID'); }
+
+    async function loadRekap(){
+      const pt = document.getElementById('select-pt').value;
+      const pangkalans = getSelectedPangkalan();
+      const month = document.getElementById('select-month').value;
+      const year = document.getElementById('select-year').value;
+      const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalans.join(','))}&month=${month}&year=${year}`;
+      const data = await fetchJSON(url);
+      if(!data) return;
+      const totals = renderTable(data.rows);
+
+      document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
+      document.getElementById('do-owned').textContent = data.do_owned ?? '-';
+      document.getElementById('price').textContent = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
+      document.getElementById('harga-bagi-hasil').textContent = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
+      
+      hitungTabungKerjasama({...data, totalBagiHasil: totals.totalBagiHasil});
+    }
+
+    function renderTable(rows){
+      const tbody = document.getElementById('rekap-body');
+      tbody.innerHTML='';
+      let grandTotal = 0, totalPengiriman=0, totalBagiHasil=0;
+
+      rows.forEach(r=>{
+        const bayarBrimola = Number(r.bayar_lewat_brimola) || 0;
+        const nominalHarusDibayar = Number(r.nominal_harus_dibayar) || 0;
+        const buktiTransfer = Number(r.bukti_transfer) || 0;
+        const pengiriman = Number(r.pengiriman) || 0;
+        const bagiHasil = Number(r.bagi_hasil) || 0;
+
+        const totalTBG = bayarBrimola - nominalHarusDibayar + buktiTransfer;
+
+        grandTotal += totalTBG;
+        totalPengiriman += pengiriman;
+        totalBagiHasil += bagiHasil;
+
+        const tr = document.createElement('tr'); 
+        tr.innerHTML = `
+          <td class="px-3 py-2 text-sm">${r.tanggal}</td>
+          <td class="px-3 py-2 text-sm">${r.laporan_pengiriman}</td>
+          <td class="px-3 py-2 text-sm">${r.retur}</td>
+          <td class="px-3 py-2 text-sm">${r.dikirim}</td>
+          <td class="px-3 py-2 text-sm">${r.master_sa}</td>
+          <td class="px-3 py-2 text-sm">${pengiriman}</td>
+          <td class="px-3 py-2 text-sm">${formatRupiah(r.nominal_harus_dibayar)}</td>
+          <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
+          <td class="px-3 py-2 text-sm">${formatRupiah(r.bayar_lewat_brimola)}</td>
+          <td class="px-3 py-2 text-sm">${formatRupiah(r.bukti_transfer)}</td>
+          <td class="px-3 py-2 text-sm">${formatRupiah(r.bagi_hasil)}</td>
+          <td class="px-3 py-2 text-sm text-blue-600 font-semibold">${formatRupiah(totalTBG)}</td>
+        `; 
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('total-pengiriman').textContent = totalPengiriman;
+      document.getElementById('total-bagi-hasil').textContent = formatRupiah(totalBagiHasil);
+      document.getElementById('grand-total').textContent = formatRupiah(grandTotal);
+
+      return { totalPengiriman, totalBagiHasil, grandTotal };
+    }
+
+    function hitungTabungKerjasama(data){
+      const tP = Number(data.total_penerimaan)||0;
+      const dO = Number(data.do_owned)||0;
+      const hrgBagi = Number(data.harga_bagi_hasil)||0;
+      const sudahBayar = Number(data.totalBagiHasil)||0;
+
+      const tabungKerjasama = (tP - dO);
+      const nominalBagiHasil = tabungKerjasama * hrgBagi;
+      const sisa = nominalBagiHasil + sudahBayar; // pengurangan
+
+      document.getElementById('tabung-kerjasama').textContent = tabungKerjasama + ' Tbg';
+      document.getElementById('sisa-bagi-hasil').textContent = formatRupiah(sisa);
+    }
+
+    // Export CSV
+    document.getElementById('btn-export-csv').addEventListener('click', ()=>{
+      const rows = Array.from(document.querySelectorAll('#rekap-table tr')).map(tr=>{
+        return Array.from(tr.querySelectorAll('th,td')).map(td=>`"${td.innerText.replace(/"/g,'""')}"`).join(',');
+      });
+      const blob = new Blob([rows.join('\n')], {type:'text/csv;charset=utf-8;'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'rekap.csv';
+      a.click();
+    });
+
+    document.getElementById('btn-load').addEventListener('click', loadRekap);
+    document.getElementById('select-pt').addEventListener('change', async (e)=>{ 
+      await loadPangkalanForPT(e.target.value); 
+      await updateDOInfo(e.target.value, getSelectedPangkalan()); 
+    });
+    document.getElementById('select-pangkalan').addEventListener('change', async ()=>{ 
+      await updateDOInfo(document.getElementById('select-pt').value, getSelectedPangkalan());
+    });
+
+    makeMonthOptions(); makeYearOptions(); loadPTs();
   </script>
 </body>
 </html>
