@@ -103,7 +103,7 @@
               <th class="px-3 py-2 border">Laporan Driver</th>
               <th class="px-3 py-2 border">Retur</th>
               <th class="px-3 py-2 border">Dikirim</th>
-              <th class="px-3 py-2 border">MASTER_SA</th>
+              <th class="px-3 py-2 border">SA Pangkalan</th>
               <th class="px-3 py-2 border">Pengiriman</th>
               <th class="px-3 py-2 border">Nominal Dibayar</th>
               <th class="px-3 py-2 border">Brimola Oleh</th>
@@ -114,15 +114,16 @@
             </tr>
           </thead>
           <tbody id="rekap-body" class="bg-white"></tbody>
-          <tfoot class="bg-blue-100 font-semibold">
-            <tr>
-              <td colspan="5" class="px-3 py-2 text-right border">TOTAL</td>
-              <td id="total-pengiriman" class="px-3 py-2 border">0</td>
-              <td></td><td></td><td></td><td></td>
-              <td id="total-bagi-hasil" class="px-3 py-2 border">0</td>
-              <td id="grand-total" class="px-3 py-2 border text-blue-800">0</td>
-            </tr>
-          </tfoot>
+<tfoot class="bg-blue-100 font-semibold">
+  <tr>
+    <td colspan="5" class="px-3 py-2 text-right border">TOTAL</td>
+    <td id="total-pengiriman" class="px-3 py-2 border text-right whitespace-nowrap">0</td>
+    <td></td><td></td><td></td><td></td>
+    <td id="total-bagi-hasil" class="px-3 py-2 border text-right whitespace-nowrap">0</td>
+    <td id="grand-total" class="px-3 py-2 border text-right whitespace-nowrap text-blue-800">0</td>
+  </tr>
+</tfoot>
+
         </table>
       </div>
     </section>
@@ -257,21 +258,22 @@ function renderTable(rows){
     totalPengiriman += pengiriman;
     totalBagiHasil += bagiHasil;
 
-    const tr = document.createElement('tr'); 
-    tr.innerHTML = `
-      <td class="px-3 py-2 text-sm">${r.tanggal}</td>
-      <td class="px-3 py-2 text-sm">${r.laporan_pengiriman}</td>
-      <td class="px-3 py-2 text-sm">${r.retur}</td>
-      <td class="px-3 py-2 text-sm">${r.dikirim}</td>
-      <td class="px-3 py-2 text-sm">${r.master_sa}</td>
-      <td class="px-3 py-2 text-sm">${pengiriman}</td>
-      <td class="px-3 py-2 text-sm">${formatRupiah(r.nominal_harus_dibayar)}</td>
-      <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
-      <td class="px-3 py-2 text-sm">${formatRupiah(r.bayar_lewat_brimola)}</td>
-      <td class="px-3 py-2 text-sm">${formatRupiah(r.bukti_transfer)}</td>
-      <td class="px-3 py-2 text-sm">${formatRupiah(r.bagi_hasil)}</td>
-      <td class="px-3 py-2 text-sm text-blue-600 font-semibold">${formatRupiah(totalTBG)}</td>
-    `; 
+ const tr = document.createElement('tr'); 
+tr.innerHTML = `
+  <td class="px-3 py-2 text-sm">${r.tanggal}</td>
+  <td class="px-3 py-2 text-sm">${r.laporan_pengiriman}</td>
+  <td class="px-3 py-2 text-sm">${r.retur}</td>
+  <td class="px-3 py-2 text-sm">${r.dikirim}</td>
+  <td class="px-3 py-2 text-sm">${r.master_sa}</td>
+  <td class="px-3 py-2 text-sm text-right whitespace-nowrap">${pengiriman}</td>
+  <td class="px-3 py-2 text-sm text-right whitespace-nowrap">${formatRupiah(r.nominal_harus_dibayar)}</td>
+  <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
+  <td class="px-3 py-2 text-sm text-right whitespace-nowrap">${formatRupiah(r.bayar_lewat_brimola)}</td>
+  <td class="px-3 py-2 text-sm text-right whitespace-nowrap">${formatRupiah(r.bukti_transfer)}</td>
+  <td class="px-3 py-2 text-sm text-right whitespace-nowrap">${formatRupiah(r.bagi_hasil)}</td>
+  <td class="px-3 py-2 text-sm text-right whitespace-nowrap text-blue-600 font-semibold">${formatRupiah(totalTBG)}</td>
+`; 
+
     tbody.appendChild(tr);
   });
 
