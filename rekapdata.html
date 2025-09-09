@@ -258,7 +258,7 @@
       const tP = Number(data.total_penerimaan)||0;
       const dO = Number(data.do_owned)||0;
       const hrgBagi = Number(data.harga_bagi_hasil)||0;
-      const sudahBayar = Number(totalBagiHasil)||0;
+      const sudahBayar = Number(data.totalBagiHasil)||0;
 
       const tabungKerjasama = (tP - dO);
       const nominalBagiHasil = tabungKerjasama * hrgBagi;
