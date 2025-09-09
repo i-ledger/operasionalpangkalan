@@ -256,7 +256,7 @@
 
       const tabungKerjasama = (tP - dO);
       const nominalBagiHasil = tabungKerjasama * hrgBagi;
-      const sisa = nominalBagiHasil - sudahBayar; // pengurangan
+      const sisa = nominalBagiHasil + sudahBayar; // pengurangan
 
       document.getElementById('tabung-kerjasama').textContent = tabungKerjasama + ' Tbg';
       document.getElementById('sisa-bagi-hasil').textContent = formatRupiah(sisa);
