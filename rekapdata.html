@@ -40,7 +40,8 @@
         </div>
       </div>
 
-      <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- Info Box -->
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-4">
         <div class="bg-slate-100 p-3 rounded">
           <div class="text-xs text-gray-500">DO yang dimiliki (total)</div>
           <div id="do-owned" class="text-lg font-medium">-</div>
@@ -54,6 +55,14 @@
           <div class="text-xs text-gray-500">Total Penerimaan TBG Bulanan</div>
           <div id="total-penerimaan" class="text-lg font-medium">-</div>
         </div>
+        <div class="bg-slate-100 p-3 rounded">
+          <div class="text-xs text-gray-500">Tabung Kerjasama</div>
+          <div id="tabung-kerjasama" class="text-lg font-medium">-</div>
+        </div>
+        <div class="bg-slate-100 p-3 rounded">
+          <div class="text-xs text-gray-500">Dikurangi Total Bagi Hasil yang Sudah Dibayar</div>
+          <div id="sisa-bagi-hasil" class="text-lg font-medium text-red-600">-</div>
+        </div>
       </div>
 
       <div class="mt-4 flex items-center gap-2">
@@ -62,6 +71,7 @@
       </div>
     </section>
 
+    <!-- Table -->
     <section class="bg-white p-4 rounded-lg shadow">
       <div class="overflow-auto">
         <table id="rekap-table" class="min-w-full divide-y divide-gray-200">
@@ -91,7 +101,6 @@
         </table>
       </div>
     </section>
-
   </div>
 
   <script>
@@ -133,7 +142,6 @@
       const data = await fetchJSON(url); 
       const sel = document.getElementById('select-pangkalan');
       sel.innerHTML='';
-      // Opsi "Semua"
       const empty = document.createElement('option'); empty.value='ALL'; empty.textContent='-- Semua Pangkalan --'; empty.selected = true; sel.appendChild(empty);
       (data||[]).forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
     }
@@ -152,7 +160,7 @@
       const d = await fetchJSON(url);
       if(!d) return;
       document.getElementById('do-owned').textContent = d.do_owned ?? '-';
-      document.getElementById('price').textContent = (d.price === null || d.price === undefined) ? '-' : formatRupiah(d.price);
+      document.getElementById('price').textContent = (d.price == null) ? '-' : formatRupiah(d.price);
       document.getElementById('total-penerimaan').textContent = d.total_penerimaan ?? '-';
     }
 
@@ -167,9 +175,12 @@
       const data = await fetchJSON(url);
       if(!data) return;
       renderTable(data.rows);
+
       document.getElementById('total-penerimaan').textContent = formatRupiah(data.total_penerimaan);
       document.getElementById('do-owned').textContent = data.do_owned ?? '-';
-      document.getElementById('price').textContent = (data.price === null || data.price === undefined) ? '-' : formatRupiah(data.price);
+      document.getElementById('price').textContent = (data.price == null) ? '-' : formatRupiah(data.price);
+
+      hitungTabungKerjasama(data);
     }
 
     function renderTable(rows){
@@ -180,7 +191,6 @@
       rows.forEach(r=>{
         const totalTBG = (Number(r.bayar_lewat_brimola)||0) - (Number(r.nominal_harus_dibayar)||0) + (Number(r.bukti_transfer)||0);
         grandTotal += totalTBG;
-
         const tr = document.createElement('tr'); 
         tr.innerHTML = `
           <td class="px-3 py-2 text-sm">${r.tanggal}</td>
@@ -202,7 +212,20 @@
       document.getElementById('grand-total').textContent = formatRupiah(grandTotal);
     }
 
-    // Export CSV sederhana dari tabel
+    function hitungTabungKerjasama(data){
+      const tP = Number(data.total_penerimaan)||0;
+      const dO = Number(data.do_owned)||0;
+      const hrg = Number(data.price)||0;
+      const sudahBayar = Number(data.total_bagi_hasil_bayar)||0;
+
+      const tabungKerjasama = (tP - dO) * hrg;
+      const sisa = tabungKerjasama - sudahBayar;
+
+      document.getElementById('tabung-kerjasama').textContent = formatRupiah(tabungKerjasama);
+      document.getElementById('sisa-bagi-hasil').textContent = formatRupiah(sisa);
+    }
+
+    // Export CSV
     document.getElementById('btn-export-csv').addEventListener('click', ()=>{
       const rows = Array.from(document.querySelectorAll('#rekap-table tr')).map(tr=>{
         return Array.from(tr.querySelectorAll('th,td')).map(td=>`"${td.innerText.replace(/"/g,'""')}"`).join(',');
@@ -214,16 +237,15 @@
       a.click();
     });
 
-    document.getElementById('btn-load').addEventListener('click', async ()=>{ await loadRekap(); });
+    document.getElementById('btn-load').addEventListener('click', loadRekap);
     document.getElementById('select-pt').addEventListener('change', async (e)=>{ 
       await loadPangkalanForPT(e.target.value); 
       await updateDOInfo(e.target.value, getSelectedPangkalan()); 
     });
-    document.getElementById('select-pangkalan').addEventListener('change', async ()=>{
+    document.getElementById('select-pangkalan').addEventListener('change', async ()=>{ 
       await updateDOInfo(document.getElementById('select-pt').value, getSelectedPangkalan());
     });
 
-    // init
     makeMonthOptions(); makeYearOptions(); loadPTs();
   </script>
 </body>
