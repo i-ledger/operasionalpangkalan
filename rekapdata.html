@@ -19,6 +19,7 @@
       </div>
     </header>
 
+    <!-- Filter Section -->
     <section class="bg-white p-4 rounded-lg shadow mb-6">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
@@ -97,8 +98,14 @@
           <tbody id="rekap-body" class="bg-white divide-y divide-gray-100"></tbody>
           <tfoot class="bg-gray-100 font-semibold">
             <tr>
-              <td colspan="11" class="px-3 py-2 text-right">TOTAL</td>
-              <td id="grand-total" class="px-3 py-2 text-blue-600">0 Tbg</td>
+              <td colspan="5" class="px-3 py-2 text-right">TOTAL</td>
+              <td id="total-pengiriman" class="px-3 py-2">0</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td id="total-bagi-hasil" class="px-3 py-2">0</td>
+              <td id="grand-total" class="px-3 py-2 text-blue-600">0</td>
             </tr>
           </tfoot>
         </table>
@@ -107,7 +114,7 @@
   </div>
 
   <script>
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbx4VuE2KfU6tbis0cdC3DdpJH2cKB5vrMEQW4mlGZyxRHH6Rff_bTQp1O8cI-wq5Tol6w/exec'; // ganti dengan GAS lo
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbx4VuE2KfU6tbis0cdC3DdpJH2cKB5vrMEQW4mlGZyxRHH6Rff_bTQp1O8cI-wq5Tol6w/exec';
     const SPINNER = document.getElementById('spinner');
 
     function showSpinner(){ SPINNER.classList.remove('hidden'); }
@@ -180,61 +187,72 @@
 
     function formatRupiah(val){ if(val==null || val==='') return '-'; return 'Rp ' + Number(val).toLocaleString('id-ID'); }
 
-async function loadRekap(){
-  const pt = document.getElementById('select-pt').value;
-  const pangkalans = getSelectedPangkalan();
-  const month = document.getElementById('select-month').value;
-  const year = document.getElementById('select-year').value;
-  const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalans.join(','))}&month=${month}&year=${year}`;
-  const data = await fetchJSON(url);
-  if(!data) return;
-  renderTable(data.rows);
+    async function loadRekap(){
+      const pt = document.getElementById('select-pt').value;
+      const pangkalans = getSelectedPangkalan();
+      const month = document.getElementById('select-month').value;
+      const year = document.getElementById('select-year').value;
+      const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalans.join(','))}&month=${month}&year=${year}`;
+      const data = await fetchJSON(url);
+      if(!data) return;
+      renderTable(data.rows);
 
-  document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
-  document.getElementById('do-owned').textContent = data.do_owned ?? '-';
-  document.getElementById('price').textContent = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
-  document.getElementById('harga-bagi-hasil').textContent = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
+      document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
+      document.getElementById('do-owned').textContent = data.do_owned ?? '-';
+      document.getElementById('price').textContent = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
+      document.getElementById('harga-bagi-hasil').textContent = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
 
-  hitungTabungKerjasama(data);
-}
+      hitungTabungKerjasama(data);
+    }
 
+    function renderTable(rows){
+      const tbody = document.getElementById('rekap-body');
+      tbody.innerHTML='';
+      let grandTotal = 0, totalPengiriman=0, totalBagiHasil=0;
 
-function renderTable(rows){
-  const tbody = document.getElementById('rekap-body');
-  tbody.innerHTML='';
-  let grandTotal = 0;
+      rows.forEach(r=>{
+        const bayarBrimola = Number(r.bayar_lewat_brimola) || 0;
+        const nominalHarusDibayar = Number(r.nominal_harus_dibayar) || 0;
+        const buktiTransfer = Number(r.bukti_transfer) || 0;
+        const pengiriman = Number(r.pengiriman) || 0;
+        const bagiHasil = Number(r.bagi_hasil) || 0;
 
-  rows.forEach(r=>{
-    const bayarBrimola = Number(r.bayar_lewat_brimola) || 0;
-    const nominalHarusDibayar = Number(r.nominal_harus_dibayar) || 0;
-    const buktiTransfer = Number(r.bukti_transfer) || 0;
+        const totalTBG = bayarBrimola - nominalHarusDibayar + buktiTransfer;
 
-    // Rumus baru
-    const totalTBG = bayarBrimola - nominalHarusDibayar + buktiTransfer;
+        grandTotal += totalTBG;
+        totalPengiriman += pengiriman;
+        totalBagiHasil += bagiHasil;
 
-    grandTotal += totalTBG;
+        const tr = document.createElement('tr'); 
+        tr.innerHTML = `
+          <td class="px-3 py-2 text-sm">${r.tanggal}</td>
+          <td class="px-3 py-2 text-sm">${r.laporan_pengiriman}</td>
+          <td class="px-3 py-2 text-sm">${r.retur}</td>
+          <td class="px-3 py-2 text-sm">${r.dikirim}</td>
+          <td class="px-3 py-2 text-sm">${r.master_sa}</td>
+          <td class="px-3 py-2 text-sm">${pengiriman}</td>
+          <td class="px-3 py-2 text-sm">${formatRupiah(r.nominal_harus_dibayar)}</td>
+          <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
+          <td class="px-3 py-2 text-sm">${formatRupiah(r.bayar_lewat_brimola)}</td>
+          <td class="px-3 py-2 text-sm">${formatRupiah(r.bukti_transfer)}</td>
+          <td class="px-3 py-2 text-sm">${formatRupiah(r.bagi_hasil)}</td>
+          <td class="px-3 py-2 text-sm text-blue-600 font-semibold">${formatRupiah(totalTBG)}</td>
+        `; 
+        tbody.appendChild(tr);
+      });
 
-    const tr = document.createElement('tr'); 
-    tr.innerHTML = `
-      <td class="px-3 py-2 text-sm">${r.tanggal}</td>
-      <td class="px-3 py-2 text-sm">${r.laporan_pengiriman}</td>
-      <td class="px-3 py-2 text-sm">${r.retur}</td>
-      <td class="px-3 py-2 text-sm">${r.dikirim}</td>
-      <td class="px-3 py-2 text-sm">${r.master_sa}</td>
-      <td class="px-3 py-2 text-sm">${r.pengiriman}</td>
-      <td class="px-3 py-2 text-sm">${formatRupiah(r.nominal_harus_dibayar)}</td>
-      <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
-      <td class="px-3 py-2 text-sm">${formatRupiah(r.bayar_lewat_brimola)}</td>
-      <td class="px-3 py-2 text-sm">${formatRupiah(r.bukti_transfer)}</td>
-      <td class="px-3 py-2 text-sm">${formatRupiah(r.bagi_hasil)}</td>
-      <td class="px-3 py-2 text-sm text-blue-600 font-semibold">${formatRupiah(totalTBG)}</td>
-    `; 
-    tbody.appendChild(tr);
-  });
+      document.getElementById('total-pengiriman').textContent = totalPengiriman;
+      document.getElementById('total-bagi-hasil').textContent = formatRupiah(totalBagiHasil);
+      document.getElementById('grand-total').textContent = formatRupiah(grandTotal);
 
-  document.getElementById('grand-total').textContent = formatRupiah(grandTotal);
-}
-
+      // update sisa bagi hasil
+      const sisaBox = document.getElementById('sisa-bagi-hasil');
+      if(sisaBox){
+        const current = parseInt(sisaBox.textContent.replace(/[^\d]/g,'')) || 0;
+        const updated = current + totalBagiHasil;
+        sisaBox.textContent = formatRupiah(updated);
+      }
+    }
 
     function hitungTabungKerjasama(data){
       const tP = Number(data.total_penerimaan)||0;
