@@ -195,14 +195,14 @@
       const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalans.join(','))}&month=${month}&year=${year}`;
       const data = await fetchJSON(url);
       if(!data) return;
-      renderTable(data.rows);
+      const totals = renderTable(data.rows);
 
       document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
       document.getElementById('do-owned').textContent = data.do_owned ?? '-';
       document.getElementById('price').textContent = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
       document.getElementById('harga-bagi-hasil').textContent = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
       
-      hitungTabungKerjasama(data);
+      hitungTabungKerjasama({...data, totalBagiHasil: totals.totalBagiHasil});
     }
 
     function renderTable(rows){
@@ -245,22 +245,22 @@
       document.getElementById('total-bagi-hasil').textContent = formatRupiah(totalBagiHasil);
       document.getElementById('grand-total').textContent = formatRupiah(grandTotal);
 
+      return { totalPengiriman, totalBagiHasil, grandTotal };
     }
 
-  function hitungTabungKerjasama(data){
-  const tP = Number(data.total_penerimaan)||0;
-  const dO = Number(data.do_owned)||0;
-  const hrgBagi = Number(data.harga_bagi_hasil)||0;
-  const sudahBayar = Number(data.totalBagiHasil)||0;
+    function hitungTabungKerjasama(data){
+      const tP = Number(data.total_penerimaan)||0;
+      const dO = Number(data.do_owned)||0;
+      const hrgBagi = Number(data.harga_bagi_hasil)||0;
+      const sudahBayar = Number(data.totalBagiHasil)||0;
 
-  const tabungKerjasama = (tP - dO);
-  const nominalBagiHasil = tabungKerjasama * hrgBagi;
-  const sisa = nominalBagiHasil - sudahBayar; // <- kurangi, bukan tambah
+      const tabungKerjasama = (tP - dO);
+      const nominalBagiHasil = tabungKerjasama * hrgBagi;
+      const sisa = nominalBagiHasil - sudahBayar; // pengurangan
 
-  document.getElementById('tabung-kerjasama').textContent = tabungKerjasama + ' Tbg';
-  document.getElementById('sisa-bagi-hasil').textContent = formatRupiah(sisa);
-}
-
+      document.getElementById('tabung-kerjasama').textContent = tabungKerjasama + ' Tbg';
+      document.getElementById('sisa-bagi-hasil').textContent = formatRupiah(sisa);
+    }
 
     // Export CSV
     document.getElementById('btn-export-csv').addEventListener('click', ()=>{
