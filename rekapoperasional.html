@@ -198,7 +198,14 @@
       document.getElementById('total-penerimaan').textContent = d.total_penerimaan ?? '-';
     }
 
-    function formatRupiah(val){ if(val==null || val==='') return '-'; return 'Rp ' + Number(val).toLocaleString('id-ID'); }
+   function formatRupiah(val){
+    const num = Number(val);
+    if(isNaN(num) || num === 0) return ''; // Rp0 jangan ditulis
+    const text = 'Rp ' + num.toLocaleString('id-ID');
+    if(num < 0) return `<span class="text-red-600 font-semibold">${text}</span>`;
+    if(num > 0) return `<span class="text-green-600 font-semibold">${text}</span>`;
+    return '';
+  }
 
     async function loadRekap(){
       const pt = document.getElementById('select-pt').value;
@@ -298,27 +305,22 @@
 
     makeMonthOptions(); makeYearOptions(); loadPTs();
 
+  // --- Share to WhatsApp ---
+  document.getElementById("btn-share").addEventListener("click", async ()=>{
+    const phone = "628123456789"; // ubah ke nomor tujuan WA
+    const el = document.getElementById("rekap-table"); // cuma tabel yg di-SS
+    const canvas = await html2canvas(el, {scale:2, backgroundColor:"#ffffff"});
+    const dataUrl = canvas.toDataURL("image/png");
+    const blob = await (await fetch(dataUrl)).blob();
+    const file = new File([blob], "rekap.png", {type:"image/png"});
 
-
-
-
-
-    
-    // Share to WhatsApp
-    document.getElementById("btn-share").addEventListener("click", async ()=>{
-      const phone = "628123456789"; // ubah ke nomor tujuan
-      const el = document.body;
-      const canvas = await html2canvas(el, {scale:1});
-      const dataUrl = canvas.toDataURL("image/png");
-      const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], "rekap.png", {type:"image/png"});
-
-      if(navigator.canShare && navigator.canShare({files:[file]})){
-        await navigator.share({files:[file], title:"Rekap Operasional"});
-      } else {
-        window.open(`https://wa.me/${phone}?text=Berikut rekap operasional saya`, "_blank");
-      }
-    });
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:"Rekap Operasional"});
+    } else {
+      // fallback: buka chat WA dengan text (tanpa gambar)
+      window.open(`https://wa.me/${phone}?text=Berikut rekap operasional saya`, "_blank");
+    }
+  });
   </script>
 </body>
 </html>
