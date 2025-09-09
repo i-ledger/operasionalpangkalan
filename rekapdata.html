@@ -19,6 +19,7 @@
       </div>
     </header>
 
+    <!-- Filter -->
     <section class="bg-white p-4 rounded-lg shadow mb-6">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
@@ -48,7 +49,7 @@
         </div>
         <div class="bg-slate-100 p-3 rounded">
           <div class="text-xs text-gray-500">Harga Tabung</div>
-          <div id="price" class="text-lg font-medium">-</div>
+          <div id="harga-tabung" class="text-lg font-medium">-</div>
         </div>
         <div class="bg-slate-100 p-3 rounded">
           <div class="text-xs text-gray-500">Harga Bagi Hasil</div>
@@ -107,7 +108,7 @@
   </div>
 
   <script>
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxMTVNAxqxZYYqMz9kFINbUXhUV777v-j13JkSOw7H-XAB5IxzVEJ9OhMN5eBmNtikKlQ/exec'; // ganti dengan GAS lo
+    const GAS_URL = 'YOUR_APPS_SCRIPT_URL';
     const SPINNER = document.getElementById('spinner');
 
     function showSpinner(){ SPINNER.classList.remove('hidden'); }
@@ -146,7 +147,7 @@
       const data = await fetchJSON(url); if(!data) return;
       const sel = document.getElementById('select-pt');
       sel.innerHTML = '';
-      data.forEach(pt=>{ const o=document.createElement('option'); o.value=pt; o.textContent=pt; sel.appendChild(o) });
+      (data||[]).forEach(pt=>{ const o=document.createElement('option'); o.value=pt; o.textContent=pt; sel.appendChild(o) });
       sel.dispatchEvent(new Event('change'));
     }
 
@@ -173,7 +174,7 @@
       const d = await fetchJSON(url);
       if(!d) return;
       document.getElementById('do-owned').textContent = d.do_owned ?? '-';
-      document.getElementById('price').textContent = d.price ? formatRupiah(d.price) : '-';
+      document.getElementById('harga-tabung').textContent = d.harga_tabung ? formatRupiah(d.harga_tabung) : '-';
       document.getElementById('harga-bagi-hasil').textContent = d.harga_bagi_hasil ? formatRupiah(d.harga_bagi_hasil) : '-';
       document.getElementById('total-penerimaan').textContent = d.total_penerimaan ?? '-';
     }
@@ -192,7 +193,7 @@
 
       document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
       document.getElementById('do-owned').textContent = data.do_owned ?? '-';
-      document.getElementById('price').textContent = data.price ? formatRupiah(data.price) : '-';
+      document.getElementById('harga-tabung').textContent = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
       document.getElementById('harga-bagi-hasil').textContent = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
 
       hitungTabungKerjasama(data);
@@ -204,7 +205,7 @@
       let grandTotal = 0;
 
       rows.forEach(r=>{
-        const totalTBG = Number(r.total_tbg)||0;
+        const totalTBG = Number(r.pengiriman)||0;
         grandTotal += totalTBG;
         const tr = document.createElement('tr'); 
         tr.innerHTML = `
