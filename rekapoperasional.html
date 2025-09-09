@@ -220,18 +220,24 @@ async function loadRekap(){
   const pangkalans = getSelectedPangkalan();
   const month = document.getElementById('select-month').value;
   const year = document.getElementById('select-year').value;
+
+  // 🔥 ambil info DO juga di sini
+  await updateDOInfo(pt, pangkalans);
+
   const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalans.join(','))}&month=${month}&year=${year}`;
   const data = await fetchJSON(url);
   if(!data) return;
+
   const totals = renderTable(data.rows);
 
   document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
   document.getElementById('do-owned').textContent = data.do_owned ?? '-';
-  document.getElementById('price').innerHTML = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
-  document.getElementById('harga-bagi-hasil').innerHTML = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
+  document.getElementById('price').textContent = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
+  document.getElementById('harga-bagi-hasil').textContent = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
   
   hitungTabungKerjasama({...data, totalBagiHasil: totals.totalBagiHasil});
 }
+
 
 function renderTable(rows){
   const tbody = document.getElementById('rekap-body');
@@ -306,10 +312,8 @@ function hitungTabungKerjasama(data){
     document.getElementById('btn-load').addEventListener('click', loadRekap);
     document.getElementById('select-pt').addEventListener('change', async (e)=>{ 
       await loadPangkalanForPT(e.target.value); 
-      await updateDOInfo(e.target.value, getSelectedPangkalan()); 
     });
     document.getElementById('select-pangkalan').addEventListener('change', async ()=>{ 
-      await updateDOInfo(document.getElementById('select-pt').value, getSelectedPangkalan());
     });
 
     makeMonthOptions(); makeYearOptions(); loadPTs();
