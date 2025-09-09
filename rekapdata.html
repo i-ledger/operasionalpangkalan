@@ -245,28 +245,22 @@
       document.getElementById('total-bagi-hasil').textContent = formatRupiah(totalBagiHasil);
       document.getElementById('grand-total').textContent = formatRupiah(grandTotal);
 
-      // update sisa bagi hasil
-      const sisaBox = document.getElementById('sisa-bagi-hasil');
-      if(sisaBox){
-        const current = parseInt(sisaBox.textContent.replace(/[^\d]/g,'')) || 0;
-        const updated = current + totalBagiHasil;
-        sisaBox.textContent = formatRupiah(updated);
-      }
     }
 
-    function hitungTabungKerjasama(data){
-      const tP = Number(data.total_penerimaan)||0;
-      const dO = Number(data.do_owned)||0;
-      const hrgBagi = Number(data.harga_bagi_hasil)||0;
-      const sudahBayar = Number(data.totalBagiHasil)||0;
+  function hitungTabungKerjasama(data){
+  const tP = Number(data.total_penerimaan)||0;
+  const dO = Number(data.do_owned)||0;
+  const hrgBagi = Number(data.harga_bagi_hasil)||0;
+  const sudahBayar = Number(data.totalBagiHasil)||0;
 
-      const tabungKerjasama = (tP - dO);
-      const nominalBagiHasil = tabungKerjasama * hrgBagi;
-      const sisa = nominalBagiHasil + sudahBayar;
+  const tabungKerjasama = (tP - dO);
+  const nominalBagiHasil = tabungKerjasama * hrgBagi;
+  const sisa = nominalBagiHasil - sudahBayar; // <- kurangi, bukan tambah
 
-      document.getElementById('tabung-kerjasama').textContent = tabungKerjasama + ' Tbg';
-      document.getElementById('sisa-bagi-hasil').textContent = formatRupiah(sisa);
-    }
+  document.getElementById('tabung-kerjasama').textContent = tabungKerjasama + ' Tbg';
+  document.getElementById('sisa-bagi-hasil').textContent = formatRupiah(sisa);
+}
+
 
     // Export CSV
     document.getElementById('btn-export-csv').addEventListener('click', ()=>{
