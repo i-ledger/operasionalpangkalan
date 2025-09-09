@@ -6,116 +6,106 @@
   <title>Rekap Operasional — i-Shipping</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-blue-50 min-h-screen p-4 font-sans">
-  <div class="max-w-4xl mx-auto">
-    <!-- Header -->
-    <header class="flex items-center justify-between mb-4">
-      <h1 class="text-xl font-bold text-blue-700">📊 Rekap Operasional</h1>
-      <div class="flex items-center gap-2">
-        <button onclick="window.location.href='dashboard.html'" class="px-3 py-1 bg-blue-500 text-white rounded shadow">
-          Dashboard
-        </button>
-        <div id="spinner" class="hidden items-center space-x-2 text-blue-600">
-          <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
-            <path class="opacity-75" d="M4 12a8 8 0 018-8v8z" fill="currentColor"></path>
-          </svg>
-        </div>
+<body class="bg-slate-50 min-h-screen p-6 font-sans">
+  <div class="max-w-7xl mx-auto">
+    <header class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-semibold">Rekap Operasional</h1>
+      <div id="spinner" class="hidden items-center space-x-2">
+        <svg class="animate-spin h-6 w-6" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+          <path class="opacity-75" d="M4 12a8 8 0 018-8v8z" fill="currentColor"></path>
+        </svg>
+        <span>Loading...</span>
       </div>
     </header>
 
     <!-- Filter Section -->
     <section class="bg-white p-4 rounded-lg shadow mb-6">
-      <div class="grid grid-cols-1 gap-3">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <label class="block text-sm font-medium">Nama PT</label>
           <select id="select-pt" class="mt-1 block w-full rounded-md border-gray-200"></select>
         </div>
-        
-        <!-- Tambah/Hapus Pangkalan -->
         <div>
-          <label class="block text-sm font-medium">Pangkalan Terpilih</label>
-          <div id="selected-pangkalan" class="flex flex-wrap gap-2 mt-1"></div>
-          <div class="flex gap-2 mt-2">
-            <select id="select-pangkalan" class="flex-1 rounded-md border-gray-200"></select>
-            <button id="btn-add-pangkalan" class="px-3 py-1 bg-blue-500 text-white rounded">Tambah</button>
-          </div>
+          <label class="block text-sm font-medium">Nama Pangkalan</label>
+          <select id="select-pangkalan" multiple size="7" class="mt-1 block w-full rounded-md border-gray-200"></select>
+          <p class="text-xs text-gray-500 mt-1">Tip: tekan Ctrl / Cmd untuk pilih banyak.</p>
         </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-sm font-medium">Bulan</label>
-            <select id="select-month" class="mt-1 block w-full rounded-md border-gray-200"></select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium">Tahun</label>
-            <select id="select-year" class="mt-1 block w-full rounded-md border-gray-200"></select>
-          </div>
+        <div>
+          <label class="block text-sm font-medium">Bulan</label>
+          <select id="select-month" class="mt-1 block w-full rounded-md border-gray-200"></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Tahun</label>
+          <select id="select-year" class="mt-1 block w-full rounded-md border-gray-200"></select>
         </div>
       </div>
 
       <!-- Info Box -->
-      <div class="mt-4 grid grid-cols-2 gap-3">
-        <div class="bg-blue-100 p-3 rounded shadow">
-          <div class="text-xs text-gray-600">DO yang dimiliki</div>
-          <div id="do-owned" class="text-lg font-semibold">-</div>
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-4">
+        <div class="bg-slate-100 p-3 rounded">
+          <div class="text-xs text-gray-500">DO yang dimiliki (total)</div>
+          <div id="do-owned" class="text-lg font-medium">-</div>
         </div>
-        <div class="bg-blue-100 p-3 rounded shadow">
-          <div class="text-xs text-gray-600">Harga Tabung</div>
-          <div id="price" class="text-lg font-semibold">-</div>
+        <div class="bg-slate-100 p-3 rounded">
+          <div class="text-xs text-gray-500">Harga Tabung</div>
+          <div id="price" class="text-lg font-medium">-</div>
         </div>
-        <div class="bg-blue-100 p-3 rounded shadow">
-          <div class="text-xs text-gray-600">Harga Bagi Hasil</div>
-          <div id="harga-bagi-hasil" class="text-lg font-semibold">-</div>
+        <div class="bg-slate-100 p-3 rounded">
+          <div class="text-xs text-gray-500">Harga Bagi Hasil</div>
+          <div id="harga-bagi-hasil" class="text-lg font-medium">-</div>
         </div>
-        <div class="bg-blue-100 p-3 rounded shadow">
-          <div class="text-xs text-gray-600">Total Penerimaan</div>
-          <div id="total-penerimaan" class="text-lg font-semibold">-</div>
+        <div class="bg-slate-100 p-3 rounded">
+          <div class="text-xs text-gray-500">Total Penerimaan TBG Bulanan</div>
+          <div id="total-penerimaan" class="text-lg font-medium">-</div>
         </div>
-        <div class="bg-blue-100 p-3 rounded shadow">
-          <div class="text-xs text-gray-600">Tabung Kerjasama</div>
-          <div id="tabung-kerjasama" class="text-lg font-semibold">-</div>
+        <div class="bg-slate-100 p-3 rounded">
+          <div class="text-xs text-gray-500">Tabung Kerjasama</div>
+          <div id="tabung-kerjasama" class="text-lg font-medium">-</div>
         </div>
-        <div class="bg-blue-100 p-3 rounded shadow">
-          <div class="text-xs text-gray-600">Sisa Bagi Hasil</div>
-          <div id="sisa-bagi-hasil" class="text-lg font-semibold">-</div>
+        <div class="bg-slate-100 p-3 rounded">
+          <div class="text-xs text-gray-500">Sisa Bagi Hasil</div>
+          <div id="sisa-bagi-hasil" class="text-lg font-medium text-red-600">-</div>
         </div>
       </div>
 
-      <div class="mt-4 flex gap-2">
-        <button id="btn-load" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded shadow">Tampilkan</button>
-        <button id="btn-export-csv" class="px-4 py-2 bg-gray-200 rounded shadow">Export CSV</button>
+      <div class="mt-4 flex items-center gap-2">
+        <button id="btn-load" class="px-4 py-2 bg-blue-600 text-white rounded">Tampilkan Rekap</button>
+        <button id="btn-export-csv" class="px-3 py-2 border rounded">Export CSV</button>
       </div>
     </section>
 
     <!-- Table -->
     <section class="bg-white p-4 rounded-lg shadow">
-      <div class="overflow-x-auto">
-        <table id="rekap-table" class="min-w-full border border-gray-300">
-          <thead class="bg-blue-100">
+      <div class="overflow-auto">
+        <table id="rekap-table" class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
             <tr>
-              <th class="px-2 py-2 text-xs font-bold border">Tanggal</th>
-              <th class="px-2 py-2 text-xs font-bold border">Laporan Driver</th>
-              <th class="px-2 py-2 text-xs font-bold border">Retur</th>
-              <th class="px-2 py-2 text-xs font-bold border">Dikirim</th>
-              <th class="px-2 py-2 text-xs font-bold border">SA Pangkalan</th>
-              <th class="px-2 py-2 text-xs font-bold border">Pengiriman</th>
-              <th class="px-2 py-2 text-xs font-bold border">Nominal</th>
-              <th class="px-2 py-2 text-xs font-bold border">Brimola Oleh</th>
-              <th class="px-2 py-2 text-xs font-bold border">Bayar Brimola</th>
-              <th class="px-2 py-2 text-xs font-bold border">Bukti TF</th>
-              <th class="px-2 py-2 text-xs font-bold border">Bagi Hasil</th>
-              <th class="px-2 py-2 text-xs font-bold border text-blue-700">Total TBG</th>
+              <th class="px-3 py-2 text-left text-xs font-medium">Tanggal</th>
+              <th class="px-3 py-2 text-left text-xs font-medium">Laporan Pengiriman Driver/Kernet</th>
+              <th class="px-3 py-2 text-left text-xs font-medium">Retur</th>
+              <th class="px-3 py-2 text-left text-xs font-medium">Dikirim Driver/Kernet</th>
+              <th class="px-3 py-2 text-left text-xs font-medium">MASTER_SA</th>
+              <th class="px-3 py-2 text-left text-xs font-medium">Pengiriman</th>
+              <th class="px-3 py-2 text-left text-xs font-medium">Nominal yang harus dibayar</th>
+              <th class="px-3 py-2 text-left text-xs font-medium">Brimola Oleh</th>
+              <th class="px-3 py-2 text-left text-xs font-medium">Bayar Lewat Brimola</th>
+              <th class="px-3 py-2 text-left text-xs font-medium">Bukti Transfer</th>
+              <th class="px-3 py-2 text-left text-xs font-medium">Bagi Hasil</th>
+              <th class="px-3 py-2 text-left text-xs font-medium text-blue-600">Total Pembayaran TBG</th>
             </tr>
           </thead>
-          <tbody id="rekap-body" class="divide-y divide-gray-200"></tbody>
-          <tfoot class="bg-blue-50 font-bold">
+          <tbody id="rekap-body" class="bg-white divide-y divide-gray-100"></tbody>
+          <tfoot class="bg-gray-100 font-semibold">
             <tr>
-              <td colspan="5" class="px-3 py-2 text-right border">TOTAL</td>
-              <td id="total-pengiriman" class="px-3 py-2 border">0</td>
-              <td></td><td></td><td></td><td></td>
-              <td id="total-bagi-hasil" class="px-3 py-2 border">0</td>
-              <td id="grand-total" class="px-3 py-2 border text-blue-700">0</td>
+              <td colspan="5" class="px-3 py-2 text-right">TOTAL</td>
+              <td id="total-pengiriman" class="px-3 py-2">0</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td id="total-bagi-hasil" class="px-3 py-2">0</td>
+              <td id="grand-total" class="px-3 py-2 text-blue-600">0</td>
             </tr>
           </tfoot>
         </table>
@@ -124,37 +114,11 @@
   </div>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbx4VuE2KfU6tbis0cdC3DdpJH2cKB5vrMEQW4mlGZyxRHH6Rff_bTQp1O8cI-wq5Tol6w/exec";
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbx4VuE2KfU6tbis0cdC3DdpJH2cKB5vrMEQW4mlGZyxRHH6Rff_bTQp1O8cI-wq5Tol6w/exec';
     const SPINNER = document.getElementById('spinner');
-    let pangkalanTerpilih = [];
 
     function showSpinner(){ SPINNER.classList.remove('hidden'); }
     function hideSpinner(){ SPINNER.classList.add('hidden'); }
-    async function fetchJSON(url){ showSpinner(); try{const r=await fetch(url);const j=await r.json();hideSpinner();return j;}catch(e){hideSpinner();alert("Gagal ambil data");return null;}}
-
-    function formatRupiah(val){
-      if(!val || val==0) return ""; 
-      const num = Number(val);
-      const str = "Rp " + num.toLocaleString("id-ID");
-      return `<span class="${num<0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}">${str}</span>`;
-    }
-
-    function renderSelectedPangkalan(){
-      const wrap = document.getElementById('selected-pangkalan');
-      wrap.innerHTML = '';
-      pangkalanTerpilih.forEach((p,i)=>{
-        const chip = document.createElement('div');
-        chip.className = "flex items-center bg-blue-200 text-blue-800 px-2 py-1 rounded text-sm";
-        chip.innerHTML = `${p} <button onclick="hapusPangkalan(${i})" class="ml-1 text-red-600 font-bold">x</button>`;
-        wrap.appendChild(chip);
-      });
-    }
-    function hapusPangkalan(i){ pangkalanTerpilih.splice(i,1); renderSelectedPangkalan(); }
-
-    document.getElementById('btn-add-pangkalan').addEventListener('click',()=>{
-      const val = document.getElementById('select-pangkalan').value;
-      if(val && !pangkalanTerpilih.includes(val)){ pangkalanTerpilih.push(val); renderSelectedPangkalan(); }
-    });
 
     async function fetchJSON(url){
       showSpinner();
@@ -198,86 +162,79 @@
       const data = await fetchJSON(url); 
       const sel = document.getElementById('select-pangkalan');
       sel.innerHTML='';
-      const empty = document.createElement('option'); empty.value='ALL'; empty.textContent='-- Semua Pangkalan --'; empty.selected = true; sel.appendChild(empty);
       (data||[]).forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
     }
 
     function getSelectedPangkalan(){
       const sel = document.getElementById('select-pangkalan');
       const vals = Array.from(sel.selectedOptions).map(o=>o.value);
-      if (vals.length === 0) return ['ALL'];
-      if (vals.includes('ALL')) return ['ALL'];
+      if (vals.length === 0) return [];
       return vals;
-    }
-
-    async function updateDOInfo(pt, pangkalanList){
-      const q = Array.isArray(pangkalanList) ? pangkalanList.join(',') : String(pangkalanList||'ALL');
-      const url = `${GAS_URL}?action=getDOInfo&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(q)}`;
-      const d = await fetchJSON(url);
-      if(!d) return;
-      document.getElementById('do-owned').textContent = d.do_owned ?? '-';
-      document.getElementById('price').textContent = d.harga_tabung ? formatRupiah(d.harga_tabung) : '-';
-      document.getElementById('harga-bagi-hasil').textContent = d.harga_bagi_hasil ? formatRupiah(d.harga_bagi_hasil) : '-';
-      document.getElementById('total-penerimaan').textContent = d.total_penerimaan ?? '-';
     }
 
     function formatRupiah(val){ if(val==null || val==='') return '-'; return 'Rp ' + Number(val).toLocaleString('id-ID'); }
 
-async function loadRekap(){
-  const pt = document.getElementById('select-pt').value;
-  const pangkalans = getSelectedPangkalan();
-  const month = document.getElementById('select-month').value;
-  const year = document.getElementById('select-year').value;
+    async function loadRekap(){
+      const pt = document.getElementById('select-pt').value;
+      const pangkalans = getSelectedPangkalan();
+      const month = document.getElementById('select-month').value;
+      const year = document.getElementById('select-year').value;
 
-  let allRows = [];
-  let totalPenerimaan = 0, totalBagiHasil = 0, doOwned = 0, hargaTabung = 0, hargaBagi = 0;
+      let allRows = [];
+      let totalPenerimaan = 0, doOwned = 0, hargaTabung=0, hargaBagi=0;
+      let totalPengiriman = 0, totalBagiHasil = 0, grandTotal = 0;
 
-  for (let p of pangkalans) {
-    const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(p)}&month=${month}&year=${year}`;
-    const data = await fetchJSON(url);
-    if (!data) continue;
+      for (let p of pangkalans){
+        const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(p)}&month=${month}&year=${year}`;
+        const data = await fetchJSON(url);
+        if(!data) continue;
+        allRows = allRows.concat(data.rows || []);
+        totalPenerimaan += Number(data.total_penerimaan)||0;
+        doOwned += Number(data.do_owned)||0;
+        hargaTabung = data.harga_tabung || hargaTabung;
+        hargaBagi = data.harga_bagi_hasil || hargaBagi;
 
-    allRows = allRows.concat(data.rows || []);
-    totalPenerimaan += Number(data.total_penerimaan)||0;
-    totalBagiHasil += Number(data.total_bagi_hasil)||0;
-    doOwned += Number(data.do_owned)||0;
-    hargaTabung = data.harga_tabung || hargaTabung;
-    hargaBagi = data.harga_bagi_hasil || hargaBagi;
-  }
+        // sum dari render
+        data.rows.forEach(r=>{
+          const bayarBrimola = Number(r.bayar_lewat_brimola) || 0;
+          const nominalHarusDibayar = Number(r.nominal_harus_dibayar) || 0;
+          const buktiTransfer = Number(r.bukti_transfer) || 0;
+          const pengiriman = Number(r.pengiriman) || 0;
+          const bagiHasil = Number(r.bagi_hasil) || 0;
+          const totalTBG = bayarBrimola - nominalHarusDibayar + buktiTransfer;
+          grandTotal += totalTBG;
+          totalPengiriman += pengiriman;
+          totalBagiHasil += bagiHasil;
+        });
+      }
 
-  const totals = renderTable(allRows);
-  document.getElementById('total-penerimaan').textContent = totalPenerimaan;
-  document.getElementById('do-owned').textContent = doOwned;
-  document.getElementById('price').textContent = formatRupiah(hargaTabung);
-  document.getElementById('harga-bagi-hasil').textContent = formatRupiah(hargaBagi);
+      renderTable(allRows);
+      document.getElementById('total-penerimaan').textContent = totalPenerimaan;
+      document.getElementById('do-owned').textContent = doOwned;
+      document.getElementById('price').textContent = formatRupiah(hargaTabung);
+      document.getElementById('harga-bagi-hasil').textContent = formatRupiah(hargaBagi);
+      document.getElementById('total-pengiriman').textContent = totalPengiriman;
+      document.getElementById('total-bagi-hasil').textContent = formatRupiah(totalBagiHasil);
+      document.getElementById('grand-total').textContent = formatRupiah(grandTotal);
 
-  hitungTabungKerjasama({
-    total_penerimaan: totalPenerimaan,
-    do_owned: doOwned,
-    harga_bagi_hasil: hargaBagi,
-    totalBagiHasil: totals.totalBagiHasil
-  });
-}
-
+      hitungTabungKerjasama({
+        total_penerimaan: totalPenerimaan,
+        do_owned: doOwned,
+        harga_bagi_hasil: hargaBagi,
+        totalBagiHasil: totalBagiHasil
+      });
+    }
 
     function renderTable(rows){
       const tbody = document.getElementById('rekap-body');
       tbody.innerHTML='';
-      let grandTotal = 0, totalPengiriman=0, totalBagiHasil=0;
-
       rows.forEach(r=>{
         const bayarBrimola = Number(r.bayar_lewat_brimola) || 0;
         const nominalHarusDibayar = Number(r.nominal_harus_dibayar) || 0;
         const buktiTransfer = Number(r.bukti_transfer) || 0;
         const pengiriman = Number(r.pengiriman) || 0;
         const bagiHasil = Number(r.bagi_hasil) || 0;
-
         const totalTBG = bayarBrimola - nominalHarusDibayar + buktiTransfer;
-
-        grandTotal += totalTBG;
-        totalPengiriman += pengiriman;
-        totalBagiHasil += bagiHasil;
-
         const tr = document.createElement('tr'); 
         tr.innerHTML = `
           <td class="px-3 py-2 text-sm">${r.tanggal}</td>
@@ -295,12 +252,6 @@ async function loadRekap(){
         `; 
         tbody.appendChild(tr);
       });
-
-      document.getElementById('total-pengiriman').textContent = totalPengiriman;
-      document.getElementById('total-bagi-hasil').textContent = formatRupiah(totalBagiHasil);
-      document.getElementById('grand-total').textContent = formatRupiah(grandTotal);
-
-      return { totalPengiriman, totalBagiHasil, grandTotal };
     }
 
     function hitungTabungKerjasama(data){
@@ -311,7 +262,7 @@ async function loadRekap(){
 
       const tabungKerjasama = (tP - dO);
       const nominalBagiHasil = tabungKerjasama * hrgBagi;
-      const sisa = nominalBagiHasil + sudahBayar; // pengurangan
+      const sisa = nominalBagiHasil + sudahBayar;
 
       document.getElementById('tabung-kerjasama').textContent = tabungKerjasama + ' Tbg';
       document.getElementById('sisa-bagi-hasil').textContent = formatRupiah(sisa);
@@ -332,10 +283,6 @@ async function loadRekap(){
     document.getElementById('btn-load').addEventListener('click', loadRekap);
     document.getElementById('select-pt').addEventListener('change', async (e)=>{ 
       await loadPangkalanForPT(e.target.value); 
-      await updateDOInfo(e.target.value, getSelectedPangkalan()); 
-    });
-    document.getElementById('select-pangkalan').addEventListener('change', async ()=>{ 
-      await updateDOInfo(document.getElementById('select-pt').value, getSelectedPangkalan());
     });
 
     makeMonthOptions(); makeYearOptions(); loadPTs();
