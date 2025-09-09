@@ -265,7 +265,7 @@
       const sisa = nominalBagiHasil - sudahBayar;
 
       document.getElementById('tabung-kerjasama').textContent = tabungKerjasama + ' Tbg';
-      document.getElementById('sisa-bagi-hasil').textContent = formatRupiah(sisa);
+      document.getElementById('sisa-bagi-hasil').textContent = formatRupiah(sisa) + formatRupiah(totalBagiHasil);
     }
 
     // Export CSV
