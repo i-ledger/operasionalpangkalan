@@ -35,14 +35,7 @@
         </div>
         <div>
           <label class="block text-sm font-medium text-blue-900">Nama Pangkalan</label>
-<div>
-  <label class="block text-sm font-medium text-blue-900">Nama Pangkalan</label>
-  <div id="select-pangkalan-wrapper" 
-       class="mt-1 border rounded-md p-2 bg-white shadow max-h-40 overflow-y-auto">
-    <!-- Checkbox akan diinject dari JS -->
-  </div>
-</div>
-
+          <select id="select-pangkalan" multiple size="5" class="mt-1 block w-full rounded-md border-gray-300"></select>
         </div>
         <div>
           <label class="block text-sm font-medium text-blue-900">Bulan</label>
@@ -192,52 +185,24 @@ function toggleMenu(){
       sel.dispatchEvent(new Event('change'));
     }
 
-async function loadPangkalanForPT(pt){
-  const url = `${GAS_URL}?action=getPangkalan&pt=${encodeURIComponent(pt)}`;
-  const data = await fetchJSON(url); 
-  const wrapper = document.getElementById('select-pangkalan-wrapper');
-  wrapper.innerHTML = '';
+    async function loadPangkalanForPT(pt){
+      const url = `${GAS_URL}?action=getPangkalan&pt=${encodeURIComponent(pt)}`;
+      const data = await fetchJSON(url); 
+      const sel = document.getElementById('select-pangkalan');
+      sel.innerHTML='';
+      const empty = document.createElement('option'); empty.value='ALL'; empty.textContent='-- Semua Pangkalan --'; empty.selected = true; sel.appendChild(empty);
+      (data||[]).forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
+    }
 
-  // Tambahin opsi "ALL"
-  const all = document.createElement('div');
-  all.innerHTML = `
-    <label class="flex items-center gap-2">
-      <input type="checkbox" value="ALL" class="pangkalan-check" checked>
-      <span class="text-sm font-medium text-blue-900">-- Semua Pangkalan --</span>
-    </label>`;
-  wrapper.appendChild(all);
+    function getSelectedPangkalan(){
+      const sel = document.getElementById('select-pangkalan');
+      const vals = Array.from(sel.selectedOptions).map(o=>o.value);
+      if (vals.length === 0) return ['ALL'];
+      if (vals.includes('ALL')) return ['ALL'];
+      return vals;
+    }
 
-  (data||[]).forEach(r=>{
-    const div = document.createElement('div');
-    div.innerHTML = `
-      <label class="flex items-center gap-2">
-        <input type="checkbox" value="${r}" class="pangkalan-check">
-        <span class="text-sm">${r}</span>
-      </label>`;
-    wrapper.appendChild(div);
-  });
-
-  // kalau "ALL" dicentang, uncheck semua lainnya
-  wrapper.querySelectorAll('.pangkalan-check').forEach(chk=>{
-    chk.addEventListener('change', ()=>{
-      if(chk.value==='ALL' && chk.checked){
-        wrapper.querySelectorAll('.pangkalan-check').forEach(c=>{
-          if(c.value!=='ALL') c.checked=false;
-        });
-      } else if(chk.value!=='ALL' && chk.checked){
-        wrapper.querySelector('.pangkalan-check[value="ALL"]').checked=false;
-      }
-    });
-  });
-}
-
-function getSelectedPangkalan(){
-  const checks = document.querySelectorAll('.pangkalan-check:checked');
-  const vals = Array.from(checks).map(c=>c.value);
-  if(vals.includes('ALL') || vals.length===0) return ['ALL'];
-  return vals;
-}
-
+ <!-- POTONGAN SCRIPT YANG SUDAH DIREVISI -->
 
 async function updateDOInfo(pt, pangkalanList){
   const q = Array.isArray(pangkalanList) ? pangkalanList.join(',') : String(pangkalanList||'ALL');
