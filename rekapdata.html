@@ -201,7 +201,7 @@
       document.getElementById('do-owned').textContent = data.do_owned ?? '-';
       document.getElementById('price').textContent = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
       document.getElementById('harga-bagi-hasil').textContent = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
-      document.getElementById('total-bagi-hasil').textContent = data.totalBagiHasil ? formatRupiah(data.totalBagiHasil) : '-';
+      
       hitungTabungKerjasama(data);
     }
 
