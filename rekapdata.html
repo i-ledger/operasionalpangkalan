@@ -180,23 +180,24 @@
 
     function formatRupiah(val){ if(val==null || val==='') return '-'; return 'Rp ' + Number(val).toLocaleString('id-ID'); }
 
-    async function loadRekap(){
-      const pt = document.getElementById('select-pt').value;
-      const pangkalans = getSelectedPangkalan();
-      const month = document.getElementById('select-month').value;
-      const year = document.getElementById('select-year').value;
-      const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalans.join(','))}&month=${month}&year=${year}`;
-      const data = await fetchJSON(url);
-      if(!data) return;
-      renderTable(data.rows);
+async function loadRekap(){
+  const pt = document.getElementById('select-pt').value;
+  const pangkalans = getSelectedPangkalan();
+  const month = document.getElementById('select-month').value;
+  const year = document.getElementById('select-year').value;
+  const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalans.join(','))}&month=${month}&year=${year}`;
+  const data = await fetchJSON(url);
+  if(!data) return;
+  renderTable(data.rows);
 
-      document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
-      document.getElementById('do-owned').textContent = data.do_owned ?? '-';
-      document.getElementById('price').textContent = data.price ? formatRupiah(data.price) : '-';
-      document.getElementById('harga-bagi-hasil').textContent = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
+  document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
+  document.getElementById('do-owned').textContent = data.do_owned ?? '-';
+  document.getElementById('price').textContent = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
+  document.getElementById('harga-bagi-hasil').textContent = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
 
-      hitungTabungKerjasama(data);
-    }
+  hitungTabungKerjasama(data);
+}
+
 
     function renderTable(rows){
       const tbody = document.getElementById('rekap-body');
