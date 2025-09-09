@@ -230,10 +230,10 @@ async function loadRekap(){
 
   const totals = renderTable(data.rows);
 
-  document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
+   document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
   document.getElementById('do-owned').textContent = data.do_owned ?? '-';
-  document.getElementById('price').textContent = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
-  document.getElementById('harga-bagi-hasil').textContent = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
+  document.getElementById('price').innerHTML = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
+  document.getElementById('harga-bagi-hasil').innerHTML = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
   
   hitungTabungKerjasama({...data, totalBagiHasil: totals.totalBagiHasil});
 }
