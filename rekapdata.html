@@ -178,7 +178,7 @@
       let grandTotal = 0;
 
       rows.forEach(r=>{
-        const totalTBG = (Number(r.bayar_lewat_brimola)||0) - (Number(r.nominal_harus_dibayar)||0) - (Number(r.bukti_transfer)||0);
+        const totalTBG = (Number(r.bayar_lewat_brimola)||0) - (Number(r.nominal_harus_dibayar)||0) + (Number(r.bukti_transfer)||0);
         grandTotal += totalTBG;
 
         const tr = document.createElement('tr'); 
