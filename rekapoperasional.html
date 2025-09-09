@@ -187,100 +187,94 @@
       return vals;
     }
 
-    async function updateDOInfo(pt, pangkalanList){
-      const q = Array.isArray(pangkalanList) ? pangkalanList.join(',') : String(pangkalanList||'ALL');
-      const url = `${GAS_URL}?action=getDOInfo&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(q)}`;
-      const d = await fetchJSON(url);
-      if(!d) return;
-      document.getElementById('do-owned').textContent = d.do_owned ?? '-';
-      document.getElementById('price').textContent = d.harga_tabung ? formatRupiah(d.harga_tabung) : '-';
-      document.getElementById('harga-bagi-hasil').textContent = d.harga_bagi_hasil ? formatRupiah(d.harga_bagi_hasil) : '-';
-      document.getElementById('total-penerimaan').textContent = d.total_penerimaan ?? '-';
-    }
+ <!-- POTONGAN SCRIPT YANG SUDAH DIREVISI -->
 
-   function formatRupiah(val){
-    const num = Number(val);
-    if(isNaN(num) || num === 0) return ''; // Rp0 jangan ditulis
-    const text = 'Rp ' + num.toLocaleString('id-ID');
-    if(num < 0) return `<span class="text-red-600 font-semibold">${text}</span>`;
-    if(num > 0) return `<span class="text-green-600 font-semibold">${text}</span>`;
-    return '';
-  }
+async function updateDOInfo(pt, pangkalanList){
+  const q = Array.isArray(pangkalanList) ? pangkalanList.join(',') : String(pangkalanList||'ALL');
+  const url = `${GAS_URL}?action=getDOInfo&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(q)}`;
+  const d = await fetchJSON(url);
+  if(!d) return;
+  document.getElementById('do-owned').textContent = d.do_owned ?? '-';
+  document.getElementById('price').innerHTML = d.harga_tabung ? formatRupiah(d.harga_tabung) : '-';
+  document.getElementById('harga-bagi-hasil').innerHTML = d.harga_bagi_hasil ? formatRupiah(d.harga_bagi_hasil) : '-';
+  document.getElementById('total-penerimaan').textContent = d.total_penerimaan ?? '-';
+}
 
-    async function loadRekap(){
-      const pt = document.getElementById('select-pt').value;
-      const pangkalans = getSelectedPangkalan();
-      const month = document.getElementById('select-month').value;
-      const year = document.getElementById('select-year').value;
-      const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalans.join(','))}&month=${month}&year=${year}`;
-      const data = await fetchJSON(url);
-      if(!data) return;
-      const totals = renderTable(data.rows);
+async function loadRekap(){
+  const pt = document.getElementById('select-pt').value;
+  const pangkalans = getSelectedPangkalan();
+  const month = document.getElementById('select-month').value;
+  const year = document.getElementById('select-year').value;
+  const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalans.join(','))}&month=${month}&year=${year}`;
+  const data = await fetchJSON(url);
+  if(!data) return;
+  const totals = renderTable(data.rows);
 
-      document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
-      document.getElementById('do-owned').textContent = data.do_owned ?? '-';
-      document.getElementById('price').textContent = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
-      document.getElementById('harga-bagi-hasil').textContent = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
-      
-      hitungTabungKerjasama({...data, totalBagiHasil: totals.totalBagiHasil});
-    }
+  document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
+  document.getElementById('do-owned').textContent = data.do_owned ?? '-';
+  document.getElementById('price').innerHTML = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
+  document.getElementById('harga-bagi-hasil').innerHTML = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
+  
+  hitungTabungKerjasama({...data, totalBagiHasil: totals.totalBagiHasil});
+}
 
-    function renderTable(rows){
-      const tbody = document.getElementById('rekap-body');
-      tbody.innerHTML='';
-      let grandTotal = 0, totalPengiriman=0, totalBagiHasil=0;
+function renderTable(rows){
+  const tbody = document.getElementById('rekap-body');
+  tbody.innerHTML='';
+  let grandTotal = 0, totalPengiriman=0, totalBagiHasil=0;
 
-      rows.forEach(r=>{
-        const bayarBrimola = Number(r.bayar_lewat_brimola) || 0;
-        const nominalHarusDibayar = Number(r.nominal_harus_dibayar) || 0;
-        const buktiTransfer = Number(r.bukti_transfer) || 0;
-        const pengiriman = Number(r.pengiriman) || 0;
-        const bagiHasil = Number(r.bagi_hasil) || 0;
+  rows.forEach(r=>{
+    const bayarBrimola = Number(r.bayar_lewat_brimola) || 0;
+    const nominalHarusDibayar = Number(r.nominal_harus_dibayar) || 0;
+    const buktiTransfer = Number(r.bukti_transfer) || 0;
+    const pengiriman = Number(r.pengiriman) || 0;
+    const bagiHasil = Number(r.bagi_hasil) || 0;
 
-        const totalTBG = bayarBrimola - nominalHarusDibayar + buktiTransfer;
+    const totalTBG = bayarBrimola - nominalHarusDibayar + buktiTransfer;
 
-        grandTotal += totalTBG;
-        totalPengiriman += pengiriman;
-        totalBagiHasil += bagiHasil;
+    grandTotal += totalTBG;
+    totalPengiriman += pengiriman;
+    totalBagiHasil += bagiHasil;
 
-        const tr = document.createElement('tr'); 
-        tr.innerHTML = `
-          <td class="px-3 py-2 text-sm">${r.tanggal}</td>
-          <td class="px-3 py-2 text-sm">${r.laporan_pengiriman}</td>
-          <td class="px-3 py-2 text-sm">${r.retur}</td>
-          <td class="px-3 py-2 text-sm">${r.dikirim}</td>
-          <td class="px-3 py-2 text-sm">${r.master_sa}</td>
-          <td class="px-3 py-2 text-sm">${pengiriman}</td>
-          <td class="px-3 py-2 text-sm">${formatRupiah(r.nominal_harus_dibayar)}</td>
-          <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
-          <td class="px-3 py-2 text-sm">${formatRupiah(r.bayar_lewat_brimola)}</td>
-          <td class="px-3 py-2 text-sm">${formatRupiah(r.bukti_transfer)}</td>
-          <td class="px-3 py-2 text-sm">${formatRupiah(r.bagi_hasil)}</td>
-          <td class="px-3 py-2 text-sm text-blue-600 font-semibold">${formatRupiah(totalTBG)}</td>
-        `; 
-        tbody.appendChild(tr);
-      });
+    const tr = document.createElement('tr'); 
+    tr.innerHTML = `
+      <td class="px-3 py-2 text-sm">${r.tanggal}</td>
+      <td class="px-3 py-2 text-sm">${r.laporan_pengiriman}</td>
+      <td class="px-3 py-2 text-sm">${r.retur}</td>
+      <td class="px-3 py-2 text-sm">${r.dikirim}</td>
+      <td class="px-3 py-2 text-sm">${r.master_sa}</td>
+      <td class="px-3 py-2 text-sm">${pengiriman}</td>
+      <td class="px-3 py-2 text-sm">${formatRupiah(r.nominal_harus_dibayar)}</td>
+      <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
+      <td class="px-3 py-2 text-sm">${formatRupiah(r.bayar_lewat_brimola)}</td>
+      <td class="px-3 py-2 text-sm">${formatRupiah(r.bukti_transfer)}</td>
+      <td class="px-3 py-2 text-sm">${formatRupiah(r.bagi_hasil)}</td>
+      <td class="px-3 py-2 text-sm text-blue-600 font-semibold">${formatRupiah(totalTBG)}</td>
+    `; 
+    tbody.appendChild(tr);
+  });
 
-      document.getElementById('total-pengiriman').textContent = totalPengiriman;
-      document.getElementById('total-bagi-hasil').textContent = formatRupiah(totalBagiHasil);
-      document.getElementById('grand-total').textContent = formatRupiah(grandTotal);
+  document.getElementById('total-pengiriman').textContent = totalPengiriman;
+  document.getElementById('total-bagi-hasil').innerHTML = formatRupiah(totalBagiHasil);
+  document.getElementById('grand-total').innerHTML = formatRupiah(grandTotal);
 
-      return { totalPengiriman, totalBagiHasil, grandTotal };
-    }
+  return { totalPengiriman, totalBagiHasil, grandTotal };
+}
 
-    function hitungTabungKerjasama(data){
-      const tP = Number(data.total_penerimaan)||0;
-      const dO = Number(data.do_owned)||0;
-      const hrgBagi = Number(data.harga_bagi_hasil)||0;
-      const sudahBayar = Number(data.totalBagiHasil)||0;
+function hitungTabungKerjasama(data){
+  const tP = Number(data.total_penerimaan)||0;
+  const dO = Number(data.do_owned)||0;
+  const hrgBagi = Number(data.harga_bagi_hasil)||0;
+  const sudahBayar = Number(data.totalBagiHasil)||0;
 
-      const tabungKerjasama = (tP - dO);
-      const nominalBagiHasil = tabungKerjasama * hrgBagi;
-      const sisa = nominalBagiHasil + sudahBayar; // pengurangan
+  const tabungKerjasama = (tP - dO);
+  const nominalBagiHasil = tabungKerjasama * hrgBagi;
+  const sisa = nominalBagiHasil + sudahBayar;
 
-      document.getElementById('tabung-kerjasama').textContent = tabungKerjasama + ' Tbg';
-      document.getElementById('sisa-bagi-hasil').textContent = formatRupiah(sisa);
-    }
+  document.getElementById('tabung-kerjasama').textContent = tabungKerjasama + ' Tbg';
+  document.getElementById('sisa-bagi-hasil').innerHTML = formatRupiah(sisa);
+}
+
 
     // Export CSV
     document.getElementById('btn-export-csv').addEventListener('click', ()=>{
