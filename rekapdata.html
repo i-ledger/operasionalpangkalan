@@ -199,34 +199,42 @@ async function loadRekap(){
 }
 
 
-    function renderTable(rows){
-      const tbody = document.getElementById('rekap-body');
-      tbody.innerHTML='';
-      let grandTotal = 0;
+function renderTable(rows){
+  const tbody = document.getElementById('rekap-body');
+  tbody.innerHTML='';
+  let grandTotal = 0;
 
-      rows.forEach(r=>{
-        const totalTBG = Number(r.total_tbg)||0;
-        grandTotal += totalTBG;
-        const tr = document.createElement('tr'); 
-        tr.innerHTML = `
-          <td class="px-3 py-2 text-sm">${r.tanggal}</td>
-          <td class="px-3 py-2 text-sm">${r.laporan_pengiriman}</td>
-          <td class="px-3 py-2 text-sm">${r.retur}</td>
-          <td class="px-3 py-2 text-sm">${r.dikirim}</td>
-          <td class="px-3 py-2 text-sm">${r.master_sa}</td>
-          <td class="px-3 py-2 text-sm">${r.pengiriman}</td>
-          <td class="px-3 py-2 text-sm">${formatRupiah(r.nominal_harus_dibayar)}</td>
-          <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
-          <td class="px-3 py-2 text-sm">${formatRupiah(r.bayar_lewat_brimola)}</td>
-          <td class="px-3 py-2 text-sm">${formatRupiah(r.bukti_transfer)}</td>
-          <td class="px-3 py-2 text-sm">${formatRupiah(r.bagi_hasil)}</td>
-          <td class="px-3 py-2 text-sm text-blue-600 font-semibold">${totalTBG} Tbg</td>
-        `; 
-        tbody.appendChild(tr);
-      });
+  rows.forEach(r=>{
+    const bayarBrimola = Number(r.bayar_lewat_brimola) || 0;
+    const nominalHarusDibayar = Number(r.nominal_harus_dibayar) || 0;
+    const buktiTransfer = Number(r.bukti_transfer) || 0;
 
-      document.getElementById('grand-total').textContent = grandTotal + ' Tbg';
-    }
+    // Rumus baru
+    const totalTBG = bayarBrimola - nominalHarusDibayar + buktiTransfer;
+
+    grandTotal += totalTBG;
+
+    const tr = document.createElement('tr'); 
+    tr.innerHTML = `
+      <td class="px-3 py-2 text-sm">${r.tanggal}</td>
+      <td class="px-3 py-2 text-sm">${r.laporan_pengiriman}</td>
+      <td class="px-3 py-2 text-sm">${r.retur}</td>
+      <td class="px-3 py-2 text-sm">${r.dikirim}</td>
+      <td class="px-3 py-2 text-sm">${r.master_sa}</td>
+      <td class="px-3 py-2 text-sm">${r.pengiriman}</td>
+      <td class="px-3 py-2 text-sm">${formatRupiah(r.nominal_harus_dibayar)}</td>
+      <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
+      <td class="px-3 py-2 text-sm">${formatRupiah(r.bayar_lewat_brimola)}</td>
+      <td class="px-3 py-2 text-sm">${formatRupiah(r.bukti_transfer)}</td>
+      <td class="px-3 py-2 text-sm">${formatRupiah(r.bagi_hasil)}</td>
+      <td class="px-3 py-2 text-sm text-blue-600 font-semibold">${formatRupiah(totalTBG)}</td>
+    `; 
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('grand-total').textContent = formatRupiah(grandTotal);
+}
+
 
     function hitungTabungKerjasama(data){
       const tP = Number(data.total_penerimaan)||0;
