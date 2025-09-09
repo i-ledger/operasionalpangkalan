@@ -6,6 +6,7 @@
   <title>Rekap Operasional — i-Shipping</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body class="bg-blue-50 min-h-screen p-4 font-sans">
   <div class="max-w-5xl mx-auto">
@@ -77,7 +78,18 @@
       <div class="mt-4 flex flex-wrap gap-2">
         <button id="btn-load" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">🔎 Tampilkan Rekap</button>
         <button id="btn-export-csv" class="px-4 py-2 border border-blue-400 text-blue-700 rounded-lg shadow">📥 Export CSV</button>
-        <button id="btn-share" class="px-4 py-2 bg-green-500 text-white rounded-lg shadow hover:bg-green-600">📤 Bagikan WhatsApp</button>
+        
+        <!-- Dropdown Bagikan -->
+        <div class="relative inline-block text-left">
+          <button onclick="toggleMenu()" 
+            class="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700">
+            📤 Bagikan
+          </button>
+          <div id="share-menu" class="hidden absolute mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
+            <button onclick="shareRekapWA()" class="w-full text-left px-4 py-2 hover:bg-gray-100">📱 WhatsApp</button>
+            <button onclick="downloadPDF()" class="w-full text-left px-4 py-2 hover:bg-gray-100">📄 Download PDF</button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -116,7 +128,10 @@
     </section>
   </div>
 
-  <script>
+<script>
+function toggleMenu(){
+  document.getElementById("share-menu").classList.toggle("hidden");
+}
     function goDashboard(){ window.location.href="dashboard.html"; }
 
     function formatRupiah(val){
@@ -299,22 +314,49 @@ function hitungTabungKerjasama(data){
 
     makeMonthOptions(); makeYearOptions(); loadPTs();
 
-  // --- Share to WhatsApp ---
-  document.getElementById("btn-share").addEventListener("click", async ()=>{
-    const phone = "628123456789"; // ubah ke nomor tujuan WA
-    const el = document.getElementById("rekap-table"); // cuma tabel yg di-SS
-    const canvas = await html2canvas(el, {scale:2, backgroundColor:"#ffffff"});
-    const dataUrl = canvas.toDataURL("image/png");
+// Share ke WhatsApp
+async function shareRekapWA(){
+  const wrapper = document.querySelector(".max-w-5xl");
+  const pangkalan = document.getElementById("select-pangkalan");
+  const selected = [...pangkalan.selectedOptions].map(o => o.text).join(", ") || "Semua Pangkalan";
+
+  const canvas = await html2canvas(wrapper,{scale:2});
+  const dataUrl = canvas.toDataURL("image/png");
+
+  if(navigator.share){
     const blob = await (await fetch(dataUrl)).blob();
     const file = new File([blob], "rekap.png", {type:"image/png"});
+    await navigator.share({
+      title:"Rekap Operasional",
+      text:`Rekap Data untuk: ${selected}`,
+      files:[file]
+    });
+  } else {
+    window.open(`https://wa.me/?text=Rekap Data untuk: ${selected}`, "_blank");
+  }
+}
 
-    if(navigator.canShare && navigator.canShare({files:[file]})){
-      await navigator.share({files:[file], title:"Rekap Operasional"});
-    } else {
-      // fallback: buka chat WA dengan text (tanpa gambar)
-      window.open(`https://wa.me/${phone}?text=Berikut rekap operasional saya`, "_blank");
-    }
-  });
-  </script>
+// Download PDF
+async function downloadPDF(){
+  const { jsPDF } = window.jspdf;
+  const wrapper = document.querySelector(".max-w-5xl");
+  const pangkalan = document.getElementById("select-pangkalan");
+  const selected = [...pangkalan.selectedOptions].map(o => o.text).join(", ") || "Semua Pangkalan";
+
+  const canvas = await html2canvas(wrapper,{scale:2});
+  const imgData = canvas.toDataURL("image/png");
+
+  const pdf = new jsPDF("p","mm","a4");
+  const imgProps = pdf.getImageProperties(imgData);
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+  pdf.text(`Rekap Data untuk: ${selected}`, 10, 10);
+  pdf.addImage(imgData,"PNG",0,20,pdfWidth,pdfHeight);
+  pdf.save("rekap_operasional.pdf");
+}
+</script>
+</body>
+</html>
 </body>
 </html>
