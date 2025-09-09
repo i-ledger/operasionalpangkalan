@@ -223,23 +223,42 @@
 
     function formatRupiah(val){ if(val==null || val==='') return '-'; return 'Rp ' + Number(val).toLocaleString('id-ID'); }
 
-    async function loadRekap(){
-      const pt = document.getElementById('select-pt').value;
-      const pangkalans = getSelectedPangkalan();
-      const month = document.getElementById('select-month').value;
-      const year = document.getElementById('select-year').value;
-      const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalans.join(','))}&month=${month}&year=${year}`;
-      const data = await fetchJSON(url);
-      if(!data) return;
-      const totals = renderTable(data.rows);
+async function loadRekap(){
+  const pt = document.getElementById('select-pt').value;
+  const pangkalans = getSelectedPangkalan();
+  const month = document.getElementById('select-month').value;
+  const year = document.getElementById('select-year').value;
 
-      document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
-      document.getElementById('do-owned').textContent = data.do_owned ?? '-';
-      document.getElementById('price').textContent = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
-      document.getElementById('harga-bagi-hasil').textContent = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
-      
-      hitungTabungKerjasama({...data, totalBagiHasil: totals.totalBagiHasil});
-    }
+  let allRows = [];
+  let totalPenerimaan = 0, totalBagiHasil = 0, doOwned = 0, hargaTabung = 0, hargaBagi = 0;
+
+  for (let p of pangkalans) {
+    const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(p)}&month=${month}&year=${year}`;
+    const data = await fetchJSON(url);
+    if (!data) continue;
+
+    allRows = allRows.concat(data.rows || []);
+    totalPenerimaan += Number(data.total_penerimaan)||0;
+    totalBagiHasil += Number(data.total_bagi_hasil)||0;
+    doOwned += Number(data.do_owned)||0;
+    hargaTabung = data.harga_tabung || hargaTabung;
+    hargaBagi = data.harga_bagi_hasil || hargaBagi;
+  }
+
+  const totals = renderTable(allRows);
+  document.getElementById('total-penerimaan').textContent = totalPenerimaan;
+  document.getElementById('do-owned').textContent = doOwned;
+  document.getElementById('price').textContent = formatRupiah(hargaTabung);
+  document.getElementById('harga-bagi-hasil').textContent = formatRupiah(hargaBagi);
+
+  hitungTabungKerjasama({
+    total_penerimaan: totalPenerimaan,
+    do_owned: doOwned,
+    harga_bagi_hasil: hargaBagi,
+    totalBagiHasil: totals.totalBagiHasil
+  });
+}
+
 
     function renderTable(rows){
       const tbody = document.getElementById('rekap-body');
