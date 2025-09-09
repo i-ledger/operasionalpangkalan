@@ -173,7 +173,7 @@
       const d = await fetchJSON(url);
       if(!d) return;
       document.getElementById('do-owned').textContent = d.do_owned ?? '-';
-      document.getElementById('price').textContent = d.price ? formatRupiah(d.price) : '-';
+      document.getElementById('price').textContent = d.harga_tabung ? formatRupiah(d.harga_tabung) : '-';
       document.getElementById('harga-bagi-hasil').textContent = d.harga_bagi_hasil ? formatRupiah(d.harga_bagi_hasil) : '-';
       document.getElementById('total-penerimaan').textContent = d.total_penerimaan ?? '-';
     }
