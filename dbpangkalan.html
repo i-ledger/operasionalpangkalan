@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kelola POS (Uraian ⇄ Kategori)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-cyan-100 to-blue-200 min-h-screen p-2 sm:p-4">
+  <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-blue-600">Kelola POS</h2>
+      <a href="dashboard.html" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow">Dashboard</a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <input type="text" id="uraianInput" placeholder="Uraian (misal: KERTAS)" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
+      <input type="text" id="posInput" placeholder="Pos (misal: ATK)" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
+      <button onclick="tambahPos()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md px-4 py-2 w-full">Tambah</button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <input type="file" id="fileUpload" accept=".xlsx, .xls" class="col-span-3 border border-gray-300 rounded-md px-3 py-2 w-full" />
+      <button onclick="uploadExcel()" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md px-4 py-2 w-full">Upload Excel</button>
+    </div>
+
+    <div class="overflow-auto rounded-lg border border-gray-200">
+      <table id="posTable" class="w-full text-sm text-left text-gray-700">
+        <thead class="bg-blue-600 text-white">
+          <tr>
+            <th class="p-3">No.</th>
+            <th class="p-3">Nama Pangkalan</th>
+            <th class="p-3">Nama PT</th>
+             <th class="p-3">Do yang dimiliki</th>
+             <th class="p-3">Harga Refill</th>
+             <th class="p-3">Harga Bagi Hasil</th>
+            <th class="p-3">Aksi</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+  <script src="config.js"></script>
+  <script>
+    const id_spreadsheet = localStorage.getItem("id_spreadsheet");
+    const loggedIn = localStorage.getItem("loggedIn");
+    if (!id_spreadsheet || loggedIn !== "true") {
+      window.location.href = "login.html";
+    }
+
+    let dataPOS = [];
+
+    function loadPOS() {
+      fetch(getAPIUrl("get") + `&sheet=DB_PANGKALAN`)
+        .then(res => res.json())
+        .then(data => {
+          dataPOS = data;
+          const tbody = document.querySelector("#posTable tbody");
+          tbody.innerHTML = '';
+          dataPOS.forEach((item, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td class="p-3">${i + 1}</td>
+              <td class="p-3">${item.uraian}</td>
+              <td class="p-3">${item.pos}</td>
+              <td class="p-3">${item.doyandimiliki}</td>
+              <td class="p-3">${item.hargarefill}</td>
+            <td class="p-3">${item.hargabagihasil}</td>
+                <button class="bg-yellow-400 text-black px-3 py-1 rounded-md text-sm mr-2" onclick="editPos(${i})">✏️ Edit</button>
+                <button class="bg-red-500 text-white px-3 py-1 rounded-md text-sm" onclick="hapusPos(${i + 2})">🗑️ Hapus</button>
+              </td>`;
+            tbody.appendChild(tr);
+          });
+        })
+        .catch(err => alert("❌ Gagal load POS: " + err.message));
+    }
+
+    function tambahPos() {
+      const uraian = document.getElementById("uraianInput").value.trim().toUpperCase();
+      const pos = document.getElementById("posInput").value.trim().toUpperCase();
+        const doyangdimiliki = document.getElementById("doyangdimilikiInput").value.trim().toUpperCase();
+         const hargarefill = document.getElementById("hargarefillInput").value.trim().toUpperCase();
+         const hargabagihasil = document.getElementById("hargabagihasilInput").value.trim().toUpperCase();
+      if (!uraian || !pos) return alert("Kedua field harus diisi.");
+
+      fetch(getAPIUrl("add"), {
+        method: 'POST',
+        body: JSON.stringify({
+          sheet: "POS",
+          action: "add",
+          payload: {
+            values: [uraian, pos]
+          }
+        })
+      })
+      .then(res => res.json())
+      .then(() => {
+        document.getElementById("uraianInput").value = '';
+        document.getElementById("posInput").value = '';
+        loadPOS();
+      })
+      .catch(err => alert("❌ Gagal tambah POS: " + err.message));
+    }
+
+    function editPos(index) {
+      const current = dataPOS[index];
+      const newUraian = prompt("Edit Uraian:", current.uraian);
+      if (newUraian === null) return;
+      const newPos = prompt("Edit Pos:", current.pos);
+      if (newPos === null) return;
+
+      fetch(getAPIUrl("edit"), {
+        method: 'POST',
+        body: JSON.stringify({
+          sheet: "POS",
+          action: "edit",
+          payload: {
+            row: index + 2,
+            values: [newUraian.trim().toUpperCase(), newPos.trim().toUpperCase()]
+          }
+        })
+      })
+      .then(res => res.json())
+      .then(loadPOS)
+      .catch(err => alert("❌ Gagal edit POS: " + err.message));
+    }
+
+    function hapusPos(row) {
+      if (!confirm("Yakin ingin menghapus baris " + row + "?")) return;
+      fetch(getAPIUrl("delete"), {
+        method: 'POST',
+        body: JSON.stringify({
+          sheet: "POS",
+          action: "delete",
+          payload: { row }
+        })
+      })
+      .then(res => res.json())
+      .then(loadPOS)
+      .catch(err => alert("❌ Gagal hapus POS: " + err.message));
+    }
+
+    function uploadExcel() {
+      const file = document.getElementById('fileUpload').files[0];
+      if (!file) return alert("Pilih file Excel terlebih dahulu.");
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        rows.forEach(row => {
+          if (row[0] && row[1]) {
+            fetch(getAPIUrl("add"), {
+              method: 'POST',
+              body: JSON.stringify({
+                sheet: "POS",
+                action: "add",
+                payload: { values: [row[0], row[1]] }
+              })
+            })
+            .then(res => res.json())
+            .then(loadPOS)
+            .catch(err => console.error("❌ Gagal upload baris:", err));
+          }
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    loadPOS();
+setTimeout(() => {
+  localStorage.clear();
+  window.location.href = "login.html";
+}, 5 * 60 * 1000);
+
+  </script>
+</body>
+</html>
