@@ -292,7 +292,7 @@ function hitungTabungKerjasama(data){
 
   const tabungKerjasama = (tP - dO);
   const nominalBagiHasil = tabungKerjasama * hrgBagi;
-  const sisa = nominalBagiHasil + sudahBayar;
+  const sisa = nominalBagiHasil - sudahBayar;
 
   document.getElementById('tabung-kerjasama').textContent = tabungKerjasama + ' Tbg';
   document.getElementById('sisa-bagi-hasil').innerHTML = formatRupiah(sisa);
