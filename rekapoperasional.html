@@ -5,8 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Rekap Operasional — i-Shipping</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    /* Striping tabel biar ringan */
+    #rekap-table tbody tr:nth-child(even){ background:#f9fafb; }
+    #rekap-table tbody tr:nth-child(odd){ background:#fff; }
+    #rekap-table th, #rekap-table td { white-space:nowrap; }
+  </style>
 </head>
 <body class="bg-blue-50 min-h-screen p-4 font-sans">
   <div class="max-w-5xl mx-auto">
@@ -81,8 +85,7 @@
         
         <!-- Dropdown Bagikan -->
         <div class="relative inline-block text-left">
-          <button onclick="toggleMenu()" 
-            class="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700">
+          <button onclick="toggleMenu()" class="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700">
             📤 Bagikan
           </button>
           <div id="share-menu" class="hidden absolute mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
@@ -93,8 +96,8 @@
       </div>
     </section>
 
-    <!-- Table -->
-    <section class="bg-white p-4 rounded-xl shadow">
+    <!-- Table Wrapper -->
+    <section id="rekap-wrapper" class="bg-white p-4 rounded-xl shadow">
       <div class="overflow-auto">
         <table id="rekap-table" class="min-w-full border border-gray-300">
           <thead class="bg-blue-200 text-blue-900 font-bold">
@@ -114,97 +117,93 @@
             </tr>
           </thead>
           <tbody id="rekap-body" class="bg-white"></tbody>
-<tfoot class="bg-blue-100 font-semibold">
-  <tr>
-    <td colspan="5" class="px-3 py-2 text-right border">TOTAL</td>
-    <td id="total-pengiriman" class="px-3 py-2 border text-right whitespace-nowrap">0</td>
-    <td></td><td></td><td></td><td></td>
-    <td id="total-bagi-hasil" class="px-3 py-2 border text-right whitespace-nowrap">0</td>
-    <td id="grand-total" class="px-3 py-2 border text-right whitespace-nowrap text-blue-800">0</td>
-  </tr>
-</tfoot>
-
+          <tfoot class="bg-blue-100 font-semibold">
+            <tr>
+              <td colspan="5" class="px-3 py-2 text-right border">TOTAL</td>
+              <td id="total-pengiriman" class="px-3 py-2 border text-right whitespace-nowrap">0</td>
+              <td></td><td></td><td></td><td></td>
+              <td id="total-bagi-hasil" class="px-3 py-2 border text-right whitespace-nowrap">0</td>
+              <td id="grand-total" class="px-3 py-2 border text-right whitespace-nowrap text-blue-800">0</td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </section>
   </div>
 
 <script>
-function toggleMenu(){
-  document.getElementById("share-menu").classList.toggle("hidden");
+function toggleMenu(){ document.getElementById("share-menu").classList.toggle("hidden"); }
+function goDashboard(){ window.location.href="dashboard.html"; }
+
+function formatRupiah(val){
+  if(val==null || val==='' || Number(val)===0) return '-';
+  const num = Number(val);
+  let text = 'Rp ' + num.toLocaleString('id-ID');
+  if(num < 0) return `<span class="text-red-600 font-semibold">${text}</span>`;
+  if(num > 0) return `<span class="text-green-600 font-semibold">${text}</span>`;
+  return '';
 }
-    function goDashboard(){ window.location.href="dashboard.html"; }
 
-    function formatRupiah(val){
-      if(val==null || val==='' || Number(val)===0) return '-';
-      const num = Number(val);
-      let text = 'Rp ' + num.toLocaleString('id-ID');
-      if(num < 0) return `<span class="text-red-600 font-semibold">${text}</span>`;
-      if(num > 0) return `<span class="text-green-600 font-semibold">${text}</span>`;
-      return '';
-    }
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbx4VuE2KfU6tbis0cdC3DdpJH2cKB5vrMEQW4mlGZyxRHH6Rff_bTQp1O8cI-wq5Tol6w/exec';
-    const SPINNER = document.getElementById('spinner');
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbx4VuE2KfU6tbis0cdC3DdpJH2cKB5vrMEQW4mlGZyxRHH6Rff_bTQp1O8cI-wq5Tol6w/exec';
+const SPINNER = document.getElementById('spinner');
+function showSpinner(){ SPINNER.classList.remove('hidden'); }
+function hideSpinner(){ SPINNER.classList.add('hidden'); }
 
-    function showSpinner(){ SPINNER.classList.remove('hidden'); }
-    function hideSpinner(){ SPINNER.classList.add('hidden'); }
+async function fetchJSON(url){
+  try{ showSpinner(); const res = await fetch(url); return await res.json(); }
+  catch(e){ console.error(e); alert('Gagal mengambil data'); return null; }
+  finally{ hideSpinner(); }
+}
 
-    async function fetchJSON(url){
-      showSpinner();
-      try{ const res = await fetch(url); const j = await res.json(); hideSpinner(); return j;}
-      catch(e){ hideSpinner(); console.error(e); alert('Gagal mengambil data'); return null }
-    }
+function makeMonthOptions(){
+  const sel = document.getElementById('select-month');
+  const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const now = new Date();
+  months.forEach((m,i)=>{ 
+    const opt = document.createElement('option'); 
+    opt.value = i+1; opt.textContent = m; 
+    if(i===now.getMonth()) opt.selected = true; 
+    sel.appendChild(opt) 
+  });
+}
+function makeYearOptions(){
+  const sel = document.getElementById('select-year');
+  const yearNow = new Date().getFullYear();
+  for(let y=yearNow-2;y<=yearNow+1;y++){ 
+    const opt=document.createElement('option'); 
+    opt.value=y; opt.textContent=y; 
+    if(y===yearNow) opt.selected = true; 
+    sel.appendChild(opt);
+  }
+}
 
-    function makeMonthOptions(){
-      const sel = document.getElementById('select-month');
-      const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-      const now = new Date();
-      months.forEach((m,i)=>{ 
-        const opt = document.createElement('option'); 
-        opt.value = i+1; opt.textContent = m; 
-        if(i===now.getMonth()) opt.selected = true; 
-        sel.appendChild(opt) 
-      });
-    }
-    function makeYearOptions(){
-      const sel = document.getElementById('select-year');
-      const yearNow = new Date().getFullYear();
-      for(let y=yearNow-2;y<=yearNow+1;y++){ 
-        const opt=document.createElement('option'); 
-        opt.value=y; opt.textContent=y; 
-        if(y===yearNow) opt.selected = true; 
-        sel.appendChild(opt);
-      }
-    }
+async function loadPTs(){
+  const url = `${GAS_URL}?action=getPTs`; 
+  const data = await fetchJSON(url); if(!data) return;
+  const sel = document.getElementById('select-pt');
+  sel.innerHTML = '';
+  data.forEach(pt=>{ const o=document.createElement('option'); o.value=pt; o.textContent=pt; sel.appendChild(o) });
+  sel.dispatchEvent(new Event('change'));
+}
 
-    async function loadPTs(){
-      const url = `${GAS_URL}?action=getPTs`; 
-      const data = await fetchJSON(url); if(!data) return;
-      const sel = document.getElementById('select-pt');
-      sel.innerHTML = '';
-      data.forEach(pt=>{ const o=document.createElement('option'); o.value=pt; o.textContent=pt; sel.appendChild(o) });
-      sel.dispatchEvent(new Event('change'));
-    }
+async function loadPangkalanForPT(pt){
+  const url = `${GAS_URL}?action=getPangkalan&pt=${encodeURIComponent(pt)}`;
+  const data = await fetchJSON(url); 
+  const sel = document.getElementById('select-pangkalan');
+  sel.innerHTML='';
+  const empty = document.createElement('option'); empty.value='ALL'; empty.textContent='-- Semua Pangkalan --'; empty.selected = true; sel.appendChild(empty);
+  (data||[]).forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
+}
 
-    async function loadPangkalanForPT(pt){
-      const url = `${GAS_URL}?action=getPangkalan&pt=${encodeURIComponent(pt)}`;
-      const data = await fetchJSON(url); 
-      const sel = document.getElementById('select-pangkalan');
-      sel.innerHTML='';
-      const empty = document.createElement('option'); empty.value='ALL'; empty.textContent='-- Semua Pangkalan --'; empty.selected = true; sel.appendChild(empty);
-      (data||[]).forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
-    }
+function getSelectedPangkalan(){
+  const sel = document.getElementById('select-pangkalan');
+  const vals = Array.from(sel.selectedOptions).map(o=>o.value);
+  if (vals.length === 0) return ['ALL'];
+  if (vals.includes('ALL')) return ['ALL'];
+  return vals;
+}
 
-    function getSelectedPangkalan(){
-      const sel = document.getElementById('select-pangkalan');
-      const vals = Array.from(sel.selectedOptions).map(o=>o.value);
-      if (vals.length === 0) return ['ALL'];
-      if (vals.includes('ALL')) return ['ALL'];
-      return vals;
-    }
-
- <!-- POTONGAN SCRIPT YANG SUDAH DIREVISI -->
-
+// Info DO
 async function updateDOInfo(pt, pangkalanList){
   const q = Array.isArray(pangkalanList) ? pangkalanList.join(',') : String(pangkalanList||'ALL');
   const url = `${GAS_URL}?action=getDOInfo&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(q)}`;
@@ -222,7 +221,6 @@ async function loadRekap(){
   const month = document.getElementById('select-month').value;
   const year = document.getElementById('select-year').value;
 
-  // 🔥 ambil info DO juga di sini
   await updateDOInfo(pt, pangkalans);
 
   const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalans.join(','))}&month=${month}&year=${year}`;
@@ -230,15 +228,13 @@ async function loadRekap(){
   if(!data) return;
 
   const totals = renderTable(data.rows);
-
-   document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
+  document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
   document.getElementById('do-owned').textContent = data.do_owned ?? '-';
   document.getElementById('price').innerHTML = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
   document.getElementById('harga-bagi-hasil').innerHTML = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
   
   hitungTabungKerjasama({...data, totalBagiHasil: totals.totalBagiHasil});
 }
-
 
 function renderTable(rows){
   const tbody = document.getElementById('rekap-body');
@@ -251,29 +247,27 @@ function renderTable(rows){
     const buktiTransfer = Number(r.bukti_transfer) || 0;
     const pengiriman = Number(r.pengiriman) || 0;
     const bagiHasil = Number(r.bagi_hasil) || 0;
-
     const totalTBG = bayarBrimola - nominalHarusDibayar + buktiTransfer;
 
     grandTotal += totalTBG;
     totalPengiriman += pengiriman;
     totalBagiHasil += bagiHasil;
 
- const tr = document.createElement('tr'); 
-tr.innerHTML = `
-  <td class="px-3 py-2 text-sm">${r.tanggal}</td>
-  <td class="px-3 py-2 text-sm">${r.laporan_pengiriman}</td>
-  <td class="px-3 py-2 text-sm">${r.retur}</td>
-  <td class="px-3 py-2 text-sm">${r.dikirim}</td>
-  <td class="px-3 py-2 text-sm">${r.master_sa}</td>
-  <td class="px-3 py-2 text-sm text-right whitespace-nowrap">${pengiriman}</td>
-  <td class="px-3 py-2 text-sm text-right whitespace-nowrap">${formatRupiah(r.nominal_harus_dibayar)}</td>
-  <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
-  <td class="px-3 py-2 text-sm text-right whitespace-nowrap">${formatRupiah(r.bayar_lewat_brimola)}</td>
-  <td class="px-3 py-2 text-sm text-right whitespace-nowrap">${formatRupiah(r.bukti_transfer)}</td>
-  <td class="px-3 py-2 text-sm text-right whitespace-nowrap">${formatRupiah(r.bagi_hasil)}</td>
-  <td class="px-3 py-2 text-sm text-right whitespace-nowrap text-blue-600 font-semibold">${formatRupiah(totalTBG)}</td>
-`; 
-
+    const tr = document.createElement('tr'); 
+    tr.innerHTML = `
+      <td class="px-3 py-2 text-sm">${r.tanggal}</td>
+      <td class="px-3 py-2 text-sm">${r.laporan_pengiriman}</td>
+      <td class="px-3 py-2 text-sm">${r.retur}</td>
+      <td class="px-3 py-2 text-sm">${r.dikirim}</td>
+      <td class="px-3 py-2 text-sm">${r.master_sa}</td>
+      <td class="px-3 py-2 text-sm text-right">${pengiriman}</td>
+      <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.nominal_harus_dibayar)}</td>
+      <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
+      <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bayar_lewat_brimola)}</td>
+      <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bukti_transfer)}</td>
+      <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bagi_hasil)}</td>
+      <td class="px-3 py-2 text-sm text-right text-blue-600 font-semibold">${formatRupiah(totalTBG)}</td>
+    `;
     tbody.appendChild(tr);
   });
 
@@ -298,71 +292,68 @@ function hitungTabungKerjasama(data){
   document.getElementById('sisa-bagi-hasil').innerHTML = formatRupiah(sisa);
 }
 
+// Export CSV
+document.getElementById('btn-export-csv').addEventListener('click', ()=>{
+  const rows = Array.from(document.querySelectorAll('#rekap-table tr')).map(tr=> 
+    Array.from(tr.querySelectorAll('th,td')).map(td=> td.innerText.replace(/\n/g,' '))
+  );
+  let csv = rows.map(r=>r.join(',')).join('\n');
+  let blob = new Blob([csv], {type:'text/csv'});
+  let url = URL.createObjectURL(blob);
+  let a=document.createElement('a'); a.href=url; a.download='rekap.csv'; a.click();
+  URL.revokeObjectURL(url);
+});
 
-    // Export CSV
-    document.getElementById('btn-export-csv').addEventListener('click', ()=>{
-      const rows = Array.from(document.querySelectorAll('#rekap-table tr')).map(tr=>{
-        return Array.from(tr.querySelectorAll('th,td')).map(td=>`"${td.innerText.replace(/"/g,'""')}"`).join(',');
-      });
-      const blob = new Blob([rows.join('\n')], {type:'text/csv;charset=utf-8;'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'rekap.csv';
-      a.click();
+// Lazy load libs
+async function loadLib(url){
+  if(!document.querySelector(`script[src="${url}"]`)){
+    return new Promise(resolve=>{
+      const s=document.createElement("script");
+      s.src=url; s.onload=resolve; document.body.appendChild(s);
     });
+  }
+}
 
-    document.getElementById('btn-load').addEventListener('click', loadRekap);
-    document.getElementById('select-pt').addEventListener('change', async (e)=>{ 
-      await loadPangkalanForPT(e.target.value); 
-    });
-    document.getElementById('select-pangkalan').addEventListener('change', async ()=>{ 
-    });
-
-    makeMonthOptions(); makeYearOptions(); loadPTs();
-
-// Share ke WhatsApp
+// Share via WA
 async function shareRekapWA(){
-  const wrapper = document.querySelector(".max-w-5xl");
-  const pangkalan = document.getElementById("select-pangkalan");
-  const selected = [...pangkalan.selectedOptions].map(o => o.text).join(", ") || "Semua Pangkalan";
-
-  const canvas = await html2canvas(wrapper,{scale:2});
-  const dataUrl = canvas.toDataURL("image/png");
-
-  if(navigator.share){
-    const blob = await (await fetch(dataUrl)).blob();
-    const file = new File([blob], "rekap.png", {type:"image/png"});
-    await navigator.share({
-      title:"Rekap Operasional",
-      text:`Rekap Data untuk: ${selected}`,
-      files:[file]
-    });
+  await loadLib("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js");
+  const wrapper=document.getElementById("rekap-wrapper");
+  const canvas=await html2canvas(wrapper,{scale:1});
+  const dataUrl=canvas.toDataURL("image/png");
+  const blob=await (await fetch(dataUrl)).blob();
+  const file=new File([blob],"rekap.png",{type:"image/png"});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    await navigator.share({files:[file],title:"Rekap Operasional"});
   } else {
-    window.open(`https://wa.me/?text=Rekap Data untuk: ${selected}`, "_blank");
+    alert("Browser tidak mendukung Web Share API untuk file.");
   }
 }
 
 // Download PDF
 async function downloadPDF(){
-  const { jsPDF } = window.jspdf;
-  const wrapper = document.querySelector(".max-w-5xl");
-  const pangkalan = document.getElementById("select-pangkalan");
-  const selected = [...pangkalan.selectedOptions].map(o => o.text).join(", ") || "Semua Pangkalan";
-
-  const canvas = await html2canvas(wrapper,{scale:2});
-  const imgData = canvas.toDataURL("image/png");
-
-  const pdf = new jsPDF("p","mm","a4");
-  const imgProps = pdf.getImageProperties(imgData);
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-  pdf.text(`Rekap Data untuk: ${selected}`, 10, 10);
-  pdf.addImage(imgData,"PNG",0,20,pdfWidth,pdfHeight);
-  pdf.save("rekap_operasional.pdf");
+  await loadLib("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js");
+  await loadLib("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+  const { jsPDF }=window.jspdf;
+  const wrapper=document.getElementById("rekap-wrapper");
+  const canvas=await html2canvas(wrapper,{scale:1});
+  const imgData=canvas.toDataURL("image/png");
+  const pdf=new jsPDF("l","pt","a4");
+  const pageW=pdf.internal.pageSize.getWidth();
+  const pageH=pdf.internal.pageSize.getHeight();
+  const imgW=pageW-40;
+  const imgH=canvas.height*imgW/canvas.width;
+  pdf.addImage(imgData,"PNG",20,20,imgW,imgH);
+  pdf.save("rekap.pdf");
 }
+
+// Init
+window.addEventListener('DOMContentLoaded',()=>{
+  makeMonthOptions();
+  makeYearOptions();
+  loadPTs();
+  document.getElementById('select-pt').addEventListener('change',e=> loadPangkalanForPT(e.target.value));
+  document.getElementById('btn-load').addEventListener('click', loadRekap);
+});
 </script>
-</body>
-</html>
 </body>
 </html>
