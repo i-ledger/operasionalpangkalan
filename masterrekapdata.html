@@ -126,6 +126,11 @@
       return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
     }
 
+    function extractDriveId(url) {
+      const match = url.match(/[-\w]{25,}/);
+      return match ? match[0] : "";
+    }
+
     async function fetchData() {
       document.getElementById("loadingSpinner").style.display = "block";
       try {
@@ -159,16 +164,13 @@
         const nominal = item.nominal ? parseInt(item.nominal) : 0;
         totalNominal += nominal;
 
-      data.forEach(item => {
-        const nominal = item.nominal ? parseInt(item.nominal) : 0;
-        totalNominal += nominal;
-const fotoNota = item.foto && item.foto.includes('https://') 
-  ? `<a href="${item.foto}" target="_blank"><img src="https://drive.google.com/thumbnail?id=${extractDriveId(item.foto)}&sz=w200" alt="Foto Nota" /></a>` 
-  : '<span class="error">Foto Nota tidak ada</span>';
+        const fotoNota = item.foto
+          ? `<a href="${item.foto}" target="_blank"><img src="https://drive.google.com/uc?export=view&id=${extractDriveId(item.foto)}" alt="Foto Nota" /></a>`
+          : "-";
 
-const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https://') 
-  ? `<a href="${item.buktitransfer}" target="_blank"><img src="https://drive.google.com/thumbnail?id=${extractDriveId(item.buktitransfer)}&sz=w200" alt="Bukti Transfer" /></a>` 
-  : '<span class="error">Bukti Transfer tidak ada</span>';
+        const buktiTransfer = item.buktitransfer
+          ? `<a href="${item.buktitransfer}" target="_blank"><img src="https://drive.google.com/uc?export=view&id=${extractDriveId(item.buktitransfer)}" alt="Bukti Transfer" /></a>`
+          : "-";
 
         const row = document.createElement("tr");
         row.innerHTML = `
@@ -179,7 +181,7 @@ const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https:/
           <td>${nominal ? formatRupiah(nominal) : ""}</td>
           <td>${fotoNota}</td>
           <td>${item.pembayaran || ""}</td>
-          <td>${buktitransfer}</td>
+          <td>${buktiTransfer}</td>
           <td><button class="px-2 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded" onclick='openEditModal(${JSON.stringify(item)}, ${index})'>✏️</button></td>
         `;
         tbody.appendChild(row);
@@ -188,36 +190,12 @@ const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https:/
       document.getElementById("totalNominal").textContent = `Total Nominal: ${formatRupiah(totalNominal)}`;
     }
 
-function filterByPos(pos, startDate, endDate) {
-  // Ambil nilai startDate dan endDate dari inputan
-  startDate = document.getElementById("startDate").value;
-  endDate = document.getElementById("endDate").value;
+    function filterByPos(pos) {
+      let filtered = allData;
+      if (pos) filtered = allData.filter(item => item.pos === pos);
+      renderTable(filtered);
+    }
 
-  // Jika salah satu tanggal kosong, tampilkan semua data
-  if (!startDate || !endDate) {
-    renderTable(allData);
-    return;
-  }
-
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  // Tambahkan waktu agar tanggal selesai mencakup seluruh hari
-  end.setHours(23, 59, 59, 999);
-
-  // Filter data berdasarkan tanggal
-  let filteredData = allData.filter(item => {
-    const timestamp = new Date(item.timestamp);
-    return timestamp >= start && timestamp <= end;
-  });
-
-  // Memfilter berdasarkan pos jika pos dipilih
-  if (pos) {
-    filteredData = filteredData.filter(item => item.pos === pos);
-  }
-
-  // Render tabel dengan data yang sudah difilter
-  renderTable(filteredData);
-}
     function filterByDate() {
       const startDate = document.getElementById("startDate").value;
       const endDate = document.getElementById("endDate").value;
@@ -228,7 +206,6 @@ function filterByPos(pos, startDate, endDate) {
 
       const start = new Date(startDate);
       const end = new Date(endDate);
-      // Tambahkan waktu agar tanggal selesai mencakup seluruh hari
       end.setHours(23, 59, 59, 999);
 
       const filtered = allData.filter(item => {
@@ -238,26 +215,19 @@ function filterByPos(pos, startDate, endDate) {
 
       renderTable(filtered);
     }
-  // pasang event listener setelah DOM siap
-  window.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('filterBtn')
-      .addEventListener('click', filterByDate);
-   });
 
-function filterCurrentMonthData() {
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+    function filterCurrentMonthData() {
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
 
-  const filtered = allData.filter(item => {
-    const date = new Date(item.timestamp);
-    return (
-      date.getMonth() === currentMonth &&
-      date.getFullYear() === currentYear
-    );
-  });
-  renderTable(filtered);
-}
+      const filtered = allData.filter(item => {
+        const date = new Date(item.timestamp);
+        return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+      });
+      renderTable(filtered);
+    }
+
     function resetFilter() {
       document.getElementById("startDate").value = "";
       document.getElementById("endDate").value = "";
@@ -266,7 +236,7 @@ function filterCurrentMonthData() {
 
     // ✅ Modal Edit
     function openEditModal(item, index) {
-      selectedItem = { ...item, row: index + 2 }; // karena row 1 = header
+      selectedItem = { ...item, row: index + 2 }; // row 1 = header
       document.getElementById("editRow").value = selectedItem.row;
       document.getElementById("editNama").value = item.nama || "";
       document.getElementById("editUraian").value = item.uraian || "";
@@ -286,7 +256,7 @@ function filterCurrentMonthData() {
       if (!selectedItem) return;
 
       const updated = [
-        selectedItem.timestamp, // timestamp tetap
+        selectedItem.timestamp,
         document.getElementById("editNama").value,
         document.getElementById("editUraian").value,
         document.getElementById("editPos").value,
@@ -315,7 +285,7 @@ function filterCurrentMonthData() {
       }
     });
 
-    document.getElementById("filterBtn").addEventListener("click", filterCurrentMonthData);
+    document.getElementById("filterBtn").addEventListener("click", filterByDate);
     document.getElementById("resetBtn").addEventListener("click", resetFilter);
 
     fetchData();
