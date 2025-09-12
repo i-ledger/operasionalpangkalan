@@ -103,57 +103,73 @@
   </style>
 
   <script>
-    let allData = [];
-    let selectedItem = null;
+     let allData = [];
+  let selectedItem = null;
 
-    // ✅ Cek login
-    if (localStorage.getItem('loggedIn') !== 'true') window.location.href = 'login.html';
-    const id_spreadsheet = localStorage.getItem("id_spreadsheet");
-    if (!id_spreadsheet) { alert("Spreadsheet ID tidak ditemukan. Silakan login ulang."); window.location.href = "login.html"; }
+  // ✅ Cek login
+  if (localStorage.getItem('loggedIn') !== 'true') window.location.href = 'login.html';
+  const id_spreadsheet = localStorage.getItem("id_spreadsheet");
+  if (!id_spreadsheet) { 
+    alert("Spreadsheet ID tidak ditemukan. Silakan login ulang."); 
+    window.location.href = "login.html"; 
+  }
 
-    const endpoint = `${API_ENDPOINT}?action=transaksi&id_spreadsheet=${id_spreadsheet}`;
-    const posEndpoint = `${API_ENDPOINT}?action=namapos&id_spreadsheet=${id_spreadsheet}`;
+  const endpoint = `${API_ENDPOINT}?action=transaksi&id_spreadsheet=${id_spreadsheet}`;
+  const posEndpoint = `${API_ENDPOINT}?action=namapos&id_spreadsheet=${id_spreadsheet}`;
 
-    function formatRupiah(angka) {
-      const num = parseInt(angka.toString().replace(/[^\d]/g, ""));
-      return isNaN(num) ? "" : num.toLocaleString("id-ID", { style: "currency", currency: "IDR" });
+  // ✅ Auto set tanggal: awal bulan sampai hari ini
+  window.addEventListener("DOMContentLoaded", () => {
+    const today = new Date();
+    const pad = n => n.toString().padStart(2, "0");
+
+    const firstDay = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-01`;
+    const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+
+    document.getElementById("startDate").value = firstDay;
+    document.getElementById("endDate").value = todayStr;
+  });
+
+  function formatRupiah(angka) {
+    const num = parseInt(angka.toString().replace(/[^\d]/g, ""));
+    return isNaN(num) ? "" : num.toLocaleString("id-ID", { style: "currency", currency: "IDR" });
+  }
+
+  function formatTanggalIndonesia(datetimeStr) {
+    const date = new Date(datetimeStr);
+    if (isNaN(date)) return datetimeStr;
+    const pad = n => n.toString().padStart(2, '0');
+    return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  }
+
+  function extractDriveId(url) {
+    const match = url.match(/[-\w]{25,}/);
+    return match ? match[0] : "";
+  }
+
+  async function fetchData() {
+    document.getElementById("loadingSpinner").style.display = "block";
+    try {
+      const res = await fetch(endpoint);
+      allData = await res.json();
+      filterByDate(); // langsung pake filter sesuai tanggal input
+    } finally {
+      document.getElementById("loadingSpinner").style.display = "none";
     }
+  }
 
-    function formatTanggalIndonesia(datetimeStr) {
-      const date = new Date(datetimeStr);
-      if (isNaN(date)) return datetimeStr;
-      const pad = n => n.toString().padStart(2, '0');
-      return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-    }
+  async function fetchPos() {
+    const res = await fetch(posEndpoint);
+    const allPos = await res.json();
+    const posList = document.getElementById("posList");
+    posList.innerHTML = "";
+    allPos.forEach(pos => {
+      const li = document.createElement("li");
+      li.textContent = pos.nama_pos;
+      li.onclick = () => filterByPos(pos.nama_pos);
+      posList.appendChild(li);
+    });
+  }
 
-    function extractDriveId(url) {
-      const match = url.match(/[-\w]{25,}/);
-      return match ? match[0] : "";
-    }
-
-    async function fetchData() {
-      document.getElementById("loadingSpinner").style.display = "block";
-      try {
-        const res = await fetch(endpoint);
-        allData = await res.json();
-        filterCurrentMonthData();
-      } finally {
-        document.getElementById("loadingSpinner").style.display = "none";
-      }
-    }
-
-    async function fetchPos() {
-      const res = await fetch(posEndpoint);
-      const allPos = await res.json();
-      const posList = document.getElementById("posList");
-      posList.innerHTML = "";
-      allPos.forEach(pos => {
-        const li = document.createElement("li");
-        li.textContent = pos.nama_pos;
-        li.onclick = () => filterByPos(pos.nama_pos);
-        posList.appendChild(li);
-      });
-    }
 
     function renderTable(data) {
       const tbody = document.getElementById("ledgerTableBody");
