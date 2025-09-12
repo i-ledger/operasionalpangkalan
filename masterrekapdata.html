@@ -202,7 +202,7 @@ const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https:/
           <td>${fotoNota}</td>
           <td>${item.pembayaran || ""}</td>
           <td>${buktitransfer}</td>
-          <td><button class="px-2 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded" onclick='openEditModal(${JSON.stringify(item)}, ${index})'>✏️</button></td>
+          <td><button class="px-2 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded" onclick='openEditModal(${JSON.stringify(item)}, ${index})'>✏️Edit</button></td>
         `;
         tbody.appendChild(row);
       });
