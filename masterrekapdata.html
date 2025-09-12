@@ -253,12 +253,23 @@ const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https:/
       document.getElementById("endDate").value = "";
       renderTable(allData);
     }
-
+    function toDateTimeLocalInput(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      if (isNaN(d)) return '';
+      // create yyyy-mm-ddThh:ii
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mi = String(d.getMinutes()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+    }
     // ✅ Modal Edit
     function openEditModal(item, index) {
       selectedItem = { ...item, row: index + 2 }; // row 1 = header
       document.getElementById("editRow").value = selectedItem.row;
-      document.getElementById("editTimestamp").value = item.timestamp || "";
+      document.getElementById("editTimestamp").value =  toDateTimeLocalInput(item.timestamp);
       document.getElementById("editNama").value = item.nama || "";
       document.getElementById("editUraian").value = item.uraian || "";
       document.getElementById("editPos").value = item.pos || "";
@@ -278,7 +289,7 @@ const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https:/
 
       const updated = [
         selectedItem.timestamp,
-        document.getElementById("editTimestamp").value,
+        document.getElementById("editTimestamp").value, 
         document.getElementById("editNama").value,
         document.getElementById("editUraian").value,
         document.getElementById("editPos").value,
