@@ -10,11 +10,6 @@
   <!-- Spinner -->
   <div class="spinner fixed top-1/2 left-1/2 w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin z-50" id="loadingSpinner"></div>
 
-  <!-- Notif PDF -->
-  <div class="notification hidden fixed top-10 left-1/2 transform -translate-x-1/2 bg-white border border-gray-300 px-6 py-4 rounded-xl shadow-lg z-50 text-sm text-gray-800" id="pdfNotif">
-    Sedang menyiapkan file PDF... (<span id="pdfProgress">0</span>%)
-  </div>
-
   <div class="flex flex-col sm:flex-row gap-4">
     <!-- Sidebar -->
     <aside class="bg-white rounded-xl shadow-md p-4 w-full sm:w-64">
@@ -37,9 +32,6 @@
         </label>
         <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow" id="filterBtn">Filter</button>
         <button class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow" id="resetBtn">Reset</button>
-        <button class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow" id="excelBtn">Excel</button>
-        <button class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow" id="downloadExcelPerPosBtn">Excel per POS</button>
-        <button class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow" id="pdfBtn">PDF</button>
       </div>
 
       <!-- Table -->
@@ -70,7 +62,7 @@
     <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
       <h3 class="text-lg font-semibold mb-4">Edit Transaksi</h3>
       <form id="editForm" class="space-y-3">
-        <input type="hidden" id="editTimestamp" />
+        <input type="hidden" id="editRow" />
         <label class="block">
           <span class="text-sm">Nama</span>
           <input type="text" id="editNama" class="w-full border rounded px-2 py-1" />
@@ -102,10 +94,6 @@
     </div>
   </div>
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="config.js"></script>
   <style>
     #ledgerTable td img { max-width: 50px; max-height: 50px; border-radius: 0.5rem; border: 1px solid #ddd; padding: 2px; background: #fff; }
@@ -118,7 +106,7 @@
     let allData = [];
     let selectedItem = null;
 
-    // Cek login
+    // ✅ Cek login
     if (localStorage.getItem('loggedIn') !== 'true') window.location.href = 'login.html';
     const id_spreadsheet = localStorage.getItem("id_spreadsheet");
     if (!id_spreadsheet) { alert("Spreadsheet ID tidak ditemukan. Silakan login ulang."); window.location.href = "login.html"; }
@@ -136,15 +124,6 @@
       if (isNaN(date)) return datetimeStr;
       const pad = n => n.toString().padStart(2, '0');
       return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-    }
-
-    function extractDriveId(url) {
-      if (!url) return null;
-      let match = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
-      if (match) return match[1];
-      match = url.match(/id=([a-zA-Z0-9_-]{10,})/);
-      if (match) return match[1];
-      return null;
     }
 
     async function fetchData() {
@@ -176,17 +155,12 @@
       tbody.innerHTML = "";
       let totalNominal = 0;
 
-      data.forEach(item => {
+      data.forEach((item, index) => {
         const nominal = item.nominal ? parseInt(item.nominal) : 0;
         totalNominal += nominal;
 
-        const fotoNota = item.foto && item.foto.includes('https://') 
-          ? `<a href="${item.foto}" target="_blank"><img src="https://drive.google.com/thumbnail?id=${extractDriveId(item.foto)}&sz=w200"/></a>` 
-          : '<span class="text-red-500">-</span>';
-
-        const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https://') 
-          ? `<a href="${item.buktitransfer}" target="_blank"><img src="https://drive.google.com/thumbnail?id=${extractDriveId(item.buktitransfer)}&sz=w200"/></a>` 
-          : '<span class="text-red-500">-</span>';
+        const fotoNota = item.foto ? `<a href="${item.foto}" target="_blank"><img src="${item.foto}" /></a>` : '<span class="text-red-500">-</span>';
+        const buktitransfer = item.buktitransfer ? `<a href="${item.buktitransfer}" target="_blank"><img src="${item.buktitransfer}" /></a>` : '<span class="text-red-500">-</span>';
 
         const row = document.createElement("tr");
         row.innerHTML = `
@@ -198,7 +172,7 @@
           <td>${fotoNota}</td>
           <td>${item.pembayaran || ""}</td>
           <td>${buktitransfer}</td>
-          <td><button class="px-2 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded" onclick='openEditModal(${JSON.stringify(item)})'>✏️</button></td>
+          <td><button class="px-2 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded" onclick='openEditModal(${JSON.stringify(item)}, ${index})'>✏️</button></td>
         `;
         tbody.appendChild(row);
       });
@@ -207,33 +181,8 @@
     }
 
     function filterByPos(pos) {
-      const startDate = document.getElementById("startDate").value;
-      const endDate = document.getElementById("endDate").value;
-      let filteredData = allData;
-
-      if (startDate && endDate) {
-        const start = new Date(startDate);
-        const end = new Date(endDate); end.setHours(23,59,59,999);
-        filteredData = filteredData.filter(item => {
-          const t = new Date(item.timestamp);
-          return t >= start && t <= end;
-        });
-      }
-      if (pos) filteredData = filteredData.filter(item => item.pos === pos);
+      const filteredData = allData.filter(item => item.pos === pos);
       renderTable(filteredData);
-    }
-
-    function filterByDate() {
-      const startDate = document.getElementById("startDate").value;
-      const endDate = document.getElementById("endDate").value;
-      if (!startDate || !endDate) { renderTable(allData); return; }
-      const start = new Date(startDate);
-      const end = new Date(endDate); end.setHours(23,59,59,999);
-      const filtered = allData.filter(item => {
-        const t = new Date(item.timestamp);
-        return t >= start && t <= end;
-      });
-      renderTable(filtered);
     }
 
     function filterCurrentMonthData() {
@@ -253,10 +202,10 @@
       renderTable(allData);
     }
 
-    // ✅ Tambahin fungsi modal edit
-    function openEditModal(item) {
-      selectedItem = item;
-      document.getElementById("editTimestamp").value = item.timestamp || "";
+    // ✅ Modal Edit
+    function openEditModal(item, index) {
+      selectedItem = { ...item, row: index + 2 }; // karena row 1 = header
+      document.getElementById("editRow").value = selectedItem.row;
       document.getElementById("editNama").value = item.nama || "";
       document.getElementById("editUraian").value = item.uraian || "";
       document.getElementById("editPos").value = item.pos || "";
@@ -274,24 +223,26 @@
       e.preventDefault();
       if (!selectedItem) return;
 
-      const updated = {
-        timestamp: document.getElementById("editTimestamp").value,
-        nama: document.getElementById("editNama").value,
-        uraian: document.getElementById("editUraian").value,
-        pos: document.getElementById("editPos").value,
-        nominal: document.getElementById("editNominal").value,
-        pembayaran: document.getElementById("editPembayaran").value,
-      };
+      const updated = [
+        selectedItem.timestamp, // timestamp tetap
+        document.getElementById("editNama").value,
+        document.getElementById("editUraian").value,
+        document.getElementById("editPos").value,
+        document.getElementById("editNominal").value,
+        selectedItem.foto || "",
+        document.getElementById("editPembayaran").value,
+        selectedItem.buktitransfer || ""
+      ];
 
-      // kirim ke GAS (lo bisa modif action=edit sesuai backend GAS lo)
-      const res = await fetch(API_ENDPOINT, {
+      const res = await fetch(`${API_ENDPOINT}?id_spreadsheet=${id_spreadsheet}`, {
         method: "POST",
         body: JSON.stringify({
           action: "edit",
-          id_spreadsheet,
-          payload: updated
+          sheet: "Transaksi",
+          payload: { row: selectedItem.row, values: updated }
         })
       });
+
       const result = await res.json();
       if (result.status === "success") {
         alert("Data berhasil diupdate!");
@@ -302,7 +253,7 @@
       }
     });
 
-    document.getElementById("filterBtn").addEventListener("click", filterByDate);
+    document.getElementById("filterBtn").addEventListener("click", filterCurrentMonthData);
     document.getElementById("resetBtn").addEventListener("click", resetFilter);
 
     fetchData();
