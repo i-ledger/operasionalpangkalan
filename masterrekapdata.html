@@ -63,6 +63,10 @@
       <h3 class="text-lg font-semibold mb-4">Edit Transaksi</h3>
       <form id="editForm" class="space-y-3">
         <input type="hidden" id="editRow" />
+         <label class="block">
+          <span class="text-sm">Timestamp</span>
+          <input type="text" id="editTimestamp" class="w-full border rounded px-2 py-1" />
+        </label>
         <label class="block">
           <span class="text-sm">Nama</span>
           <input type="text" id="editNama" class="w-full border rounded px-2 py-1" />
@@ -254,6 +258,7 @@ const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https:/
     function openEditModal(item, index) {
       selectedItem = { ...item, row: index + 2 }; // row 1 = header
       document.getElementById("editRow").value = selectedItem.row;
+      document.getElementById("editTimestamp").value = item.timestamp || "";
       document.getElementById("editNama").value = item.nama || "";
       document.getElementById("editUraian").value = item.uraian || "";
       document.getElementById("editPos").value = item.pos || "";
@@ -273,6 +278,7 @@ const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https:/
 
       const updated = [
         selectedItem.timestamp,
+        document.getElementById("editTimestamp").value,
         document.getElementById("editNama").value,
         document.getElementById("editUraian").value,
         document.getElementById("editPos").value,
