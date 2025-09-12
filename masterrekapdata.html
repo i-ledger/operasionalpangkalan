@@ -188,22 +188,76 @@ const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https:/
       document.getElementById("totalNominal").textContent = `Total Nominal: ${formatRupiah(totalNominal)}`;
     }
 
-    function filterByPos(pos) {
-      const filteredData = allData.filter(item => item.pos === pos);
-      renderTable(filteredData);
-    }
+function filterByPos(pos, startDate, endDate) {
+  // Ambil nilai startDate dan endDate dari inputan
+  startDate = document.getElementById("startDate").value;
+  endDate = document.getElementById("endDate").value;
 
-    function filterCurrentMonthData() {
-      const now = new Date();
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0); lastDay.setHours(23,59,59,999);
+  // Jika salah satu tanggal kosong, tampilkan semua data
+  if (!startDate || !endDate) {
+    renderTable(allData);
+    return;
+  }
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  // Tambahkan waktu agar tanggal selesai mencakup seluruh hari
+  end.setHours(23, 59, 59, 999);
+
+  // Filter data berdasarkan tanggal
+  let filteredData = allData.filter(item => {
+    const timestamp = new Date(item.timestamp);
+    return timestamp >= start && timestamp <= end;
+  });
+
+  // Memfilter berdasarkan pos jika pos dipilih
+  if (pos) {
+    filteredData = filteredData.filter(item => item.pos === pos);
+  }
+
+  // Render tabel dengan data yang sudah difilter
+  renderTable(filteredData);
+}
+    function filterByDate() {
+      const startDate = document.getElementById("startDate").value;
+      const endDate = document.getElementById("endDate").value;
+      if (!startDate || !endDate) {
+        renderTable(allData);
+        return;
+      }
+
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      // Tambahkan waktu agar tanggal selesai mencakup seluruh hari
+      end.setHours(23, 59, 59, 999);
+
       const filtered = allData.filter(item => {
-        const t = new Date(item.timestamp);
-        return t >= firstDay && t <= lastDay;
+        const timestamp = new Date(item.timestamp);
+        return timestamp >= start && timestamp <= end;
       });
+
       renderTable(filtered);
     }
+  // pasang event listener setelah DOM siap
+  window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('filterBtn')
+      .addEventListener('click', filterByDate);
+   });
 
+function filterCurrentMonthData() {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const filtered = allData.filter(item => {
+    const date = new Date(item.timestamp);
+    return (
+      date.getMonth() === currentMonth &&
+      date.getFullYear() === currentYear
+    );
+  });
+  renderTable(filtered);
+}
     function resetFilter() {
       document.getElementById("startDate").value = "";
       document.getElementById("endDate").value = "";
