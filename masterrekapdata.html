@@ -159,8 +159,13 @@
         const nominal = item.nominal ? parseInt(item.nominal) : 0;
         totalNominal += nominal;
 
-        const fotoNota = item.foto ? `<a href="${item.foto}" target="_blank"><img src="${item.foto}" /></a>` : '<span class="text-red-500">-</span>';
-        const buktitransfer = item.buktitransfer ? `<a href="${item.buktitransfer}" target="_blank"><img src="${item.buktitransfer}" /></a>` : '<span class="text-red-500">-</span>';
+    const fotoNota = item.foto && item.foto.includes('https://') 
+  ? `<a href="${item.foto}" target="_blank"><img src="${item.foto}" /></a>` 
+  : '<span class="text-red-500">-</span>';
+
+const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https://') 
+  ? `<a href="${item.buktitransfer}" target="_blank"><img src="${item.buktitransfer}" /></a>` 
+  : '<span class="text-red-500">-</span>';
 
         const row = document.createElement("tr");
         row.innerHTML = `
