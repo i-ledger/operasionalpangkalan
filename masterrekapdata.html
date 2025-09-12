@@ -7,7 +7,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gradient-to-br from-cyan-100 to-blue-200 min-h-screen p-2 sm:p-4">
+  <!-- Spinner -->
   <div class="spinner fixed top-1/2 left-1/2 w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin z-50" id="loadingSpinner"></div>
+
+  <!-- Notif PDF -->
   <div class="notification hidden fixed top-10 left-1/2 transform -translate-x-1/2 bg-white border border-gray-300 px-6 py-4 rounded-xl shadow-lg z-50 text-sm text-gray-800" id="pdfNotif">
     Sedang menyiapkan file PDF... (<span id="pdfProgress">0</span>%)
   </div>
@@ -15,7 +18,7 @@
   <div class="flex flex-col sm:flex-row gap-4">
     <!-- Sidebar -->
     <aside class="bg-white rounded-xl shadow-md p-4 w-full sm:w-64">
-     <a href="dashboard.html" class="w-full block text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg mb-4 transition-all duration-200 shadow">Dashboard</a>
+      <a href="dashboard.html" class="w-full block text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg mb-4 shadow">Dashboard</a>
       <h3 class="text-lg font-semibold text-blue-600 mb-2">Daftar Pos</h3>
       <ul id="posList" class="space-y-2 text-blue-600"></ul>
     </aside>
@@ -39,6 +42,7 @@
         <button class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow" id="pdfBtn">PDF</button>
       </div>
 
+      <!-- Table -->
       <div class="overflow-auto rounded-xl border border-gray-200">
         <table id="ledgerTable" class="min-w-[900px] w-full text-sm text-left text-gray-700">
           <thead class="bg-blue-600 text-white">
@@ -102,48 +106,22 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="config.js"></script>
   <style>
-    #ledgerTable td img {
-      max-width: 50px;
-      max-height: 50px;
-      border-radius: 0.5rem;
-      border: 1px solid #ddd;
-      padding: 2px;
-      background: #fff;
-    }
-    .pos-active {
-      background-color: #2563eb !important;
-      color: white !important;
-      font-weight: bold;
-      border-radius: 0.5rem;
-      padding: 0.25rem 0.5rem;
-    }
-    #posList li {
-      cursor: pointer;
-      padding: 6px 12px;
-      border-radius: 0.5rem;
-      transition: background-color 0.2s;
-    }
-    #posList li:hover {
-      background-color: #ebf4ff;
-    }
+    #ledgerTable td img { max-width: 50px; max-height: 50px; border-radius: 0.5rem; border: 1px solid #ddd; padding: 2px; background: #fff; }
+    .pos-active { background-color: #2563eb !important; color: white !important; font-weight: bold; border-radius: 0.5rem; padding: 0.25rem 0.5rem; }
+    #posList li { cursor: pointer; padding: 6px 12px; border-radius: 0.5rem; transition: background-color 0.2s; }
+    #posList li:hover { background-color: #ebf4ff; }
   </style>
 
   <script>
     let allData = [];
-    let allPos = [];
+    let selectedItem = null;
 
-    if (localStorage.getItem('loggedIn') !== 'true') {
-      window.location.href = 'login.html';
-    }
-
+    // Cek login
+    if (localStorage.getItem('loggedIn') !== 'true') window.location.href = 'login.html';
     const id_spreadsheet = localStorage.getItem("id_spreadsheet");
-    if (!id_spreadsheet) {
-      alert("Spreadsheet ID tidak ditemukan. Silakan login ulang.");
-      window.location.href = "login.html";
-    }
+    if (!id_spreadsheet) { alert("Spreadsheet ID tidak ditemukan. Silakan login ulang."); window.location.href = "login.html"; }
 
     const endpoint = `${API_ENDPOINT}?action=transaksi&id_spreadsheet=${id_spreadsheet}`;
     const posEndpoint = `${API_ENDPOINT}?action=namapos&id_spreadsheet=${id_spreadsheet}`;
@@ -175,8 +153,6 @@
         const res = await fetch(endpoint);
         allData = await res.json();
         filterCurrentMonthData();
-      } catch (error) {
-        console.error(error);
       } finally {
         document.getElementById("loadingSpinner").style.display = "none";
       }
@@ -184,14 +160,10 @@
 
     async function fetchPos() {
       const res = await fetch(posEndpoint);
-      allPos = await res.json();
-      renderPosList(allPos);
-    }
-
-    function renderPosList(posData) {
+      const allPos = await res.json();
       const posList = document.getElementById("posList");
       posList.innerHTML = "";
-      posData.forEach(pos => {
+      allPos.forEach(pos => {
         const li = document.createElement("li");
         li.textContent = pos.nama_pos;
         li.onclick = () => filterByPos(pos.nama_pos);
@@ -209,11 +181,11 @@
         totalNominal += nominal;
 
         const fotoNota = item.foto && item.foto.includes('https://') 
-          ? `<a href="${item.foto}" target="_blank"><img src="https://drive.google.com/thumbnail?id=${extractDriveId(item.foto)}&sz=w200" alt="Foto Nota" /></a>` 
+          ? `<a href="${item.foto}" target="_blank"><img src="https://drive.google.com/thumbnail?id=${extractDriveId(item.foto)}&sz=w200"/></a>` 
           : '<span class="text-red-500">-</span>';
 
         const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https://') 
-          ? `<a href="${item.buktitransfer}" target="_blank"><img src="https://drive.google.com/thumbnail?id=${extractDriveId(item.buktitransfer)}&sz=w200" alt="Bukti Transfer" /></a>` 
+          ? `<a href="${item.buktitransfer}" target="_blank"><img src="https://drive.google.com/thumbnail?id=${extractDriveId(item.buktitransfer)}&sz=w200"/></a>` 
           : '<span class="text-red-500">-</span>';
 
         const row = document.createElement("tr");
@@ -241,31 +213,22 @@
 
       if (startDate && endDate) {
         const start = new Date(startDate);
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
+        const end = new Date(endDate); end.setHours(23,59,59,999);
         filteredData = filteredData.filter(item => {
           const t = new Date(item.timestamp);
           return t >= start && t <= end;
         });
       }
-
-      if (pos) {
-        filteredData = filteredData.filter(item => item.pos === pos);
-      }
-
+      if (pos) filteredData = filteredData.filter(item => item.pos === pos);
       renderTable(filteredData);
     }
 
     function filterByDate() {
       const startDate = document.getElementById("startDate").value;
       const endDate = document.getElementById("endDate").value;
-      if (!startDate || !endDate) {
-        renderTable(allData);
-        return;
-      }
+      if (!startDate || !endDate) { renderTable(allData); return; }
       const start = new Date(startDate);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
+      const end = new Date(endDate); end.setHours(23,59,59,999);
       const filtered = allData.filter(item => {
         const t = new Date(item.timestamp);
         return t >= start && t <= end;
@@ -276,8 +239,7 @@
     function filterCurrentMonthData() {
       const now = new Date();
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      lastDay.setHours(23, 59, 59, 999);
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0); lastDay.setHours(23,59,59,999);
       const filtered = allData.filter(item => {
         const t = new Date(item.timestamp);
         return t >= firstDay && t <= lastDay;
@@ -290,6 +252,55 @@
       document.getElementById("endDate").value = "";
       renderTable(allData);
     }
+
+    // ✅ Tambahin fungsi modal edit
+    function openEditModal(item) {
+      selectedItem = item;
+      document.getElementById("editTimestamp").value = item.timestamp || "";
+      document.getElementById("editNama").value = item.nama || "";
+      document.getElementById("editUraian").value = item.uraian || "";
+      document.getElementById("editPos").value = item.pos || "";
+      document.getElementById("editNominal").value = item.nominal || "";
+      document.getElementById("editPembayaran").value = item.pembayaran || "Cash";
+      document.getElementById("editModal").classList.remove("hidden");
+    }
+
+    function closeEditModal() {
+      document.getElementById("editModal").classList.add("hidden");
+      selectedItem = null;
+    }
+
+    document.getElementById("editForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      if (!selectedItem) return;
+
+      const updated = {
+        timestamp: document.getElementById("editTimestamp").value,
+        nama: document.getElementById("editNama").value,
+        uraian: document.getElementById("editUraian").value,
+        pos: document.getElementById("editPos").value,
+        nominal: document.getElementById("editNominal").value,
+        pembayaran: document.getElementById("editPembayaran").value,
+      };
+
+      // kirim ke GAS (lo bisa modif action=edit sesuai backend GAS lo)
+      const res = await fetch(API_ENDPOINT, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "edit",
+          id_spreadsheet,
+          payload: updated
+        })
+      });
+      const result = await res.json();
+      if (result.status === "success") {
+        alert("Data berhasil diupdate!");
+        closeEditModal();
+        fetchData();
+      } else {
+        alert("Gagal update data!");
+      }
+    });
 
     document.getElementById("filterBtn").addEventListener("click", filterByDate);
     document.getElementById("resetBtn").addEventListener("click", resetFilter);
