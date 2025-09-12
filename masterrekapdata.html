@@ -5,6 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Buku Besar - i-ledger</title>
   <script src="https://cdn.tailwindcss.com"></script>
+ <!-- Modal PIN -->
+  <div id="pinModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-2xl shadow-xl w-80 text-center">
+      <h2 class="text-xl font-bold text-indigo-700 mb-4">Masukkan PIN</h2>
+      <input id="pinInput" type="password" maxlength="6" placeholder="******"
+             class="w-full border p-2 rounded-xl text-center tracking-widest text-lg"/>
+      <p id="pinError" class="text-red-500 text-sm mt-2 hidden">PIN salah, coba lagi!</p>
+      <button id="pinSubmit" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl">
+        Masuk
+      </button>
+    </div>
+  </div>
 </head>
 <body class="bg-gradient-to-br from-cyan-100 to-blue-200 min-h-screen p-2 sm:p-4">
   <!-- Spinner -->
@@ -103,6 +115,27 @@
   </style>
 
   <script>
+    // ===== PIN Handling =====
+    const CORRECT_PIN = "030500";
+    const pinModal = document.getElementById("pinModal");
+    const pinInput = document.getElementById("pinInput");
+    const pinSubmit = document.getElementById("pinSubmit");
+    const pinError = document.getElementById("pinError");
+    const pageContent = document.getElementById("pageContent");
+
+    pinSubmit.addEventListener("click", () => {
+      if (pinInput.value === CORRECT_PIN) {
+        pinModal.style.display = "none";
+        pageContent.classList.remove("hidden");
+      } else {
+        pinError.classList.remove("hidden");
+        pinInput.value = "";
+        pinInput.focus();
+      }
+    });
+
+
+    
      let allData = [];
   let selectedItem = null;
 
