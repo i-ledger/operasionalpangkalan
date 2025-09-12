@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Buku Besar — i-Ledger</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <main class="p-6">
+    <h1 class="text-2xl font-bold mb-4">Data Buku Besar</h1>
+    <table class="w-full border-collapse bg-white shadow-lg rounded-lg overflow-hidden">
+      <thead class="bg-blue-600 text-white">
+        <tr>
+          <th class="p-3">Timestamp</th>
+          <th class="p-3">Nama</th>
+          <th class="p-3">Uraian</th>
+          <th class="p-3">Pos</th>
+          <th class="p-3">Nominal</th>
+          <th class="p-3">Foto Nota</th>
+          <th class="p-3">Pembayaran</th>
+          <th class="p-3">Bukti Transfer</th>
+          <th class="p-3">Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="ledgerTableBody"></tbody>
+    </table>
+    <div class="mt-4 font-semibold" id="totalNominal"></div>
+  </main>
+
+  <!-- Modal Edit -->
+  <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl p-6 w-96 shadow-xl">
+      <h3 class="text-lg font-semibold mb-4">Edit Data</h3>
+      <form id="editForm" class="space-y-3">
+        <input type="hidden" id="editIndex" />
+        <label class="block text-sm">
+          Timestamp:
+          <input type="datetime-local" id="editTimestamp" class="w-full border rounded-md px-2 py-1" />
+        </label>
+        <label class="block text-sm">
+          Nama:
+          <input type="text" id="editNama" class="w-full border rounded-md px-2 py-1" />
+        </label>
+        <label class="block text-sm">
+          Uraian:
+          <input type="text" id="editUraian" class="w-full border rounded-md px-2 py-1" />
+        </label>
+        <label class="block text-sm">
+          Pos:
+          <input type="text" id="editPos" class="w-full border rounded-md px-2 py-1" />
+        </label>
+        <label class="block text-sm">
+          Nominal:
+          <input type="number" id="editNominal" class="w-full border rounded-md px-2 py-1" />
+        </label>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal()" class="px-3 py-1 rounded-lg bg-gray-300">Batal</button>
+          <button type="submit" class="px-3 py-1 rounded-lg bg-blue-600 text-white">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_ENDPOINT = "PASTE_URL_WEBAPP_APPS_SCRIPT"; // ganti dengan URL GAS
+    const id_spreadsheet = localStorage.getItem("id_spreadsheet");
+    let allData = [];
+
+    function formatRupiah(angka) {
+      return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(angka);
+    }
+
+    function formatTanggalIndonesia(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleString("id-ID");
+    }
+
+    async function fetchData() {
+      const res = await fetch(`${API_ENDPOINT}?action=transaksi&id_spreadsheet=${id_spreadsheet}`);
+      const json = await res.json();
+      allData = json.data || [];
+      renderTable(allData);
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById("ledgerTableBody");
+      tbody.innerHTML = "";
+      let totalNominal = 0;
+
+      data.forEach((item, index) => {
+        const nominal = item.nominal ? parseInt(item.nominal) : 0;
+        totalNominal += nominal;
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${formatTanggalIndonesia(item.timestamp)}</td>
+          <td>${item.nama || ""}</td>
+          <td>${item.uraian || ""}</td>
+          <td>${item.pos || ""}</td>
+          <td>${nominal ? formatRupiah(nominal) : ""}</td>
+          <td>${item.foto ? `<a href="${item.foto}" target="_blank">Lihat</a>` : "-"}</td>
+          <td>${item.pembayaran || ""}</td>
+          <td>${item.buktitransfer ? `<a href="${item.buktitransfer}" target="_blank">Lihat</a>` : "-"}</td>
+          <td><button class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs" onclick="openEdit(${index})">Edit</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      document.getElementById("totalNominal").textContent = `Total Nominal: ${formatRupiah(totalNominal)}`;
+    }
+
+    function openEdit(index) {
+      const item = allData[index];
+      document.getElementById("editIndex").value = index;
+
+      const date = new Date(item.timestamp);
+      const iso = date.toISOString().slice(0,16);
+
+      document.getElementById("editTimestamp").value = iso;
+      document.getElementById("editNama").value = item.nama || "";
+      document.getElementById("editUraian").value = item.uraian || "";
+      document.getElementById("editPos").value = item.pos || "";
+      document.getElementById("editNominal").value = item.nominal || "";
+
+      document.getElementById("editModal").classList.remove("hidden");
+    }
+
+    function closeModal() {
+      document.getElementById("editModal").classList.add("hidden");
+    }
+
+    document.getElementById("editForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const index = document.getElementById("editIndex").value;
+      const item = allData[index];
+
+      const updated = {
+        action: "edit",
+        id_spreadsheet,
+        sheet: "Transaksi",
+        row: item.row, // backend kasih row
+        timestamp: document.getElementById("editTimestamp").value,
+        nama: document.getElementById("editNama").value,
+        uraian: document.getElementById("editUraian").value,
+        pos: document.getElementById("editPos").value,
+        nominal: document.getElementById("editNominal").value,
+      };
+
+      try {
+        const res = await fetch(API_ENDPOINT, {
+          method: "POST",
+          body: new URLSearchParams(updated),
+        });
+        const result = await res.json();
+        if (result.success) {
+          alert("Data berhasil diupdate!");
+          closeModal();
+          fetchData();
+        } else {
+          alert("Gagal update data!");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error update data");
+      }
+    });
+
+    fetchData();
+  </script>
+</body>
+</html>
