@@ -164,13 +164,13 @@
         const nominal = item.nominal ? parseInt(item.nominal) : 0;
         totalNominal += nominal;
 
-        const fotoNota = item.foto
-          ? `<a href="${item.foto}" target="_blank"><img src="https://drive.google.com/uc?export=view&id=${extractDriveId(item.foto)}" alt="Foto Nota" /></a>`
-          : "-";
+const fotoNota = item.foto && item.foto.includes('https://') 
+  ? `<a href="${item.foto}" target="_blank"><img src="https://drive.google.com/thumbnail?id=${extractDriveId(item.foto)}&sz=w200" alt="Foto Nota" /></a>` 
+  : '<span class="error">Foto Nota tidak ada</span>';
 
-        const buktiTransfer = item.buktitransfer
-          ? `<a href="${item.buktitransfer}" target="_blank"><img src="https://drive.google.com/uc?export=view&id=${extractDriveId(item.buktitransfer)}" alt="Bukti Transfer" /></a>`
-          : "-";
+const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https://') 
+  ? `<a href="${item.buktitransfer}" target="_blank"><img src="https://drive.google.com/thumbnail?id=${extractDriveId(item.buktitransfer)}&sz=w200" alt="Bukti Transfer" /></a>` 
+  : '<span class="error">Bukti Transfer tidak ada</span>';
 
         const row = document.createElement("tr");
         row.innerHTML = `
