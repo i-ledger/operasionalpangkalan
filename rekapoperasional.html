@@ -155,15 +155,6 @@ async function fetchJSON(url){
   finally{ hideSpinner(); }
 }
 
-// =========================
-// CACHE GLOBAL
-// =========================
-const cache = {
-  pts: null,
-  pangkalan: {},   // per PT
-  rekap: {}        // key: `${pt}_${month}_${year}_${pangkalan}`
-};
-
 function makeMonthOptions(){
   const sel = document.getElementById('select-month');
   const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -187,41 +178,21 @@ function makeYearOptions(){
 }
 
 async function loadPTs(){
-  if(cache.pts){ return renderPTs(cache.pts); }
   const url = `${GAS_URL}?action=getPTs`; 
   const data = await fetchJSON(url); if(!data) return;
-  cache.pts = data;
-  renderPTs(data);
-}
-function renderPTs(data){
   const sel = document.getElementById('select-pt');
   sel.innerHTML = '';
-  data.forEach(pt=>{ 
-    const o=document.createElement('option'); 
-    o.value=pt; o.textContent=pt; 
-    sel.appendChild(o);
-  });
+  data.forEach(pt=>{ const o=document.createElement('option'); o.value=pt; o.textContent=pt; sel.appendChild(o) });
   sel.dispatchEvent(new Event('change'));
 }
 
 async function loadPangkalanForPT(pt){
-  if(cache.pangkalan[pt]){ return renderPangkalan(cache.pangkalan[pt]); }
   const url = `${GAS_URL}?action=getPangkalan&pt=${encodeURIComponent(pt)}`;
   const data = await fetchJSON(url); 
-  cache.pangkalan[pt] = data || [];
-  renderPangkalan(cache.pangkalan[pt]);
-}
-function renderPangkalan(data){
   const sel = document.getElementById('select-pangkalan');
   sel.innerHTML='';
-  const empty = document.createElement('option'); 
-  empty.value='ALL'; empty.textContent='-- Semua Pangkalan --'; empty.selected = true; 
-  sel.appendChild(empty);
-  (data||[]).forEach(r=>{ 
-    const o=document.createElement('option'); 
-    o.value=r; o.textContent=r; 
-    sel.appendChild(o); 
-  });
+  const empty = document.createElement('option'); empty.value='ALL'; empty.textContent='-- Semua Pangkalan --'; empty.selected = true; sel.appendChild(empty);
+  (data||[]).forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
 }
 
 function getSelectedPangkalan(){
@@ -252,25 +223,16 @@ async function loadRekap(){
 
   await updateDOInfo(pt, pangkalans);
 
-  const key = `${pt}_${month}_${year}_${pangkalan}`;
-  if(cache.rekap[key]){
-    renderRekap(cache.rekap[key]);
-    return;
-  }
-
   const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalans.join(','))}&month=${month}&year=${year}`;
   const data = await fetchJSON(url);
   if(!data) return;
-  cache.rekap[key] = data;
-  renderRekap(data);
-}
 
-function renderRekap(data){
   const totals = renderTable(data.rows);
   document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
   document.getElementById('do-owned').textContent = data.do_owned ?? '-';
   document.getElementById('price').innerHTML = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
   document.getElementById('harga-bagi-hasil').innerHTML = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
+  
   hitungTabungKerjasama({...data, totalBagiHasil: totals.totalBagiHasil});
 }
 
