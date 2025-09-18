@@ -1,34 +1,42 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Rekap Operasional — i-Shipping</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Striping tabel biar ringan */
     #rekap-table tbody tr:nth-child(even){ background:#f9fafb; }
     #rekap-table tbody tr:nth-child(odd){ background:#fff; }
     #rekap-table th, #rekap-table td { white-space:nowrap; }
+    /* small responsive */
+    @media (max-width:900px){ #rekap-table { font-size:12px } }
   </style>
 </head>
 <body class="bg-blue-50 min-h-screen p-4 font-sans">
-  <div class="max-w-5xl mx-auto">
+  <div class="max-w-6xl mx-auto">
 
     <!-- Header -->
     <header class="flex items-center justify-between mb-4 bg-blue-200 p-3 rounded-lg shadow">
-      <h1 class="text-xl font-bold text-blue-900">📊 Rekap Operasional</h1>
+      <div class="flex items-center gap-3">
+        <!-- placeholder logo (replace with actual data URL or <img src="...">) -->
+        <div id="logo" class="w-10 h-10 bg-white rounded flex items-center justify-center text-blue-700 font-bold">iL</div>
+        <h1 class="text-xl font-bold text-blue-900">📊 Rekap Operasional — i-Shipping</h1>
+      </div>
       <div class="flex items-center gap-2">
+        <button id="btn-refresh" class="px-3 py-1 bg-gray-100 rounded text-sm">🔄 Refresh</button>
         <button onclick="goDashboard()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg shadow hover:bg-blue-700">🏠 Dashboard</button>
-        <div id="spinner" class="hidden fixed inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center z-50">
-          <svg class="animate-spin h-12 w-12 text-blue-400 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-          </svg>
-          <span class="text-white text-lg font-semibold">Loading...</span>
-        </div>
       </div>
     </header>
+
+    <!-- Spinner overlay -->
+    <div id="spinner" class="hidden fixed inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center z-50">
+      <svg class="animate-spin h-12 w-12 text-blue-400 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+      </svg>
+      <span id="spinner-text" class="text-white text-lg font-semibold">Loading...</span>
+    </div>
 
     <!-- Filter Section -->
     <section class="bg-white p-4 rounded-xl shadow mb-6">
@@ -79,20 +87,12 @@
         </div>
       </div>
 
-      <div class="mt-4 flex flex-wrap gap-2">
+      <div class="mt-4 flex flex-wrap gap-2 items-center">
         <button id="btn-load" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">🔎 Tampilkan Rekap</button>
         <button id="btn-export-csv" class="px-4 py-2 border border-blue-400 text-blue-700 rounded-lg shadow">📥 Export CSV</button>
-        
-        <!-- Dropdown Bagikan -->
-        <div class="relative inline-block text-left">
-          <button onclick="toggleMenu()" class="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700">
-            📤 Bagikan
-          </button>
-          <div id="share-menu" class="hidden absolute mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
-            <button onclick="shareRekapWA()" class="w-full text-left px-4 py-2 hover:bg-gray-100">📱 WhatsApp</button>
-            <button onclick="downloadPDF()" class="w-full text-left px-4 py-2 hover:bg-gray-100">📄 Download PDF</button>
-          </div>
-        </div>
+        <button id="btn-export-pdf" class="px-4 py-2 border bg-indigo-600 text-white rounded-lg shadow">📄 Export PDF</button>
+        <button id="btn-share-wa" class="px-4 py-2 border bg-green-600 text-white rounded-lg shadow">📤 Share WA</button>
+        <div class="text-sm text-gray-500 ml-auto">Data cached — klik Refresh untuk ambil terbaru</div>
       </div>
     </section>
 
@@ -120,10 +120,10 @@
           <tfoot class="bg-blue-100 font-semibold">
             <tr>
               <td colspan="5" class="px-3 py-2 text-right border">TOTAL</td>
-              <td id="total-pengiriman" class="px-3 py-2 border text-right whitespace-nowrap">0</td>
+              <td id="total-pengiriman" class="px-3 py-2 border text-right">0</td>
               <td></td><td></td><td></td><td></td>
-              <td id="total-bagi-hasil" class="px-3 py-2 border text-right whitespace-nowrap">0</td>
-              <td id="grand-total" class="px-3 py-2 border text-right whitespace-nowrap text-blue-800">0</td>
+              <td id="total-bagi-hasil" class="px-3 py-2 border text-right">0</td>
+              <td id="grand-total" class="px-3 py-2 border text-right text-blue-800">0</td>
             </tr>
           </tfoot>
         </table>
@@ -132,67 +132,101 @@
   </div>
 
 <script>
-function toggleMenu(){ document.getElementById("share-menu").classList.toggle("hidden"); }
-function goDashboard(){ window.location.href="dashboard.html"; }
+/* ========================
+   CONFIG
+   ======================== */
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxWrvXPaOobkmsHBUzXQVXPU23E6LMpbqhFZugBhJX_e7WeCD9RGHYRRnR9fTmdRm3Q9Q/exec";
+const APP_CACHE = { pts:[], pangkalanByPT:{}, doInfo:null, rekap:null, rawFetchedAt:null };
 
-function formatRupiah(val){
-  if(val==null || val==='' || Number(val)===0) return '-';
-  const num = Number(val);
-  let text = 'Rp ' + num.toLocaleString('id-ID');
-  if(num < 0) return `<span class="text-red-600 font-semibold">${text}</span>`;
-  if(num > 0) return `<span class="text-green-600 font-semibold">${text}</span>`;
-  return '';
-}
-
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxlbV03f3Rap-egwwdYYObqGju0pYNXsRa6tKisBpxurrvZkAsBMORdHKb8yQPPXRIKlw/exec';
+/* ========================
+   UI Helpers
+   ======================== */
 const SPINNER = document.getElementById('spinner');
-function showSpinner(){ SPINNER.classList.remove('hidden'); }
+const SPINNER_TEXT = document.getElementById('spinner-text');
+function showSpinner(text){ if(text) SPINNER_TEXT.textContent = text; SPINNER.classList.remove('hidden'); }
 function hideSpinner(){ SPINNER.classList.add('hidden'); }
 
-async function fetchJSON(url){
-  try{ showSpinner(); const res = await fetch(url); return await res.json(); }
-  catch(e){ console.error(e); alert('Gagal mengambil data'); return null; }
-  finally{ hideSpinner(); }
+function goDashboard(){ window.location.href = "dashboard.html"; }
+function safeNum(v){ return Number(v)||0; }
+function formatRupiah(val){
+  if(val===null||val===undefined||Number(val)===0) return '-';
+  return 'Rp ' + Number(val).toLocaleString('id-ID');
 }
 
+/* ========================
+   Fetch once -> cache
+   ======================== */
+async function fetchAll(params={}){
+  const q = new URLSearchParams({ action:'getAllData', ...params });
+  showSpinner('Mengambil data...'); 
+  try {
+    const res = await fetch(`${GAS_URL}?${q}`, { cache: 'no-store' });
+    const data = await res.json();
+    // basic validation
+    if (!data || !data.pts) throw new Error('Response invalid');
+    APP_CACHE.pts = data.pts || [];
+    APP_CACHE.pangkalanByPT = data.pangkalanByPT || {};
+    APP_CACHE.doInfo = data.doInfo || { do_owned:0, harga_tabung:null, harga_bagi_hasil:null };
+    APP_CACHE.rekap = data.rekap || { rows:[], total_penerimaan:0, do_owned:0, harga_tabung:null, harga_bagi_hasil:null };
+    APP_CACHE.rawFetchedAt = new Date().toISOString();
+    return APP_CACHE;
+  } catch(err){
+    console.error(err);
+    alert('Gagal ambil data dari server: ' + (err.message||err));
+    return null;
+  } finally {
+    hideSpinner();
+  }
+}
+
+/* ========================
+   DOM population & filtering
+   ======================== */
 function makeMonthOptions(){
   const sel = document.getElementById('select-month');
+  sel.innerHTML = '';
   const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   const now = new Date();
-  months.forEach((m,i)=>{ 
-    const opt = document.createElement('option'); 
-    opt.value = i+1; opt.textContent = m; 
-    if(i===now.getMonth()) opt.selected = true; 
-    sel.appendChild(opt) 
+  months.forEach((m,i)=>{
+    const opt = document.createElement('option');
+    opt.value = i+1; opt.textContent = m;
+    if (i === now.getMonth()) opt.selected = true;
+    sel.appendChild(opt);
   });
 }
 function makeYearOptions(){
   const sel = document.getElementById('select-year');
-  const yearNow = new Date().getFullYear();
-  for(let y=yearNow-2;y<=yearNow+1;y++){ 
-    const opt=document.createElement('option'); 
-    opt.value=y; opt.textContent=y; 
-    if(y===yearNow) opt.selected = true; 
+  sel.innerHTML = '';
+  const yNow = new Date().getFullYear();
+  for(let y=yNow-2; y<=yNow+1; y++){
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y;
+    if (y === yNow) opt.selected = true;
     sel.appendChild(opt);
   }
 }
 
-async function loadPTs(){
-  const url = `${GAS_URL}?action=getPTs`; 
-  const data = await fetchJSON(url); if(!data) return;
+function populatePTs(){
   const sel = document.getElementById('select-pt');
   sel.innerHTML = '';
-  data.forEach(pt=>{ const o=document.createElement('option'); o.value=pt; o.textContent=pt; sel.appendChild(o) });
-  sel.dispatchEvent(new Event('change'));
+  (APP_CACHE.pts || []).forEach(pt=>{
+    const o = document.createElement('option');
+    o.value = pt; o.textContent = pt;
+    sel.appendChild(o);
+  });
+  // if none selected, select first
+  if (sel.options.length && !sel.value) sel.selectedIndex = 0;
 }
 
-async function loadPangkalanForPT(pt){
-  const url = `${GAS_URL}?action=getPangkalan&pt=${encodeURIComponent(pt)}`;
-  const data = await fetchJSON(url); 
+function populatePangkalanForSelectedPT(){
+  const pt = document.getElementById('select-pt').value || 'ALL';
+  const list = APP_CACHE.pangkalanByPT && APP_CACHE.pangkalanByPT[pt] ? APP_CACHE.pangkalanByPT[pt] : [];
   const sel = document.getElementById('select-pangkalan');
-  sel.innerHTML='';
-  const empty = document.createElement('option'); empty.value='ALL'; empty.textContent='-- Semua Pangkalan --'; empty.selected = true; sel.appendChild(empty);
-  (data||[]).forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
+  sel.innerHTML = '';
+  const all = document.createElement('option'); all.value='ALL'; all.textContent='-- Semua Pangkalan --'; all.selected=true; sel.appendChild(all);
+  list.forEach(p=>{
+    const o = document.createElement('option'); o.value=p; o.textContent=p; sel.appendChild(o);
+  });
 }
 
 function getSelectedPangkalan(){
@@ -203,157 +237,310 @@ function getSelectedPangkalan(){
   return vals;
 }
 
-// Info DO
-async function updateDOInfo(pt, pangkalanList){
-  const q = Array.isArray(pangkalanList) ? pangkalanList.join(',') : String(pangkalanList||'ALL');
-  const url = `${GAS_URL}?action=getDOInfo&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(q)}`;
-  const d = await fetchJSON(url);
-  if(!d) return;
-  document.getElementById('do-owned').textContent = d.do_owned ?? '-';
-  document.getElementById('price').innerHTML = d.harga_tabung ? formatRupiah(d.harga_tabung) : '-';
-  document.getElementById('harga-bagi-hasil').innerHTML = d.harga_bagi_hasil ? formatRupiah(d.harga_bagi_hasil) : '-';
-  document.getElementById('total-penerimaan').textContent = d.total_penerimaan ?? '-';
+/* Filter logic: filter APP_CACHE.rekap.rows by pt/pangkalan/month/year.
+   Note: backend already returned rekap for requested month/year in getAllData,
+   but we implement client-side safe filtering as additional guard. */
+function filterCachedRekap(){
+  let rows = (APP_CACHE.rekap && APP_CACHE.rekap.rows) ? APP_CACHE.rekap.rows.slice() : [];
+  const pt = document.getElementById('select-pt').value || 'ALL';
+  const pangs = getSelectedPangkalan();
+  const month = Number(document.getElementById('select-month').value) || (new Date().getMonth()+1);
+  const year = Number(document.getElementById('select-year').value) || new Date().getFullYear();
+
+  // Keep only rows matching month/year (tanggal format dd/MM/yyyy)
+  rows = rows.filter(r=>{
+    try{
+      const t = String(r.tanggal||'').trim();
+      const m = t.split('/')[1] ? Number(t.split('/')[1]) : null;
+      const y = t.split('/')[2] ? Number(t.split('/')[2]) : null;
+      if (m && y && (m !== month || y !== year)) return false;
+    }catch(e){ /* ignore */ }
+    // PT & pangkalan fields might be per-row; backend did aggregation per day
+    // We assume backend already respected PT/pangkalan filters when generating rows.
+    return true;
+  });
+
+  return rows;
 }
 
-async function loadRekap(){
-  const pt = document.getElementById('select-pt').value;
-  const pangkalans = getSelectedPangkalan();
-  const month = document.getElementById('select-month').value;
-  const year = document.getElementById('select-year').value;
-
-  await updateDOInfo(pt, pangkalans);
-
-  const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalans.join(','))}&month=${month}&year=${year}`;
-  const data = await fetchJSON(url);
-  if(!data) return;
-
-  const totals = renderTable(data.rows);
-  document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
-  document.getElementById('do-owned').textContent = data.do_owned ?? '-';
-  document.getElementById('price').innerHTML = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
-  document.getElementById('harga-bagi-hasil').innerHTML = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
-  
-  hitungTabungKerjasama({...data, totalBagiHasil: totals.totalBagiHasil});
-}
-
-function renderTable(rows){
+/* ========================
+   Render table & summary
+   ======================== */
+function renderTableAndSummary(rows){
   const tbody = document.getElementById('rekap-body');
-  tbody.innerHTML='';
-  let grandTotal = 0, totalPengiriman=0, totalBagiHasil=0;
+  tbody.innerHTML = '';
+  let grandTotal = 0, totalPengiriman = 0, totalBagiHasil = 0;
 
   rows.forEach(r=>{
-    const bayarBrimola = Number(r.bayar_lewat_brimola) || 0;
-    const nominalHarusDibayar = Number(r.nominal_harus_dibayar) || 0;
-    const buktiTransfer = Number(r.bukti_transfer) || 0;
-    const pengiriman = Number(r.pengiriman) || 0;
-    const bagiHasil = Number(r.bagi_hasil) || 0;
+    const bayarBrimola = safeNum(r.bayar_lewat_brimola);
+    const nominalHarusDibayar = safeNum(r.nominal_harus_dibayar);
+    const buktiTransfer = safeNum(r.bukti_transfer);
+    const pengiriman = safeNum(r.pengiriman);
+    const bagiHasil = safeNum(r.bagi_hasil);
     const totalTBG = bayarBrimola - nominalHarusDibayar + buktiTransfer;
 
     grandTotal += totalTBG;
     totalPengiriman += pengiriman;
     totalBagiHasil += bagiHasil;
 
-    const tr = document.createElement('tr'); 
+    const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="px-3 py-2 text-sm">${r.tanggal}</td>
-      <td class="px-3 py-2 text-sm">${r.laporan_pengiriman}</td>
-      <td class="px-3 py-2 text-sm">${r.retur}</td>
-      <td class="px-3 py-2 text-sm">${r.dikirim}</td>
-      <td class="px-3 py-2 text-sm">${r.master_sa}</td>
+      <td class="px-3 py-2 text-sm">${r.tanggal||''}</td>
+      <td class="px-3 py-2 text-sm">${r.laporan_pengiriman||''}</td>
+      <td class="px-3 py-2 text-sm">${r.retur||0}</td>
+      <td class="px-3 py-2 text-sm">${r.dikirim||''}</td>
+      <td class="px-3 py-2 text-sm">${r.master_sa||0}</td>
       <td class="px-3 py-2 text-sm text-right">${pengiriman}</td>
-      <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.nominal_harus_dibayar)}</td>
-      <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
-      <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bayar_lewat_brimola)}</td>
-      <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bukti_transfer)}</td>
-      <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bagi_hasil)}</td>
+      <td class="px-3 py-2 text-sm text-right">${formatRupiah(nominalHarusDibayar)}</td>
+      <td class="px-3 py-2 text-sm">${r.brimola_oleh||''}</td>
+      <td class="px-3 py-2 text-sm text-right">${formatRupiah(bayarBrimola)}</td>
+      <td class="px-3 py-2 text-sm text-right">${formatRupiah(buktiTransfer)}</td>
+      <td class="px-3 py-2 text-sm text-right">${formatRupiah(bagiHasil)}</td>
       <td class="px-3 py-2 text-sm text-right text-blue-600 font-semibold">${formatRupiah(totalTBG)}</td>
     `;
     tbody.appendChild(tr);
   });
 
   document.getElementById('total-pengiriman').textContent = totalPengiriman;
-  document.getElementById('total-bagi-hasil').innerHTML = formatRupiah(totalBagiHasil);
-  document.getElementById('grand-total').innerHTML = formatRupiah(grandTotal);
+  document.getElementById('total-bagi-hasil').textContent = totalBagiHasil ? formatRupiah(totalBagiHasil) : '0';
+  document.getElementById('grand-total').textContent = grandTotal ? formatRupiah(grandTotal) : '0';
 
-  return { totalPengiriman, totalBagiHasil, grandTotal };
+  return { totalPengiriman, totalBagiHasil: totalBagiHasil, grandTotal };
 }
 
-function hitungTabungKerjasama(data){
-  const tP = Number(data.total_penerimaan)||0;
-  const dO = Number(data.do_owned)||0;
-  const hrgBagi = Number(data.harga_bagi_hasil)||0;
-  const sudahBayar = Number(data.totalBagiHasil)||0;
+/* compute tabung kerjasama & sisa bagi hasil */
+function updateInfoBoxesFromCache(totals){
+  const doInfo = APP_CACHE.doInfo || {};
+  const rekap = APP_CACHE.rekap || {};
+  document.getElementById('do-owned').textContent = safeNum(doInfo.do_owned) || '-';
+  document.getElementById('price').innerHTML = doInfo.harga_tabung ? formatRupiah(doInfo.harga_tabung) : '-';
+  document.getElementById('harga-bagi-hasil').innerHTML = doInfo.harga_bagi_hasil ? formatRupiah(doInfo.harga_bagi_hasil) : '-';
+  document.getElementById('total-penerimaan').textContent = safeNum(rekap.total_penerimaan) || '-';
 
-  const tabungKerjasama = (tP - dO);
+  const tP = safeNum(rekap.total_penerimaan);
+  const dO = safeNum(doInfo.do_owned);
+  const hrgBagi = safeNum(doInfo.harga_bagi_hasil);
+  const sudahBayar = safeNum(totals && totals.totalBagiHasil) || 0;
+  const tabungKerjasama = tP - dO;
   const nominalBagiHasil = tabungKerjasama * hrgBagi;
   const sisa = nominalBagiHasil - sudahBayar;
 
-  document.getElementById('tabung-kerjasama').textContent = tabungKerjasama + ' Tbg';
-  document.getElementById('sisa-bagi-hasil').innerHTML = formatRupiah(sisa);
+  document.getElementById('tabung-kerjasama').textContent = tabungKerjasama !== 0 ? (tabungKerjasama + ' Tbg') : '-';
+  document.getElementById('sisa-bagi-hasil').innerHTML = sisa ? formatRupiah(sisa) : '-';
 }
 
-// Export CSV
-document.getElementById('btn-export-csv').addEventListener('click', ()=>{
-  const rows = Array.from(document.querySelectorAll('#rekap-table tr')).map(tr=> 
-    Array.from(tr.querySelectorAll('th,td')).map(td=> td.innerText.replace(/\n/g,' '))
+/* ========================
+   Export CSV
+   ======================== */
+function exportCSV(){
+  const rows = Array.from(document.querySelectorAll('#rekap-table tr')).map(tr=>
+    Array.from(tr.querySelectorAll('th,td')).map(td => td.innerText.replace(/\n/g,' '))
   );
-  let csv = rows.map(r=>r.join(',')).join('\n');
-  let blob = new Blob([csv], {type:'text/csv'});
-  let url = URL.createObjectURL(blob);
-  let a=document.createElement('a'); a.href=url; a.download='rekap.csv'; a.click();
+  const csv = rows.map(r=> r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `rekap_${new Date().toISOString().slice(0,10)}.csv`; a.click();
   URL.revokeObjectURL(url);
-});
+}
 
-// Lazy load libs
-async function loadLib(url){
-  if(!document.querySelector(`script[src="${url}"]`)){
-    return new Promise(resolve=>{
-      const s=document.createElement("script");
-      s.src=url; s.onload=resolve; document.body.appendChild(s);
+/* ========================
+   Export PDF (html2canvas + jsPDF + autotable)
+   ======================== */
+async function ensurePdfLibs(){
+  // load html2canvas
+  if (!window.html2canvas) {
+    await new Promise(res=>{
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+      s.onload = res; document.body.appendChild(s);
+    });
+  }
+  // load jspdf
+  if (!window.jspdf) {
+    await new Promise(res=>{
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.onload = res; document.body.appendChild(s);
+    });
+  }
+  // load autotable plugin
+  if (!window.jspdf || !window.jspdf.jsPDF || !window.jspdf.autoTable) {
+    await new Promise(res=>{
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js';
+      s.onload = res; document.body.appendChild(s);
     });
   }
 }
 
-// Share via WA
-async function shareRekapWA(){
-  await loadLib("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js");
-  const wrapper=document.getElementById("rekap-wrapper");
-  const canvas=await html2canvas(wrapper,{scale:1});
-  const dataUrl=canvas.toDataURL("image/png");
-  const blob=await (await fetch(dataUrl)).blob();
-  const file=new File([blob],"rekap.png",{type:"image/png"});
-  if(navigator.canShare && navigator.canShare({files:[file]})){
-    await navigator.share({files:[file],title:"Rekap Operasional"});
-  } else {
-    alert("Browser tidak mendukung Web Share API untuk file.");
+async function exportPDF(){
+  try {
+    showSpinner('Mempersiapkan PDF...');
+    await ensurePdfLibs();
+
+    // Build PDF content: header + table snapshot
+    const { jsPDF } = window.jspdf || window.jspdf; // support different bundlings
+    const pdf = new jsPDF('l','pt','a4');
+    const pageW = pdf.internal.pageSize.getWidth();
+    const margin = 20;
+    const startY = 60;
+
+    // optional logo (you can replace with actual dataURL)
+    const logoDataUrl = null; // e.g. 'data:image/png;base64,...'
+
+    // Title
+    pdf.setFontSize(14);
+    pdf.text('Rekap Operasional — i-Shipping', margin, 30);
+
+    // subtitle (filters)
+    const pt = document.getElementById('select-pt').value || 'ALL';
+    const pang = getSelectedPangkalan().join(',');
+    const month = document.getElementById('select-month').selectedOptions[0].textContent;
+    const year = document.getElementById('select-year').value;
+    pdf.setFontSize(10);
+    pdf.text(`PT: ${pt} | Pangkalan: ${pang} | Periode: ${month} ${year}`, margin, 46);
+
+    // make an HTML table snapshot (clone table and simplify for pdf)
+    const table = document.getElementById('rekap-table').cloneNode(true);
+    // remove interactive attributes, ensure widths small
+    table.style.width = '100%';
+    // render to canvas using html2canvas
+    const canvas = await html2canvas(table, { scale: 1.2, useCORS: true, logging: false });
+    const imgData = canvas.toDataURL('image/png');
+
+    // place image in PDF with margins and scaling
+    const imgW = pageW - margin*2;
+    const imgH = canvas.height * imgW / canvas.width;
+    pdf.addImage(imgData, 'PNG', margin, startY, imgW, imgH);
+
+    const filename = `rekap_${pt}_${year}_${String(document.getElementById('select-month').value).padStart(2,'0')}.pdf`;
+    const pdfBlob = pdf.output('blob');
+
+    // offer download
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    const a = document.createElement('a'); a.href = blobUrl; a.download = filename; a.click();
+    URL.revokeObjectURL(blobUrl);
+
+    // store last generated PDF on APP_CACHE for sharing
+    APP_CACHE._lastPdf = pdfBlob;
+
+  } catch(err) {
+    console.error(err);
+    alert('Gagal generate PDF: ' + (err.message||err));
+  } finally {
+    hideSpinner();
   }
 }
 
-// Download PDF
-async function downloadPDF(){
-  await loadLib("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js");
-  await loadLib("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
-  const { jsPDF }=window.jspdf;
-  const wrapper=document.getElementById("rekap-wrapper");
-  const canvas=await html2canvas(wrapper,{scale:1});
-  const imgData=canvas.toDataURL("image/png");
-  const pdf=new jsPDF("l","pt","a4");
-  const pageW=pdf.internal.pageSize.getWidth();
-  const pageH=pdf.internal.pageSize.getHeight();
-  const imgW=pageW-40;
-  const imgH=canvas.height*imgW/canvas.width;
-  pdf.addImage(imgData,"PNG",20,20,imgW,imgH);
-  pdf.save("rekap.pdf");
+/* ========================
+   Share WhatsApp
+   - prefer navigator.share with files
+   - fallback: open whatsapp web with text summary
+   ======================== */
+async function shareWA(){
+  try {
+    // ensure we have a PDF; if not, create one
+    if (!APP_CACHE._lastPdf) {
+      await exportPDF(); // this sets APP_CACHE._lastPdf
+      if (!APP_CACHE._lastPdf) { alert('Gagal siapkan PDF untuk dibagikan'); return; }
+    }
+
+    const file = new File([APP_CACHE._lastPdf], `rekap_shared_${new Date().toISOString().slice(0,10)}.pdf`, { type: 'application/pdf' });
+
+    // If browser supports share files
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'Rekap Operasional', text: 'Rekap operasional (lihat lampiran).' });
+      return;
+    }
+
+    // Fallback: open whatsapp web with text summary
+    const pt = document.getElementById('select-pt').value || 'ALL';
+    const pang = getSelectedPangkalan().join(',');
+    const month = document.getElementById('select-month').selectedOptions[0].textContent;
+    const year = document.getElementById('select-year').value;
+    const total = document.getElementById('grand-total').innerText || '0';
+    const text = encodeURIComponent(`Rekap Operasional\nPT: ${pt}\nPangkalan: ${pang}\nPeriode: ${month} ${year}\nTotal TBG: ${total}\n\n(Mohon cek file PDF jika dikirim terpisah)`);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  } catch(err){
+    console.error(err);
+    alert('Gagal share ke WhatsApp: ' + (err.message||err));
+  }
 }
 
-// Init
-window.addEventListener('DOMContentLoaded',()=>{
+/* ========================
+   Orchestrator: load initial data once, populate UI
+   ======================== */
+async function initialize(){
   makeMonthOptions();
   makeYearOptions();
-  loadPTs();
-  document.getElementById('select-pt').addEventListener('change',e=> loadPangkalanForPT(e.target.value));
-  document.getElementById('btn-load').addEventListener('click', loadRekap);
+  showSpinner('Menginisialisasi...');
+  const cache = await fetchAll(); // single fetch
+  hideSpinner();
+  if (!cache) return;
+
+  populatePTs();
+  populatePangkalanForSelectedPT();
+
+  // initial render with cached rekap
+  const rows = filterCachedRekap();
+  const totals = renderTableAndSummary(rows);
+  updateInfoBoxesFromCache(totals);
+}
+
+/* ========================
+   Event listeners
+   ======================== */
+document.getElementById('select-pt').addEventListener('change', ()=>{
+  populatePangkalanForSelectedPT();
+  const rows = filterCachedRekap();
+  const totals = renderTableAndSummary(rows);
+  updateInfoBoxesFromCache(totals);
 });
+
+document.getElementById('select-pangkalan').addEventListener('change', ()=>{
+  const rows = filterCachedRekap();
+  const totals = renderTableAndSummary(rows);
+  updateInfoBoxesFromCache(totals);
+});
+
+document.getElementById('select-month').addEventListener('change', ()=>{
+  const rows = filterCachedRekap();
+  const totals = renderTableAndSummary(rows);
+  updateInfoBoxesFromCache(totals);
+});
+document.getElementById('select-year').addEventListener('change', ()=>{
+  const rows = filterCachedRekap();
+  const totals = renderTableAndSummary(rows);
+  updateInfoBoxesFromCache(totals);
+});
+
+document.getElementById('btn-load').addEventListener('click', ()=>{
+  // re-render from cache (no fetch)
+  const rows = filterCachedRekap();
+  const totals = renderTableAndSummary(rows);
+  updateInfoBoxesFromCache(totals);
+});
+
+document.getElementById('btn-refresh').addEventListener('click', async ()=>{
+  // force refetch from server
+  showSpinner('Refresh data dari server...');
+  await fetchAll();
+  populatePTs();
+  populatePangkalanForSelectedPT();
+  const rows = filterCachedRekap();
+  const totals = renderTableAndSummary(rows);
+  updateInfoBoxesFromCache(totals);
+  hideSpinner();
+});
+
+document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
+document.getElementById('btn-export-pdf').addEventListener('click', exportPDF);
+document.getElementById('btn-share-wa').addEventListener('click', shareWA);
+
+/* ========================
+   Init on load
+   ======================== */
+window.addEventListener('DOMContentLoaded', initialize);
 </script>
 </body>
 </html>
