@@ -144,7 +144,7 @@ function formatRupiah(val){
   return '';
 }
 
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbx4VuE2KfU6tbis0cdC3DdpJH2cKB5vrMEQW4mlGZyxRHH6Rff_bTQp1O8cI-wq5Tol6w/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzp1-BdkZimKFjh9IX_eAbFOldBZ51nxmWdWiex-nG75aHA0c0iSioTrbarWyUlrqpU3g/exec';
 const SPINNER = document.getElementById('spinner');
 function showSpinner(){ SPINNER.classList.remove('hidden'); }
 function hideSpinner(){ SPINNER.classList.add('hidden'); }
@@ -154,6 +154,13 @@ async function fetchJSON(url){
   catch(e){ console.error(e); alert('Gagal mengambil data'); return null; }
   finally{ hideSpinner(); }
 }
+
+// Global cache
+let cacheData = {
+  pts: [],
+  pangkalan: {},
+  rekap: []
+};
 
 function makeMonthOptions(){
   const sel = document.getElementById('select-month');
@@ -177,22 +184,44 @@ function makeYearOptions(){
   }
 }
 
-async function loadPTs(){
-  const url = `${GAS_URL}?action=getPTs`; 
-  const data = await fetchJSON(url); if(!data) return;
-  const sel = document.getElementById('select-pt');
-  sel.innerHTML = '';
-  data.forEach(pt=>{ const o=document.createElement('option'); o.value=pt; o.textContent=pt; sel.appendChild(o) });
-  sel.dispatchEvent(new Event('change'));
+async function initData(){
+  // fetch sekali semua PT
+  const url = `${GAS_URL}?action=getAllRekap`; // endpoint ini harus gabungan semua data
+  const data = await fetchJSON(url);
+  if(!data) return;
+
+  // simpan ke cache
+  cacheData.pts = data.pts;
+  cacheData.pangkalan = data.pangkalan; // {PT: [list pangkalan]}
+  cacheData.rekap = data.rekap;         // semua data rekap
+
+  // isi select PT
+  const selPT = document.getElementById('select-pt');
+  selPT.innerHTML = '';
+  data.pts.forEach(pt=>{
+    const o=document.createElement('option'); 
+    o.value=pt; o.textContent=pt; 
+    selPT.appendChild(o);
+  });
+
+  // trigger pangkalan default
+  selPT.dispatchEvent(new Event('change'));
 }
 
-async function loadPangkalanForPT(pt){
-  const url = `${GAS_URL}?action=getPangkalan&pt=${encodeURIComponent(pt)}`;
-  const data = await fetchJSON(url); 
+function loadPangkalanForPT(pt){
+  const list = cacheData.pangkalan[pt] || [];
   const sel = document.getElementById('select-pangkalan');
   sel.innerHTML='';
-  const empty = document.createElement('option'); empty.value='ALL'; empty.textContent='-- Semua Pangkalan --'; empty.selected = true; sel.appendChild(empty);
-  (data||[]).forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
+  const empty = document.createElement('option'); 
+  empty.value='ALL'; empty.textContent='-- Semua Pangkalan --'; 
+  empty.selected = true; 
+  sel.appendChild(empty);
+
+  list.forEach(r=>{
+    const o=document.createElement('option'); 
+    o.value=r; o.textContent=r; 
+    sel.appendChild(o); 
+  });
 }
 
 function getSelectedPangkalan(){
@@ -203,37 +232,21 @@ function getSelectedPangkalan(){
   return vals;
 }
 
-// Info DO
-async function updateDOInfo(pt, pangkalanList){
-  const q = Array.isArray(pangkalanList) ? pangkalanList.join(',') : String(pangkalanList||'ALL');
-  const url = `${GAS_URL}?action=getDOInfo&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(q)}`;
-  const d = await fetchJSON(url);
-  if(!d) return;
-  document.getElementById('do-owned').textContent = d.do_owned ?? '-';
-  document.getElementById('price').innerHTML = d.harga_tabung ? formatRupiah(d.harga_tabung) : '-';
-  document.getElementById('harga-bagi-hasil').innerHTML = d.harga_bagi_hasil ? formatRupiah(d.harga_bagi_hasil) : '-';
-  document.getElementById('total-penerimaan').textContent = d.total_penerimaan ?? '-';
-}
-
-async function loadRekap(){
+function loadRekap(){
   const pt = document.getElementById('select-pt').value;
   const pangkalans = getSelectedPangkalan();
   const month = document.getElementById('select-month').value;
   const year = document.getElementById('select-year').value;
 
-  await updateDOInfo(pt, pangkalans);
+  // filter data dari cache
+  let rows = cacheData.rekap.filter(r=>
+    r.pt===pt &&
+    (pangkalans.includes('ALL') || pangkalans.includes(r.pangkalan)) &&
+    r.month==month && r.year==year
+  );
 
-  const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalans.join(','))}&month=${month}&year=${year}`;
-  const data = await fetchJSON(url);
-  if(!data) return;
-
-  const totals = renderTable(data.rows);
-  document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
-  document.getElementById('do-owned').textContent = data.do_owned ?? '-';
-  document.getElementById('price').innerHTML = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
-  document.getElementById('harga-bagi-hasil').innerHTML = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
-  
-  hitungTabungKerjasama({...data, totalBagiHasil: totals.totalBagiHasil});
+  const totals = renderTable(rows);
+  hitungTabungKerjasama({...totals});
 }
 
 function renderTable(rows){
@@ -279,18 +292,19 @@ function renderTable(rows){
 }
 
 function hitungTabungKerjasama(data){
-  const tP = Number(data.total_penerimaan)||0;
-  const dO = Number(data.do_owned)||0;
-  const hrgBagi = Number(data.harga_bagi_hasil)||0;
-  const sudahBayar = Number(data.totalBagiHasil)||0;
-
-  const tabungKerjasama = (tP - dO);
-  const nominalBagiHasil = tabungKerjasama * hrgBagi;
-  const sisa = nominalBagiHasil - sudahBayar;
-
-  document.getElementById('tabung-kerjasama').textContent = tabungKerjasama + ' Tbg';
-  document.getElementById('sisa-bagi-hasil').innerHTML = formatRupiah(sisa);
+  // contoh perhitungan sederhana
+  document.getElementById('tabung-kerjasama').textContent = data.totalPengiriman + ' Tbg';
+  document.getElementById('sisa-bagi-hasil').innerHTML = formatRupiah(data.totalBagiHasil - data.grandTotal);
 }
+
+// Init
+window.addEventListener('DOMContentLoaded',()=>{
+  makeMonthOptions();
+  makeYearOptions();
+  initData();
+  document.getElementById('select-pt').addEventListener('change',e=> loadPangkalanForPT(e.target.value));
+  document.getElementById('btn-load').addEventListener('click', loadRekap);
+});
 
 // Export CSV
 document.getElementById('btn-export-csv').addEventListener('click', ()=>{
@@ -304,15 +318,6 @@ document.getElementById('btn-export-csv').addEventListener('click', ()=>{
   URL.revokeObjectURL(url);
 });
 
-// Lazy load libs
-async function loadLib(url){
-  if(!document.querySelector(`script[src="${url}"]`)){
-    return new Promise(resolve=>{
-      const s=document.createElement("script");
-      s.src=url; s.onload=resolve; document.body.appendChild(s);
-    });
-  }
-}
 
 // Share via WA
 async function shareRekapWA(){
@@ -346,14 +351,6 @@ async function downloadPDF(){
   pdf.save("rekap.pdf");
 }
 
-// Init
-window.addEventListener('DOMContentLoaded',()=>{
-  makeMonthOptions();
-  makeYearOptions();
-  loadPTs();
-  document.getElementById('select-pt').addEventListener('change',e=> loadPangkalanForPT(e.target.value));
-  document.getElementById('btn-load').addEventListener('click', loadRekap);
-});
 </script>
 </body>
 </html>
