@@ -176,17 +176,32 @@ function getSelectedPangkalan(){ const sel=document.getElementById('select-pangk
 /* ========== Filtering & rendering ========== */
 function filterCachedRekap(){
   let rows = (APP_CACHE.rekap && APP_CACHE.rekap.rows) ? APP_CACHE.rekap.rows.slice() : [];
+
   const month = Number(document.getElementById('select-month').value) || (new Date().getMonth()+1);
   const year = Number(document.getElementById('select-year').value) || new Date().getFullYear();
+  const selectedPT = (document.getElementById('select-pt').value || 'ALL').trim().toLowerCase();
+  const selectedPangkalan = getSelectedPangkalan().map(v => v.trim().toLowerCase());
+
   // filter by month/year (tanggal format expected dd/MM/yyyy)
   rows = rows.filter(r=>{
     const t = String(r.tanggal||'').trim();
-    if(!t) return true; // keep empty-date rows
+    if(!t) return true;
     const parts = t.split('/');
     if(parts.length<3) return true;
     const m = Number(parts[1]); const y = Number(parts[2]);
     return (m===month && y===year);
   });
+
+  // filter by PT
+  if(selectedPT !== 'all'){
+    rows = rows.filter(r => (r.pt||'').trim().toLowerCase() === selectedPT);
+  }
+
+  // filter by pangkalan
+  if(selectedPangkalan.length && !selectedPangkalan.includes('all')){
+    rows = rows.filter(r => selectedPangkalan.includes((r.pangkalan||'').trim().toLowerCase()));
+  }
+
   return rows;
 }
 
