@@ -144,10 +144,12 @@ function formatRupiah(val){
   return '';
 }
 
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwi0KJNkOmGpT78eCuvThEgyLkXmnt5LnIOAftKDIPHCmxiqQW5ZwY7xsYoniuSbDr9fg/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxSyvMQrmUBq8mR684lTDRNKcu40iPqYgI665WzYhK3LwXBTdosy7L5KJnjrQVFUR8AKw/exec';
 const SPINNER = document.getElementById('spinner');
 function showSpinner(){ SPINNER.classList.remove('hidden'); }
 function hideSpinner(){ SPINNER.classList.add('hidden'); }
+
+let allData = { rows: [], pts: [], pangkalans: [], harga_tabung:0, harga_bagi_hasil:0, do_owned:0, total_penerimaan:0 };
 
 async function fetchJSON(url){
   try{ showSpinner(); const res = await fetch(url); return await res.json(); }
@@ -177,22 +179,34 @@ function makeYearOptions(){
   }
 }
 
-async function loadPTs(){
-  const url = `${GAS_URL}?action=getPTs`; 
-  const data = await fetchJSON(url); if(!data) return;
-  const sel = document.getElementById('select-pt');
-  sel.innerHTML = '';
-  data.forEach(pt=>{ const o=document.createElement('option'); o.value=pt; o.textContent=pt; sel.appendChild(o) });
-  sel.dispatchEvent(new Event('change'));
+// 🔥 Sekali fetch semua data
+async function loadAllRekap(){
+  const url = `${GAS_URL}?action=getAllRekap`; // backend lu harus siapin action ini
+  const data = await fetchJSON(url);
+  if(!data) return;
+  allData = data;
+
+  // isi pilihan PT
+  const selPT = document.getElementById('select-pt');
+  selPT.innerHTML = '';
+  data.pts.forEach(pt=>{
+    const o=document.createElement('option');
+    o.value=pt; o.textContent=pt;
+    selPT.appendChild(o);
+  });
+  selPT.dispatchEvent(new Event('change'));
 }
 
-async function loadPangkalanForPT(pt){
-  const url = `${GAS_URL}?action=getPangkalan&pt=${encodeURIComponent(pt)}`;
-  const data = await fetchJSON(url); 
+function loadPangkalanForPT(pt){
   const sel = document.getElementById('select-pangkalan');
   sel.innerHTML='';
-  const empty = document.createElement('option'); empty.value='ALL'; empty.textContent='-- Semua Pangkalan --'; empty.selected = true; sel.appendChild(empty);
-  (data||[]).forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
+  const empty = document.createElement('option'); 
+  empty.value='ALL'; empty.textContent='-- Semua Pangkalan --'; empty.selected = true; 
+  sel.appendChild(empty);
+
+  (allData.pangkalans[pt]||[]).forEach(r=>{
+    const o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o);
+  });
 }
 
 function getSelectedPangkalan(){
@@ -203,37 +217,29 @@ function getSelectedPangkalan(){
   return vals;
 }
 
-// Info DO
-async function updateDOInfo(pt, pangkalanList){
-  const q = Array.isArray(pangkalanList) ? pangkalanList.join(',') : String(pangkalanList||'ALL');
-  const url = `${GAS_URL}?action=getDOInfo&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(q)}`;
-  const d = await fetchJSON(url);
-  if(!d) return;
-  document.getElementById('do-owned').textContent = d.do_owned ?? '-';
-  document.getElementById('price').innerHTML = d.harga_tabung ? formatRupiah(d.harga_tabung) : '-';
-  document.getElementById('harga-bagi-hasil').innerHTML = d.harga_bagi_hasil ? formatRupiah(d.harga_bagi_hasil) : '-';
-  document.getElementById('total-penerimaan').textContent = d.total_penerimaan ?? '-';
-}
-
-async function loadRekap(){
+function filterRekap(){
   const pt = document.getElementById('select-pt').value;
   const pangkalans = getSelectedPangkalan();
-  const month = document.getElementById('select-month').value;
-  const year = document.getElementById('select-year').value;
+  const month = Number(document.getElementById('select-month').value);
+  const year = Number(document.getElementById('select-year').value);
 
-  await updateDOInfo(pt, pangkalans);
+  // filter data lokal
+  let rows = allData.rows.filter(r=> r.pt===pt);
+  if(!pangkalans.includes('ALL')) rows = rows.filter(r=> pangkalans.includes(r.pangkalan));
+  rows = rows.filter(r=>{
+    const d = new Date(r.tanggal);
+    return d.getMonth()+1===month && d.getFullYear()===year;
+  });
 
-  const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalans.join(','))}&month=${month}&year=${year}`;
-  const data = await fetchJSON(url);
-  if(!data) return;
+  const totals = renderTable(rows);
 
-  const totals = renderTable(data.rows);
-  document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
-  document.getElementById('do-owned').textContent = data.do_owned ?? '-';
-  document.getElementById('price').innerHTML = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
-  document.getElementById('harga-bagi-hasil').innerHTML = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
+  // update info box
+  document.getElementById('do-owned').textContent = allData.do_owned ?? '-';
+  document.getElementById('price').innerHTML = allData.harga_tabung ? formatRupiah(allData.harga_tabung) : '-';
+  document.getElementById('harga-bagi-hasil').innerHTML = allData.harga_bagi_hasil ? formatRupiah(allData.harga_bagi_hasil) : '-';
+  document.getElementById('total-penerimaan').textContent = allData.total_penerimaan ?? '-';
   
-  hitungTabungKerjasama({...data, totalBagiHasil: totals.totalBagiHasil});
+  hitungTabungKerjasama({...allData, totalBagiHasil: totals.totalBagiHasil});
 }
 
 function renderTable(rows){
@@ -292,68 +298,14 @@ function hitungTabungKerjasama(data){
   document.getElementById('sisa-bagi-hasil').innerHTML = formatRupiah(sisa);
 }
 
-// Export CSV
-document.getElementById('btn-export-csv').addEventListener('click', ()=>{
-  const rows = Array.from(document.querySelectorAll('#rekap-table tr')).map(tr=> 
-    Array.from(tr.querySelectorAll('th,td')).map(td=> td.innerText.replace(/\n/g,' '))
-  );
-  let csv = rows.map(r=>r.join(',')).join('\n');
-  let blob = new Blob([csv], {type:'text/csv'});
-  let url = URL.createObjectURL(blob);
-  let a=document.createElement('a'); a.href=url; a.download='rekap.csv'; a.click();
-  URL.revokeObjectURL(url);
-});
-
-// Lazy load libs
-async function loadLib(url){
-  if(!document.querySelector(`script[src="${url}"]`)){
-    return new Promise(resolve=>{
-      const s=document.createElement("script");
-      s.src=url; s.onload=resolve; document.body.appendChild(s);
-    });
-  }
-}
-
-// Share via WA
-async function shareRekapWA(){
-  await loadLib("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js");
-  const wrapper=document.getElementById("rekap-wrapper");
-  const canvas=await html2canvas(wrapper,{scale:1});
-  const dataUrl=canvas.toDataURL("image/png");
-  const blob=await (await fetch(dataUrl)).blob();
-  const file=new File([blob],"rekap.png",{type:"image/png"});
-  if(navigator.canShare && navigator.canShare({files:[file]})){
-    await navigator.share({files:[file],title:"Rekap Operasional"});
-  } else {
-    alert("Browser tidak mendukung Web Share API untuk file.");
-  }
-}
-
-// Download PDF
-async function downloadPDF(){
-  await loadLib("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js");
-  await loadLib("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
-  const { jsPDF }=window.jspdf;
-  const wrapper=document.getElementById("rekap-wrapper");
-  const canvas=await html2canvas(wrapper,{scale:1});
-  const imgData=canvas.toDataURL("image/png");
-  const pdf=new jsPDF("l","pt","a4");
-  const pageW=pdf.internal.pageSize.getWidth();
-  const pageH=pdf.internal.pageSize.getHeight();
-  const imgW=pageW-40;
-  const imgH=canvas.height*imgW/canvas.width;
-  pdf.addImage(imgData,"PNG",20,20,imgW,imgH);
-  pdf.save("rekap.pdf");
-}
-
 // Init
 window.addEventListener('DOMContentLoaded',()=>{
   makeMonthOptions();
   makeYearOptions();
-  loadPTs();
+  loadAllRekap();
+
   document.getElementById('select-pt').addEventListener('change',e=> loadPangkalanForPT(e.target.value));
-  document.getElementById('btn-load').addEventListener('click', loadRekap);
+  document.getElementById('btn-load').addEventListener('click', filterRekap);
 });
 </script>
-</body>
-</html>
+
