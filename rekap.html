@@ -1,136 +1,3 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Rekap Operasional — i-Shipping</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* Striping tabel biar ringan */
-    #rekap-table tbody tr:nth-child(even){ background:#f9fafb; }
-    #rekap-table tbody tr:nth-child(odd){ background:#fff; }
-    #rekap-table th, #rekap-table td { white-space:nowrap; }
-  </style>
-</head>
-<body class="bg-blue-50 min-h-screen p-4 font-sans">
-  <div class="max-w-5xl mx-auto">
-
-    <!-- Header -->
-    <header class="flex items-center justify-between mb-4 bg-blue-200 p-3 rounded-lg shadow">
-      <h1 class="text-xl font-bold text-blue-900">📊 Rekap Operasional</h1>
-      <div class="flex items-center gap-2">
-        <button onclick="goDashboard()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg shadow hover:bg-blue-700">🏠 Dashboard</button>
-        <div id="spinner" class="hidden fixed inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center z-50">
-          <svg class="animate-spin h-12 w-12 text-blue-400 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-          </svg>
-          <span class="text-white text-lg font-semibold">Loading...</span>
-        </div>
-      </div>
-    </header>
-
-    <!-- Filter Section -->
-    <section class="bg-white p-4 rounded-xl shadow mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-blue-900">Nama PT</label>
-          <select id="select-pt" class="mt-1 block w-full rounded-md border-gray-300"></select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-blue-900">Nama Pangkalan</label>
-          <select id="select-pangkalan" multiple size="5" class="mt-1 block w-full rounded-md border-gray-300"></select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-blue-900">Bulan</label>
-          <select id="select-month" class="mt-1 block w-full rounded-md border-gray-300"></select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-blue-900">Tahun</label>
-          <select id="select-year" class="mt-1 block w-full rounded-md border-gray-300"></select>
-        </div>
-      </div>
-
-      <!-- Info Box -->
-      <div class="mt-4 grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
-        <div class="bg-blue-100 p-3 rounded-lg shadow">
-          <div class="text-xs text-gray-600">DO yang dimiliki</div>
-          <div id="do-owned" class="text-lg font-semibold">-</div>
-        </div>
-        <div class="bg-blue-100 p-3 rounded-lg shadow">
-          <div class="text-xs text-gray-600">Harga Tabung</div>
-          <div id="price" class="text-lg font-semibold">-</div>
-        </div>
-        <div class="bg-blue-100 p-3 rounded-lg shadow">
-          <div class="text-xs text-gray-600">Harga Bagi Hasil</div>
-          <div id="harga-bagi-hasil" class="text-lg font-semibold">-</div>
-        </div>
-        <div class="bg-blue-100 p-3 rounded-lg shadow">
-          <div class="text-xs text-gray-600">Total Penerimaan</div>
-          <div id="total-penerimaan" class="text-lg font-semibold">-</div>
-        </div>
-        <div class="bg-blue-100 p-3 rounded-lg shadow">
-          <div class="text-xs text-gray-600">Tabung Kerjasama</div>
-          <div id="tabung-kerjasama" class="text-lg font-semibold">-</div>
-        </div>
-        <div class="bg-blue-100 p-3 rounded-lg shadow">
-          <div class="text-xs text-gray-600">Sisa Bagi Hasil</div>
-          <div id="sisa-bagi-hasil" class="text-lg font-semibold">-</div>
-        </div>
-      </div>
-
-      <div class="mt-4 flex flex-wrap gap-2">
-        <button id="btn-load" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">🔎 Tampilkan Rekap</button>
-        <button id="btn-export-csv" class="px-4 py-2 border border-blue-400 text-blue-700 rounded-lg shadow">📥 Export CSV</button>
-        
-        <!-- Dropdown Bagikan -->
-        <div class="relative inline-block text-left">
-          <button onclick="toggleMenu()" class="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700">
-            📤 Bagikan
-          </button>
-          <div id="share-menu" class="hidden absolute mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
-            <button onclick="shareRekapWA()" class="w-full text-left px-4 py-2 hover:bg-gray-100">📱 WhatsApp</button>
-            <button onclick="downloadPDF()" class="w-full text-left px-4 py-2 hover:bg-gray-100">📄 Download PDF</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Table Wrapper -->
-    <section id="rekap-wrapper" class="bg-white p-4 rounded-xl shadow">
-      <div class="overflow-auto">
-        <table id="rekap-table" class="min-w-full border border-gray-300">
-          <thead class="bg-blue-200 text-blue-900 font-bold">
-            <tr>
-              <th class="px-3 py-2 border">Tanggal</th>
-              <th class="px-3 py-2 border">Laporan Driver</th>
-              <th class="px-3 py-2 border">Retur</th>
-              <th class="px-3 py-2 border">Dikirim</th>
-              <th class="px-3 py-2 border">SA Pangkalan</th>
-              <th class="px-3 py-2 border">Pengiriman</th>
-              <th class="px-3 py-2 border">Nominal Dibayar</th>
-              <th class="px-3 py-2 border">Brimola Oleh</th>
-              <th class="px-3 py-2 border">Bayar Brimola</th>
-              <th class="px-3 py-2 border">Bukti TF</th>
-              <th class="px-3 py-2 border">Bagi Hasil</th>
-              <th class="px-3 py-2 border text-blue-900">Total TBG</th>
-            </tr>
-          </thead>
-          <tbody id="rekap-body" class="bg-white"></tbody>
-          <tfoot class="bg-blue-100 font-semibold">
-            <tr>
-              <td colspan="5" class="px-3 py-2 text-right border">TOTAL</td>
-              <td id="total-pengiriman" class="px-3 py-2 border text-right whitespace-nowrap">0</td>
-              <td></td><td></td><td></td><td></td>
-              <td id="total-bagi-hasil" class="px-3 py-2 border text-right whitespace-nowrap">0</td>
-              <td id="grand-total" class="px-3 py-2 border text-right whitespace-nowrap text-blue-800">0</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </section>
-  </div>
-
 <script>
 function toggleMenu(){ document.getElementById("share-menu").classList.toggle("hidden"); }
 function goDashboard(){ window.location.href="dashboard.html"; }
@@ -144,12 +11,18 @@ function formatRupiah(val){
   return '';
 }
 
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxrORv_LIt7nhN1gwmMpcIifd6XoFvQPrkvCW21NZMiypJihzYNm_QIGfq5VahRg_T6Ug/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxlbV03f3Rap-egwwdYYObqGju0pYNXsRa6tKisBpxurrvZkAsBMORdHKb8yQPPXRIKlw/exec';
 const SPINNER = document.getElementById('spinner');
 function showSpinner(){ SPINNER.classList.remove('hidden'); }
 function hideSpinner(){ SPINNER.classList.add('hidden'); }
 
-let allData = { rows: [], pts: [], pangkalans: [], harga_tabung:0, harga_bagi_hasil:0, do_owned:0, total_penerimaan:0 };
+// === CACHE GLOBAL ===
+const CACHE = {
+  pts: null,
+  pangkalan: {}, // key = PT, value = array pangkalan
+  rekap: {},     // key = `${pt}_${bulan}_${tahun}`, value = data rekap
+  doinfo: {}     // key = `${pt}_${pangkalan}`, value = info DO
+};
 
 async function fetchJSON(url){
   try{ showSpinner(); const res = await fetch(url); return await res.json(); }
@@ -179,34 +52,35 @@ function makeYearOptions(){
   }
 }
 
-// 🔥 Sekali fetch semua data
-async function loadAllRekap(){
-  const url = `${GAS_URL}?action=getAllRekap`; // backend lu harus siapin action ini
-  const data = await fetchJSON(url);
+async function loadPTs(){
+  if(CACHE.pts){ renderPTs(CACHE.pts); return; }
+  const url = `${GAS_URL}?action=getPTs`; 
+  const data = await fetchJSON(url); 
   if(!data) return;
-  allData = data;
-
-  // isi pilihan PT
-  const selPT = document.getElementById('select-pt');
-  selPT.innerHTML = '';
-  data.pts.forEach(pt=>{
-    const o=document.createElement('option');
-    o.value=pt; o.textContent=pt;
-    selPT.appendChild(o);
-  });
-  selPT.dispatchEvent(new Event('change'));
+  CACHE.pts = data;
+  renderPTs(data);
 }
 
-function loadPangkalanForPT(pt){
+function renderPTs(data){
+  const sel = document.getElementById('select-pt');
+  sel.innerHTML = '';
+  data.forEach(pt=>{ const o=document.createElement('option'); o.value=pt; o.textContent=pt; sel.appendChild(o) });
+  sel.dispatchEvent(new Event('change'));
+}
+
+async function loadPangkalanForPT(pt){
+  if(CACHE.pangkalan[pt]){ renderPangkalan(CACHE.pangkalan[pt]); return; }
+  const url = `${GAS_URL}?action=getPangkalan&pt=${encodeURIComponent(pt)}`;
+  const data = await fetchJSON(url); 
+  CACHE.pangkalan[pt] = data || [];
+  renderPangkalan(CACHE.pangkalan[pt]);
+}
+
+function renderPangkalan(data){
   const sel = document.getElementById('select-pangkalan');
   sel.innerHTML='';
-  const empty = document.createElement('option'); 
-  empty.value='ALL'; empty.textContent='-- Semua Pangkalan --'; empty.selected = true; 
-  sel.appendChild(empty);
-
-  (allData.pangkalans[pt]||[]).forEach(r=>{
-    const o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o);
-  });
+  const empty = document.createElement('option'); empty.value='ALL'; empty.textContent='-- Semua Pangkalan --'; empty.selected = true; sel.appendChild(empty);
+  (data||[]).forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
 }
 
 function getSelectedPangkalan(){
@@ -217,95 +91,51 @@ function getSelectedPangkalan(){
   return vals;
 }
 
-function filterRekap(){
+// Info DO
+async function updateDOInfo(pt, pangkalanList){
+  const key = `${pt}_${pangkalanList.join(',')}`;
+  if(CACHE.doinfo[key]){ renderDOInfo(CACHE.doinfo[key]); return; }
+
+  const q = pangkalanList.join(',');
+  const url = `${GAS_URL}?action=getDOInfo&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(q)}`;
+  const d = await fetchJSON(url);
+  if(!d) return;
+  CACHE.doinfo[key] = d;
+  renderDOInfo(d);
+}
+function renderDOInfo(d){
+  document.getElementById('do-owned').textContent = d.do_owned ?? '-';
+  document.getElementById('price').innerHTML = d.harga_tabung ? formatRupiah(d.harga_tabung) : '-';
+  document.getElementById('harga-bagi-hasil').innerHTML = d.harga_bagi_hasil ? formatRupiah(d.harga_bagi_hasil) : '-';
+  document.getElementById('total-penerimaan').textContent = d.total_penerimaan ?? '-';
+}
+
+async function loadRekap(){
   const pt = document.getElementById('select-pt').value;
   const pangkalans = getSelectedPangkalan();
-  const month = Number(document.getElementById('select-month').value);
-  const year = Number(document.getElementById('select-year').value);
+  const month = document.getElementById('select-month').value;
+  const year = document.getElementById('select-year').value;
+  const key = `${pt}_${month}_${year}_${pangkalans.join(',')}`;
 
-  // filter data lokal
-  let rows = allData.rows.filter(r=> r.pt===pt);
-  if(!pangkalans.includes('ALL')) rows = rows.filter(r=> pangkalans.includes(r.pangkalan));
-  rows = rows.filter(r=>{
-    const d = new Date(r.tanggal);
-    return d.getMonth()+1===month && d.getFullYear()===year;
-  });
+  await updateDOInfo(pt, pangkalans);
 
-  const totals = renderTable(rows);
+  if(CACHE.rekap[key]){
+    renderRekap(CACHE.rekap[key]);
+    return;
+  }
 
-  // update info box
-  document.getElementById('do-owned').textContent = allData.do_owned ?? '-';
-  document.getElementById('price').innerHTML = allData.harga_tabung ? formatRupiah(allData.harga_tabung) : '-';
-  document.getElementById('harga-bagi-hasil').innerHTML = allData.harga_bagi_hasil ? formatRupiah(allData.harga_bagi_hasil) : '-';
-  document.getElementById('total-penerimaan').textContent = allData.total_penerimaan ?? '-';
-  
-  hitungTabungKerjasama({...allData, totalBagiHasil: totals.totalBagiHasil});
+  const url = `${GAS_URL}?action=getRekap&pt=${encodeURIComponent(pt)}&pangkalan=${encodeURIComponent(pangkalans.join(','))}&month=${month}&year=${year}`;
+  const data = await fetchJSON(url);
+  if(!data) return;
+  CACHE.rekap[key] = data;
+  renderRekap(data);
 }
 
-function renderTable(rows){
-  const tbody = document.getElementById('rekap-body');
-  tbody.innerHTML='';
-  let grandTotal = 0, totalPengiriman=0, totalBagiHasil=0;
-
-  rows.forEach(r=>{
-    const bayarBrimola = Number(r.bayar_lewat_brimola) || 0;
-    const nominalHarusDibayar = Number(r.nominal_harus_dibayar) || 0;
-    const buktiTransfer = Number(r.bukti_transfer) || 0;
-    const pengiriman = Number(r.pengiriman) || 0;
-    const bagiHasil = Number(r.bagi_hasil) || 0;
-    const totalTBG = bayarBrimola - nominalHarusDibayar + buktiTransfer;
-
-    grandTotal += totalTBG;
-    totalPengiriman += pengiriman;
-    totalBagiHasil += bagiHasil;
-
-    const tr = document.createElement('tr'); 
-    tr.innerHTML = `
-      <td class="px-3 py-2 text-sm">${r.tanggal}</td>
-      <td class="px-3 py-2 text-sm">${r.laporan_pengiriman}</td>
-      <td class="px-3 py-2 text-sm">${r.retur}</td>
-      <td class="px-3 py-2 text-sm">${r.dikirim}</td>
-      <td class="px-3 py-2 text-sm">${r.master_sa}</td>
-      <td class="px-3 py-2 text-sm text-right">${pengiriman}</td>
-      <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.nominal_harus_dibayar)}</td>
-      <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
-      <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bayar_lewat_brimola)}</td>
-      <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bukti_transfer)}</td>
-      <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bagi_hasil)}</td>
-      <td class="px-3 py-2 text-sm text-right text-blue-600 font-semibold">${formatRupiah(totalTBG)}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  document.getElementById('total-pengiriman').textContent = totalPengiriman;
-  document.getElementById('total-bagi-hasil').innerHTML = formatRupiah(totalBagiHasil);
-  document.getElementById('grand-total').innerHTML = formatRupiah(grandTotal);
-
-  return { totalPengiriman, totalBagiHasil, grandTotal };
+function renderRekap(data){
+  const totals = renderTable(data.rows);
+  document.getElementById('total-penerimaan').textContent = data.total_penerimaan ?? '-';
+  document.getElementById('do-owned').textContent = data.do_owned ?? '-';
+  document.getElementById('price').innerHTML = data.harga_tabung ? formatRupiah(data.harga_tabung) : '-';
+  document.getElementById('harga-bagi-hasil').innerHTML = data.harga_bagi_hasil ? formatRupiah(data.harga_bagi_hasil) : '-';
+  hitungTabungKerjasama({...data, totalBagiHasil: totals.totalBagiHasil});
 }
-
-function hitungTabungKerjasama(data){
-  const tP = Number(data.total_penerimaan)||0;
-  const dO = Number(data.do_owned)||0;
-  const hrgBagi = Number(data.harga_bagi_hasil)||0;
-  const sudahBayar = Number(data.totalBagiHasil)||0;
-
-  const tabungKerjasama = (tP - dO);
-  const nominalBagiHasil = tabungKerjasama * hrgBagi;
-  const sisa = nominalBagiHasil - sudahBayar;
-
-  document.getElementById('tabung-kerjasama').textContent = tabungKerjasama + ' Tbg';
-  document.getElementById('sisa-bagi-hasil').innerHTML = formatRupiah(sisa);
-}
-
-// Init
-window.addEventListener('DOMContentLoaded',()=>{
-  makeMonthOptions();
-  makeYearOptions();
-  loadAllRekap();
-
-  document.getElementById('select-pt').addEventListener('change',e=> loadPangkalanForPT(e.target.value));
-  document.getElementById('btn-load').addEventListener('click', filterRekap);
-});
-</script>
-
