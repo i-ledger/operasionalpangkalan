@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rekap Semua Pangkalan — i-Shipping</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    #rekap-table tbody tr:nth-child(even){ background:#f9fafb; }
+    #rekap-table tbody tr:nth-child(odd){ background:#fff; }
+    #rekap-table th, #rekap-table td { white-space:nowrap; }
+  </style>
+</head>
+<body class="bg-blue-50 min-h-screen p-4 font-sans">
+<div class="max-w-6xl mx-auto">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between mb-4 bg-blue-200 p-3 rounded-lg shadow">
+    <h1 class="text-xl font-bold text-blue-900">📊 Rekap Semua Pangkalan</h1>
+    <button onclick="goDashboard()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg shadow hover:bg-blue-700">🏠 Dashboard</button>
+  </header>
+
+  <!-- Filter -->
+  <section class="bg-white p-4 rounded-xl shadow mb-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-blue-900">Bulan</label>
+        <select id="select-month" class="mt-1 block w-full rounded-md border-gray-300"></select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-blue-900">Tahun</label>
+        <select id="select-year" class="mt-1 block w-full rounded-md border-gray-300"></select>
+      </div>
+    </div>
+    <div class="mt-4 flex gap-2">
+      <button id="btn-load" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">🔎 Tampilkan Rekap</button>
+      <button id="btn-export-csv" class="px-4 py-2 border border-blue-400 text-blue-700 rounded-lg shadow">📥 Export CSV</button>
+    </div>
+  </section>
+
+  <!-- Table -->
+  <section class="bg-white p-4 rounded-xl shadow" id="rekap-wrapper">
+    <div class="overflow-auto">
+      <table id="rekap-table" class="min-w-full border border-gray-300">
+        <thead class="bg-blue-200 text-blue-900 font-bold">
+          <tr>
+            <th class="px-3 py-2 border">Nama Pangkalan</th>
+            <th class="px-3 py-2 border">Nama PT</th>
+            <th class="px-3 py-2 border">Penerimaan Bulan Ini</th>
+            <th class="px-3 py-2 border">Total Pembayaran Brimola</th>
+            <th class="px-3 py-2 border">Total Pembayaran di Luar Brimola</th>
+            <th class="px-3 py-2 border">Total Pembayaran Bagi Hasil</th>
+          </tr>
+        </thead>
+        <tbody id="rekap-body"></tbody>
+        <tfoot class="bg-blue-100 font-semibold">
+          <tr>
+            <td colspan="2" class="px-3 py-2 text-right border">TOTAL</td>
+            <td id="sum-penerimaan" class="px-3 py-2 border text-right">0</td>
+            <td id="sum-brimola" class="px-3 py-2 border text-right">0</td>
+            <td id="sum-luar" class="px-3 py-2 border text-right">0</td>
+            <td id="sum-bagihasil" class="px-3 py-2 border text-right">0</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+function goDashboard(){ window.location.href="dashboard.html"; }
+function formatRupiah(val){
+  if(!val || Number(val)===0) return '-';
+  return 'Rp ' + Number(val).toLocaleString('id-ID');
+}
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxlbV03f3Rap-egwwdYYObqGju0pYNXsRa6tKisBpxurrvZkAsBMORdHKb8yQPPXRIKlw/exec";
+
+function makeMonthOptions(){
+  const sel=document.getElementById("select-month");
+  const months=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const now=new Date();
+  months.forEach((m,i)=>{
+    const opt=document.createElement("option");
+    opt.value=i+1; opt.textContent=m;
+    if(i===now.getMonth()) opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+function makeYearOptions(){
+  const sel=document.getElementById("select-year");
+  const yearNow=new Date().getFullYear();
+  for(let y=yearNow-2;y<=yearNow+1;y++){
+    const opt=document.createElement("option");
+    opt.value=y; opt.textContent=y;
+    if(y===yearNow) opt.selected=true;
+    sel.appendChild(opt);
+  }
+}
+
+async function fetchJSON(url){
+  try{ const res=await fetch(url); return await res.json(); }
+  catch(e){ console.error(e); alert("Gagal ambil data"); return null; }
+}
+
+async function loadRekapAll(){
+  const month=document.getElementById("select-month").value;
+  const year=document.getElementById("select-year").value;
+  const url=`${GAS_URL}?action=getRekapSemuaPangkalan&month=${month}&year=${year}`;
+  const data=await fetchJSON(url);
+  if(!data) return;
+  renderTable(data.rows||[]);
+}
+
+function renderTable(rows){
+  const tbody=document.getElementById("rekap-body");
+  tbody.innerHTML="";
+  let sumPenerimaan=0, sumBrimola=0, sumLuar=0, sumBagiHasil=0;
+
+  rows.forEach(r=>{
+    sumPenerimaan+=Number(r.penerimaan)||0;
+    sumBrimola+=Number(r.total_brimola)||0;
+    sumLuar+=Number(r.total_luar_brimola)||0;
+    sumBagiHasil+=Number(r.total_bagi_hasil)||0;
+
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td class="px-3 py-2 border">${r.nama_pangkalan}</td>
+      <td class="px-3 py-2 border">${r.nama_pt}</td>
+      <td class="px-3 py-2 border text-right">${formatRupiah(r.penerimaan)}</td>
+      <td class="px-3 py-2 border text-right">${formatRupiah(r.total_brimola)}</td>
+      <td class="px-3 py-2 border text-right">${formatRupiah(r.total_luar_brimola)}</td>
+      <td class="px-3 py-2 border text-right">${formatRupiah(r.total_bagi_hasil)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById("sum-penerimaan").textContent=formatRupiah(sumPenerimaan);
+  document.getElementById("sum-brimola").textContent=formatRupiah(sumBrimola);
+  document.getElementById("sum-luar").textContent=formatRupiah(sumLuar);
+  document.getElementById("sum-bagihasil").textContent=formatRupiah(sumBagiHasil);
+}
+
+document.getElementById("btn-load").addEventListener("click", loadRekapAll);
+document.getElementById("btn-export-csv").addEventListener("click", ()=>{
+  const rows=Array.from(document.querySelectorAll("#rekap-table tr")).map(tr=>
+    Array.from(tr.querySelectorAll("th,td")).map(td=> `"${td.innerText}"`)
+  );
+  const csv=rows.map(r=>r.join(",")).join("\n");
+  const blob=new Blob([csv],{type:"text/csv"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download="rekap_semua_pangkalan.csv"; a.click();
+  URL.revokeObjectURL(url);
+});
+
+// init
+window.addEventListener("DOMContentLoaded",()=>{
+  makeMonthOptions();
+  makeYearOptions();
+  loadRekapAll();
+});
+</script>
+</body>
+</html>
