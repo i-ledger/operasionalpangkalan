@@ -52,13 +52,13 @@
           <thead class="bg-blue-600 text-white">
             <tr>
               <th class="p-3">Timestamp</th>
-              <th class="p-3">Nama</th>
-              <th class="p-3">Uraian</th>
-              <th class="p-3">Pos</th>
+              <th class="p-3">Pembayaran</th>
+              <th class="p-3">Nama Pangkalan</th>
+              <th class="p-3">Nama PT</th>
               <th class="p-3">Nominal</th>
               <th class="p-3">Foto Nota</th>
               <th class="p-3">Pembayaran</th>
-              <th class="p-3">Bukti Transfer</th>
+              <th class="p-3">Bukti Serah Terima</th>
               <th class="p-3">Aksi</th>
             </tr>
           </thead>
@@ -229,7 +229,7 @@ const fotoNota = item.foto && item.foto.includes('https://')
 
 const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https://') 
   ? `<a href="${item.buktitransfer}" target="_blank"><img src="https://drive.google.com/thumbnail?id=${extractDriveId(item.buktitransfer)}&sz=w200" alt="Bukti Transfer" /></a>` 
-  : '<span class="error">Bukti Transfer tidak ada</span>';
+  : '<span class="error">Pembayaran Via TF</span>';
 
         const row = document.createElement("tr");
         row.innerHTML = `
