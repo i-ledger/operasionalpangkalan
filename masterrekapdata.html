@@ -69,46 +69,48 @@
     </main>
   </div>
 
-  <!-- Modal Edit -->
-  <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
-      <h3 class="text-lg font-semibold mb-4">Edit Transaksi</h3>
-      <form id="editForm" class="space-y-3">
-        <input type="hidden" id="editRow" />
-         <label class="block">
-          <span class="text-sm">Timestamp</span>
-          <input type="text" id="editTimestamp" class="w-full border rounded px-2 py-1" />
-        </label>
-        <label class="block">
-          <span class="text-sm">Nama</span>
-          <input type="text" id="editNama" class="w-full border rounded px-2 py-1" />
-        </label>
-        <label class="block">
-          <span class="text-sm">Uraian</span>
-          <input type="text" id="editUraian" class="w-full border rounded px-2 py-1" />
-        </label>
-        <label class="block">
-          <span class="text-sm">Pos</span>
-          <input type="text" id="editPos" class="w-full border rounded px-2 py-1" />
-        </label>
-        <label class="block">
-          <span class="text-sm">Nominal</span>
-          <input type="number" id="editNominal" class="w-full border rounded px-2 py-1" />
-        </label>
-        <label class="block">
-          <span class="text-sm">Pembayaran</span>
-          <select id="editPembayaran" class="w-full border rounded px-2 py-1">
-            <option value="Cash">Cash</option>
-            <option value="Transfer">Transfer</option>
-          </select>
-        </label>
-        <div class="flex justify-end gap-2 mt-4">
-          <button type="button" onclick="closeEditModal()" class="px-4 py-2 rounded bg-gray-400 hover:bg-gray-500 text-white">Batal</button>
-          <button type="submit" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white">Simpan</button>
-        </div>
-      </form>
-    </div>
+<!-- Modal Edit -->
+<div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+    <h3 class="text-lg font-semibold mb-4">Edit Transaksi</h3>
+    <form id="editForm" class="space-y-3">
+      <input type="hidden" id="editRow" />
+       <label class="block">
+        <span class="text-sm">Timestamp</span>
+        <!-- ✅ Format text manual -->
+        <input type="text" id="editTimestamp" placeholder="dd/MM/yyyy HH:mm:ss" class="w-full border rounded px-2 py-1" />
+      </label>
+      <label class="block">
+        <span class="text-sm">Nama</span>
+        <input type="text" id="editNama" class="w-full border rounded px-2 py-1" />
+      </label>
+      <label class="block">
+        <span class="text-sm">Uraian</span>
+        <input type="text" id="editUraian" class="w-full border rounded px-2 py-1" />
+      </label>
+      <label class="block">
+        <span class="text-sm">Pos</span>
+        <input type="text" id="editPos" class="w-full border rounded px-2 py-1" />
+      </label>
+      <label class="block">
+        <span class="text-sm">Nominal</span>
+        <input type="number" id="editNominal" class="w-full border rounded px-2 py-1" />
+      </label>
+      <label class="block">
+        <span class="text-sm">Pembayaran</span>
+        <select id="editPembayaran" class="w-full border rounded px-2 py-1">
+          <option value="Cash">Cash</option>
+          <option value="Transfer">Transfer</option>
+        </select>
+      </label>
+      <div class="flex justify-end gap-2 mt-4">
+        <button type="button" onclick="closeEditModal()" class="px-4 py-2 rounded bg-gray-400 hover:bg-gray-500 text-white">Batal</button>
+        <button type="submit" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white">Simpan</button>
+      </div>
+    </form>
   </div>
+</div>
+
 
   <script src="config.js"></script>
   <style>
@@ -302,17 +304,23 @@ const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https:/
       const mi = String(d.getMinutes()).padStart(2, '0');
       return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
     }
-    // ✅ Modal Edit
-    function openEditModal(item, index) {
-      selectedItem = { ...item, row: index + 2 }; // row 1 = header
-      document.getElementById("editRow").value = selectedItem.row;
-      document.getElementById("editTimestamp").value =  toDateTimeLocalInput(item.timestamp);
-      document.getElementById("editNama").value = item.nama || "";
-      document.getElementById("editUraian").value = item.uraian || "";
-      document.getElementById("editPos").value = item.pos || "";
-      document.getElementById("editNominal").value = item.nominal || "";
-      document.getElementById("editPembayaran").value = item.pembayaran || "Cash";
-      document.getElementById("editModal").classList.remove("hidden");
+function formatTanggalIndonesia(datetimeStr) {
+  const date = new Date(datetimeStr);
+  if (isNaN(date)) return datetimeStr;
+  const pad = n => n.toString().padStart(2, '0');
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}    
+// ✅ Saat buka modal
+function openEditModal(item, index) {
+  selectedItem = { ...item, row: index + 2 };
+  document.getElementById("editRow").value = selectedItem.row;
+  document.getElementById("editTimestamp").value = formatTanggalIndonesia(item.timestamp);
+  document.getElementById("editNama").value = item.nama || "";
+  document.getElementById("editUraian").value = item.uraian || "";
+  document.getElementById("editPos").value = item.pos || "";
+  document.getElementById("editNominal").value = item.nominal || "";
+  document.getElementById("editPembayaran").value = item.pembayaran || "Cash";
+  document.getElementById("editModal").classList.remove("hidden");
     }
 
     function closeEditModal() {
