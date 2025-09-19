@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stok Gudang per Pangkalan — i-Shipping</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #e5e7eb; padding: 6px 8px; font-size: 12px; }
+    th { background: #f3f4f6; position: sticky; top: 0; z-index: 2; }
+    .fixed-left { position: sticky; left: 0; background: #fff; z-index: 3; }
+    .nowrap { white-space: nowrap; }
+    .small { font-size: 11px; }
+  </style>
+</head>
+<body class="p-4 bg-gray-50 text-gray-800">
+  <div class="max-w-full mx-auto">
+    <h1 class="text-2xl font-semibold mb-3">Stok Gudang per Pangkalan — i-Shipping</h1>
+
+    <div class="flex gap-2 items-end mb-4">
+      <div>
+        <label class="block text-sm">Pilih PT</label>
+        <select id="ptSelect" class="border p-2 rounded"></select>
+      </div>
+      <div>
+        <label class="block text-sm">Bulan</label>
+        <select id="monthSelect" class="border p-2 rounded"></select>
+      </div>
+      <div>
+        <label class="block text-sm">Tahun</label>
+        <select id="yearSelect" class="border p-2 rounded"></select>
+      </div>
+      <div>
+        <button id="loadBtn" class="bg-blue-600 text-white px-4 py-2 rounded">Load</button>
+      </div>
+      <div id="status" class="ml-4 text-sm text-gray-600"></div>
+    </div>
+
+    <div id="controls" class="mb-3 text-sm text-gray-700">
+      <label><input type="checkbox" id="showCumulative" checked/> Tampilkan stok kumulatif s/d hari (default ON)</label>
+    </div>
+
+    <div id="tableWrap" class="overflow-auto border rounded bg-white shadow-sm">
+      <!-- table akan disisipkan di sini -->
+    </div>
+
+    <div id="note" class="mt-3 text-sm text-gray-600">
+      Catatan: script ini akan mencoba mem-fetch data dari endpoint Apps Script. Jika backend belum menyediakan `action=getMasterSA` atau `action=getIShipingRaw`, maka script akan menunjukkan peringatan dan menampilkan fallback (rekap total harian saja). Jika lo mau, gua bisa bantu tambahin handler di Apps Script supaya frontend ini bisa langsung jalan tanpa perubahan lebih lanjut.
+    </div>
+  </div>
+
+  <script>
+    // CONFIG: ganti dengan URL deploy Apps Script lo jika beda
+    const API_BASE = 'https://script.google.com/macros/s/AKfycbyrw10g_NvT_Ykq9R3yPm4M9SzYOXIx-YYSAGMWJirHeiWLK3EWEachjawcNiCDsnzZ/exec';
+
+    const el = id => document.getElementById(id);
+    const ptSelect = el('ptSelect');
+    const monthSelect = el('monthSelect');
+    const yearSelect = el('yearSelect');
+    const loadBtn = el('loadBtn');
+    const tableWrap = el('tableWrap');
+    const statusEl = el('status');
+    const showCumulative = el('showCumulative');
+
+    function setStatus(t) { statusEl.textContent = t || ''; }
+
+    function pad(n){ return (n<10? '0'+n: String(n)); }
+
+    // inisialisasi bulan & tahun
+    (function initMonthYear(){
+      const now = new Date();
+      for(let m=1;m<=12;m++){ const opt = document.createElement('option'); opt.value=m; opt.text = m; if(m===now.getMonth()+1) opt.selected=true; monthSelect.appendChild(opt);} 
+      for(let y= now.getFullYear()-1; y<= now.getFullYear()+1; y++){ const opt = document.createElement('option'); opt.value=y; opt.text=y; if(y===now.getFullYear()) opt.selected=true; yearSelect.appendChild(opt);} 
+    })();
+
+    async function fetchJson(url){
+      const res = await fetch(url); 
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      return await res.json();
+    }
+
+    async function loadPTs(){
+      try{
+        setStatus('Memuat daftar PT...');
+        const pts = await fetchJson(API_BASE + '?action=getPTs');
+        ptSelect.innerHTML='';
+        const allOpt = document.createElement('option'); allOpt.value='ALL'; allOpt.text='-- ALL --'; ptSelect.appendChild(allOpt);
+        if(Array.isArray(pts)) pts.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.text=p; ptSelect.appendChild(o); });
+        setStatus('Siap');
+      }catch(err){ console.error(err); setStatus('Gagal memuat PT: '+err.message); }
+    }
+
+    // Try to fetch raw MASTER_SA and raw i-shiping. If backend doesn't provide endpoint, we'll fallback.
+    async function getRawMasterSA(){
+      try{
+        const res = await fetchJson(API_BASE + '?action=getMasterSA'); // <-- backend may not have this handler
+        return res;
+      }catch(err){ console.warn('getMasterSA failed', err); return null; }
+    }
+    async function getRawIShipping(){
+      try{
+        const res = await fetchJson(API_BASE + '?action=getIShippingRaw'); // <-- backend may not have this handler
+        return res;
+      }catch(err){ console.warn('getIShippingRaw failed', err); return null; }
+    }
+
+    // Fallback: getAllData + getRekap. getAllData gives list pangkalanByPT; getRekap gives aggregated daily totals.
+    async function getAllData(params){
+      const qs = new URLSearchParams(Object.assign({action:'getAllData'}, params)).toString();
+      return await fetchJson(API_BASE + '?' + qs);
+    }
+    async function getRekap(params){
+      const qs = new URLSearchParams(Object.assign({action:'getRekap'}, params)).toString();
+      return await fetchJson(API_BASE + '?' + qs);
+    }
+
+    // main render
+    async function render(){
+      tableWrap.innerHTML = '';
+      const pt = ptSelect.value || 'ALL';
+      const month = Number(monthSelect.value);
+      const year = Number(yearSelect.value);
+      setStatus('Memuat data...');
+
+      // first try to get detailed raw sheets. If not available, we'll try to reconstruct
+      const [rawMaster, rawIship, allData] = await Promise.all([getRawMasterSA(), getRawIShipping(), getAllData({pt, month, year})]);
+
+      const daysInMonth = new Date(year, month, 0).getDate();
+      const dates = Array.from({length:daysInMonth}, (_,i)=>({dd: i+1, label: pad(i+1)+'/'+pad(month)+'/'+year}));
+
+      // pangkalan list
+      let pangs = [];
+      if(allData && allData.pangkalanByPT && allData.pangkalanByPT[pt]) pangs = allData.pangkalanByPT[pt];
+      else if(allData && allData.pangkalanyByPT){ pangs = Object.values(allData.pangkalanByPT || {})[0] || []; }
+      pangs = Array.from(new Set(pangs)).sort();
+
+      // Build map structures
+      // If rawMaster & rawIship available: expect arrays of objects (rows) like getSheetDataRaw -> [{ 'Nama Pangkalan':..., '01/09/2025': 3, ...}, ...]
+      let masterByPang = {}; // masterByPang[pang][dateLabel] = number
+      let shipByPang = {};   // shipByPang[pang][dateLabel] = number
+
+      if(rawMaster && Array.isArray(rawMaster) && rawMaster.length>0){
+        rawMaster.forEach(r => {
+          const pang = (r['NAMA PANGKALAN']||r['Nama Pangkalan']||r['Nama Pangkalan ' ]||'').toString().trim();
+          if(!pang) return;
+          masterByPang[pang] = masterByPang[pang] || {};
+          // for each header that's a date dd/MM/yyyy copy value
+          Object.keys(r).forEach(k=>{
+            if(/^\d{2}\/\d{2}\/\d{4}$/.test(k)){
+              masterByPang[pang][k] = Number(r[k]) || 0;
+            }
+          });
+        });
+      }
+
+      if(rawIship && Array.isArray(rawIship) && rawIship.length>0){
+        rawIship.forEach(r=>{
+          const pang = (r['Nama Pangkalan']||r['Nama Pangkalan ' ]||'').toString().trim();
+          const t = r['Timestamp'] || r['timestamp'] || r['Tanggal'] || r['Tanggal Pengiriman'] || '';
+          const d = t ? (new Date(t)) : null;
+          let label = '';
+          if(d && !isNaN(d)){
+            const dd = pad(d.getDate()); const mm=pad(d.getMonth()+1); const yy=d.getFullYear(); label = dd + '/' + mm + '/' + yy;
+          } else {
+            // maybe already in dd/MM/yyyy
+            const parsed = String(t||'').trim(); if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(parsed)){
+              const parts = parsed.split('/'); label = pad(Number(parts[0]))+'/'+pad(Number(parts[1]))+'/'+parts[2];
+            }
+          }
+          if(!label) return;
+          const pengiriman = Number(r['Jumlah Pengiriman'] || r['Jumlah'] || r['Pengiriman'] || 0) || 0;
+          shipByPang[pang] = shipByPang[pang] || {};
+          shipByPang[pang][label] = (shipByPang[pang][label]||0) + pengiriman;
+        });
+      }
+
+      // Fallback: if rawMaster not available, try to infer master per pang from allData.rekap? -> not possible per-pang, so we will show aggregated fallback table
+      const fallback = !(Object.keys(masterByPang).length>0 && Object.keys(shipByPang).length>0);
+
+      if(fallback){
+        // Use aggregated rekap (per-day totals) and show single-row 'TOTAL' or per-pangkalan empty
+        setStatus('Backend tidak menyediakan raw MASTER_SA atau raw i-shiping. Menampilkan fallback (rekap harian ter-aggregate).');
+        const rekap = await getRekap({pt, month, year});
+        // rekap.rows is array of {tanggal: 'dd/MM/yyyy', master_sa: x, pengiriman: x, ...}
+        // We'll render table: rows = [TOTAL], columns = dates showing remaining = cum(master_sa)-cum(pengiriman)
+
+        const cumMaster = {}; const cumShip = {};
+        let runningMaster=0, runningShip=0;
+        const cells = dates.map(d=>{
+          const row = (rekap && rekap.rows) ? rekap.rows.find(rr=>rr.tanggal===d.label) : null;
+          runningMaster += row ? Number(row.master_sa||0) : 0;
+          runningShip += row ? Number(row.pengiriman||0) : 0;
+          return runningMaster - runningShip;
+        });
+
+        // build table
+        const tbl = document.createElement('table');
+        const thead = document.createElement('thead');
+        const headRow = document.createElement('tr');
+        const leftTh = document.createElement('th'); leftTh.className='fixed-left'; leftTh.textContent='Pangkalan / Tanggal'; headRow.appendChild(leftTh);
+        dates.forEach(d=>{ const th=document.createElement('th'); th.textContent = d.dd; th.title = d.label; headRow.appendChild(th); });
+        thead.appendChild(headRow); tbl.appendChild(thead);
+        const tbody = document.createElement('tbody');
+        const tr = document.createElement('tr');
+        const leftTd = document.createElement('td'); leftTd.className='fixed-left nowrap'; leftTd.textContent = 'TOTAL (agg)'; tr.appendChild(leftTd);
+        cells.forEach(c=>{ const td=document.createElement('td'); td.className='small'; td.textContent = c; tr.appendChild(td); });
+        tbody.appendChild(tr); tbl.appendChild(tbody);
+        tableWrap.appendChild(tbl);
+        return;
+      }
+
+      // Now we have masterByPang and shipByPang -> normalize pangs list
+      pangs = Array.from(new Set([...pangs, ...Object.keys(masterByPang), ...Object.keys(shipByPang)])).sort();
+
+      // Build cumulative stock by pang per date: runningMasterUpToDate - runningShipUpToDate
+      const tableData = {};
+      pangs.forEach(pang => {
+        tableData[pang] = [];
+        let runningMaster = 0;
+        let runningShip = 0;
+        for(let i=0;i<dates.length;i++){
+          const label = dates[i].label;
+          const masterVal = Number((masterByPang[pang] && masterByPang[pang][label]) || 0);
+          const shipVal = Number((shipByPang[pang] && shipByPang[pang][label]) || 0);
+          runningMaster += masterVal;
+          runningShip += shipVal;
+          const remaining = showCumulative.checked ? (runningMaster - runningShip) : (masterVal - shipVal);
+          tableData[pang].push({date: label, master: masterVal, ship: shipVal, remaining});
+        }
+      });
+
+      // render table with pangs as rows and dates as columns
+      const tbl = document.createElement('table');
+      const thead = document.createElement('thead');
+      const headRow = document.createElement('tr');
+      const leftTh = document.createElement('th'); leftTh.className='fixed-left'; leftTh.textContent='Pangkalan / Tanggal'; headRow.appendChild(leftTh);
+      dates.forEach(d=>{ const th=document.createElement('th'); th.textContent = d.dd; th.title = d.label; headRow.appendChild(th); });
+      thead.appendChild(headRow); tbl.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      pangs.forEach(pang=>{
+        const tr = document.createElement('tr');
+        const leftTd = document.createElement('td'); leftTd.className='fixed-left nowrap'; leftTd.textContent = pang; tr.appendChild(leftTd);
+        tableData[pang].forEach(cell=>{
+          const td = document.createElement('td'); td.className='small'; td.textContent = cell.remaining; td.title = `Master: ${cell.master} \nShip: ${cell.ship}`; tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+
+      // optional: totals row
+      const totTr = document.createElement('tr');
+      const totLeft = document.createElement('td'); totLeft.className='fixed-left nowrap'; totLeft.textContent = 'TOTAL PANGKALAN'; totTr.appendChild(totLeft);
+      for(let i=0;i<dates.length;i++){
+        let s=0; pangs.forEach(p=> s += Number(tableData[p][i].remaining || 0));
+        const td=document.createElement('td'); td.textContent = s; td.className='small'; totTr.appendChild(td);
+      }
+      tbody.appendChild(totTr);
+
+      tbl.appendChild(tbody);
+      tableWrap.appendChild(tbl);
+      setStatus('Selesai');
+    }
+
+    // events
+    loadBtn.addEventListener('click', ()=>{
+      render().catch(e=>{ console.error(e); setStatus('Error: '+e.message); });
+    });
+
+    showCumulative.addEventListener('change', ()=>{ render().catch(e=>{ console.error(e); setStatus('Error: '+e.message); }); });
+
+    // initial
+    loadPTs().then(()=>{ /* nothing */ });
+  </script>
+</body>
+</html>
