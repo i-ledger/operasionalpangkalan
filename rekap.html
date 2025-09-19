@@ -1,161 +1,114 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Rekap Operasional — i-Shipping</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rekap Operasional</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    #rekap-table tbody tr:nth-child(even){ background:#f9fafb; }
-    #rekap-table tbody tr:nth-child(odd){ background:#fff; }
-    #rekap-table th, #rekap-table td { white-space:nowrap; }
+    #rekap-table tbody tr:nth-child(even) { background:#f9fafb }
+    #rekap-table th { background:#dbeafe }
   </style>
 </head>
-<body class="bg-blue-50 min-h-screen p-4 font-sans">
-  <div class="max-w-6xl mx-auto">
-    <header class="flex items-center justify-between mb-4 bg-blue-200 p-3 rounded-lg shadow">
-      <h1 class="text-xl font-bold text-blue-900">📊 Rekap Operasional</h1>
-      <button onclick="goDashboard()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg shadow hover:bg-blue-700">🏠 Dashboard</button>
-    </header>
+<body class="bg-gray-100 p-4">
+  <div class="max-w-6xl mx-auto bg-white rounded-lg shadow p-4">
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-xl font-bold text-blue-700">📊 Rekap Operasional</h1>
+      <a href="dashboard.html" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">🏠 Dashboard</a>
+    </div>
 
-    <!-- Filter -->
-    <section class="bg-white p-4 rounded-xl shadow mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div>
-          <label class="block text-sm font-medium">Nama PT</label>
-          <select id="select-pt" class="mt-1 block w-full rounded-md border-gray-300"></select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium">Nama Pangkalan</label>
-          <select id="select-pangkalan" multiple size="5" class="mt-1 block w-full rounded-md border-gray-300"></select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium">Bulan</label>
-          <select id="select-month" class="mt-1 block w-full rounded-md border-gray-300"></select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium">Tahun</label>
-          <select id="select-year" class="mt-1 block w-full rounded-md border-gray-300"></select>
-        </div>
-      </div>
-      <div class="mt-4">
-        <button id="btn-load" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">🔎 Tampilkan Rekap</button>
-      </div>
-    </section>
+    <button id="btn-load" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mb-4">
+      🔍 Tampilkan Rekap
+    </button>
 
-    <!-- Table -->
-    <section id="rekap-wrapper" class="bg-white p-4 rounded-xl shadow">
-      <div class="overflow-auto">
-        <table id="rekap-table" class="min-w-full border border-gray-300">
-          <thead class="bg-blue-200 text-blue-900 font-bold">
-            <tr>
-              <th class="px-3 py-2 border">Tanggal</th>
-              <th class="px-3 py-2 border">PT</th>
-              <th class="px-3 py-2 border">Pangkalan</th>
-              <th class="px-3 py-2 border">Pengiriman</th>
-              <th class="px-3 py-2 border">Total Tagihan</th>
-              <th class="px-3 py-2 border">Total Bayar</th>
-              <th class="px-3 py-2 border">Bagi Hasil</th>
-            </tr>
-          </thead>
-          <tbody id="rekap-body"></tbody>
-          <tfoot class="bg-blue-100 font-semibold">
-            <tr>
-              <td colspan="3" class="px-3 py-2 text-right border">TOTAL</td>
-              <td id="total-pengiriman" class="px-3 py-2 border text-right">0</td>
-              <td></td>
-              <td></td>
-              <td id="total-bagi-hasil" class="px-3 py-2 border text-right">0</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </section>
+    <div class="overflow-x-auto">
+      <table id="rekap-table" class="min-w-full border text-sm">
+        <thead>
+          <tr>
+            <th class="px-3 py-2 border">Tanggal</th>
+            <th class="px-3 py-2 border">PT</th>
+            <th class="px-3 py-2 border">Pangkalan</th>
+            <th class="px-3 py-2 border">Pengiriman</th>
+            <th class="px-3 py-2 border">Total Tagihan</th>
+            <th class="px-3 py-2 border">Total Bayar</th>
+            <th class="px-3 py-2 border">Bagi Hasil</th>
+          </tr>
+        </thead>
+        <tbody id="rekap-body"></tbody>
+        <tfoot>
+          <tr class="font-bold bg-blue-100">
+            <td colspan="3" class="px-3 py-2 text-right">TOTAL</td>
+            <td id="total-pengiriman" class="px-3 py-2 text-right">0</td>
+            <td id="grand-total" class="px-3 py-2 text-right">0</td>
+            <td id="total-bayar" class="px-3 py-2 text-right">0</td>
+            <td id="total-bagi-hasil" class="px-3 py-2 text-right">0</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
   </div>
 
-<script>
-function goDashboard(){ window.location.href="dashboard.html"; }
-function formatRupiah(val){ if(!val||Number(val)===0) return "-"; return "Rp "+Number(val).toLocaleString("id-ID"); }
+  <script>
+    const GAS_URL = "PASTE_URL_APPS_SCRIPT_LU_DISINI"; // ganti pake URL Web App lu
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzNxoK55YjYGE3CgsucyPjeWcWPaOxZhdtvnCcJpE5hovIJYZa-PNefPaXtWaJAhXMVNQ/exec";
-let allData = [];
+    document.getElementById("btn-load").addEventListener("click", loadRekap);
 
-async function fetchAll(){
-  const res = await fetch(`${GAS_URL}?action=getAllData`);
-  const json = await res.json();
-  allData = json.rekap || [];
-  buildFilters();
-}
+    async function loadRekap(){
+      try {
+        const url = `${GAS_URL}?action=getAllData`;
+        const res = await fetch(url);
+        const data = await res.json();
+        console.log("DATA BACKEND:", data);
 
-function buildFilters(){
-  const pts=[...new Set(allData.map(r=>r.pt))];
-  const sel=document.getElementById("select-pt");
-  sel.innerHTML=""; pts.forEach(pt=>{let o=document.createElement("option");o.value=pt;o.textContent=pt;sel.appendChild(o);});
-  sel.dispatchEvent(new Event("change"));
+        if(!data || !data.rekap) {
+          alert("Data kosong atau backend error!");
+          return;
+        }
+        renderTable(data.rekap);
+      } catch(err){
+        console.error("Fetch error:", err);
+        alert("Gagal ambil data dari backend!");
+      }
+    }
 
-  const years=[...new Set(allData.map(r=>(new Date(r.tanggal)).getFullYear()))];
-  const selY=document.getElementById("select-year");
-  selY.innerHTML=""; years.sort().forEach(y=>{let o=document.createElement("option");o.value=y;o.textContent=y;selY.appendChild(o);});
-}
+    function renderTable(rows){
+      const tbody = document.getElementById("rekap-body");
+      tbody.innerHTML = "";
+      let grandTotal=0, totalPengiriman=0, totalBayar=0, totalBagiHasil=0;
 
-document.getElementById("select-pt").addEventListener("change",()=>{
-  const pt=document.getElementById("select-pt").value;
-  const pangkalans=[...new Set(allData.filter(r=>r.pt===pt).map(r=>r.pangkalan))];
-  const sel=document.getElementById("select-pangkalan");
-  sel.innerHTML=""; pangkalans.forEach(p=>{let o=document.createElement("option");o.value=p;o.textContent=p;sel.appendChild(o);});
-});
+      rows.forEach(r=>{
+        const pengiriman = Number(r.pengiriman)||0;
+        const totalTagihan = Number(r.totalTagihan)||0;
+        const totalBayarRow = Number(r.totalBayar)||0;
+        const bagiHasil = Number(r.bagi_hasil)||0;
 
-function makeMonthOptions(){
-  const sel=document.getElementById("select-month");
-  const months=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
-  const now=new Date();
-  months.forEach((m,i)=>{let o=document.createElement("option");o.value=i+1;o.textContent=m;if(i===now.getMonth())o.selected=true;sel.appendChild(o);});
-}
-function makeYearOptions(){}
+        grandTotal += totalTagihan;
+        totalPengiriman += pengiriman;
+        totalBayar += totalBayarRow;
+        totalBagiHasil += bagiHasil;
 
-function renderTable(rows){
-  const tbody=document.getElementById("rekap-body"); tbody.innerHTML="";
-  let totalPengiriman=0, totalBagiHasil=0;
-  rows.forEach(r=>{
-    const tr=document.createElement("tr");
-    tr.innerHTML=`
-      <td class="px-3 py-2 border">${r.tanggal}</td>
-      <td class="px-3 py-2 border">${r.pt}</td>
-      <td class="px-3 py-2 border">${r.pangkalan}</td>
-      <td class="px-3 py-2 border text-right">${r.pengiriman}</td>
-      <td class="px-3 py-2 border text-right">${formatRupiah(r.totalTagihan)}</td>
-      <td class="px-3 py-2 border text-right">${formatRupiah(r.totalBayar)}</td>
-      <td class="px-3 py-2 border text-right">${formatRupiah(r.bagi_hasil)}</td>
-    `;
-    tbody.appendChild(tr);
-    totalPengiriman+=Number(r.pengiriman)||0;
-    totalBagiHasil+=Number(r.bagi_hasil)||0;
-  });
-  document.getElementById("total-pengiriman").textContent=totalPengiriman;
-  document.getElementById("total-bagi-hasil").textContent=formatRupiah(totalBagiHasil);
-}
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="px-3 py-2 border">${r.tanggal||"-"}</td>
+          <td class="px-3 py-2 border">${r.pt||"-"}</td>
+          <td class="px-3 py-2 border">${r.pangkalan||"-"}</td>
+          <td class="px-3 py-2 border text-right">${pengiriman}</td>
+          <td class="px-3 py-2 border text-right">${formatRupiah(totalTagihan)}</td>
+          <td class="px-3 py-2 border text-right">${formatRupiah(totalBayarRow)}</td>
+          <td class="px-3 py-2 border text-right">${formatRupiah(bagiHasil)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
 
-document.getElementById("btn-load").addEventListener("click",()=>{
-  const pt=document.getElementById("select-pt").value;
-  const pangkalanSel=Array.from(document.getElementById("select-pangkalan").selectedOptions).map(o=>o.value);
-  const month=document.getElementById("select-month").value;
-  const year=document.getElementById("select-year").value;
+      document.getElementById("total-pengiriman").textContent = totalPengiriman;
+      document.getElementById("grand-total").textContent = formatRupiah(grandTotal);
+      document.getElementById("total-bayar").textContent = formatRupiah(totalBayar);
+      document.getElementById("total-bagi-hasil").textContent = formatRupiah(totalBagiHasil);
+    }
 
-  let rows=allData.filter(r=>{
-    const d=new Date(r.tanggal);
-    const matchPT=!pt||r.pt===pt;
-    const matchP= pangkalanSel.length===0 || pangkalanSel.includes(r.pangkalan);
-    const matchM=(d.getMonth()+1)==month;
-    const matchY=d.getFullYear()==year;
-    return matchPT&&matchP&&matchM&&matchY;
-  });
-  renderTable(rows);
-});
-
-window.addEventListener("DOMContentLoaded",()=>{
-  makeMonthOptions();
-  fetchAll();
-});
-</script>
+    function formatRupiah(num){
+      return "Rp " + (num||0).toLocaleString("id-ID");
+    }
+  </script>
 </body>
 </html>
