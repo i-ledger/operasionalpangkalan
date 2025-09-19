@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rekap Operasional — i-Shipping</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    #rekap-table tbody tr:nth-child(even) { background: #f9fafb; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-cyan-100 to-blue-100 min-h-screen p-4">
+  <div class="max-w-7xl mx-auto bg-white shadow-lg rounded-xl p-6">
+    <h1 class="text-2xl font-bold mb-4 text-center">Rekap Operasional — i-Shipping</h1>
+
+    <!-- Filter -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div>
+        <label class="block text-sm font-medium">Tanggal</label>
+        <input type="date" id="filterTanggal" class="w-full border rounded-lg p-2" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium">Nama PT</label>
+        <select id="filterPT" class="w-full border rounded-lg p-2"></select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium">Nama Pangkalan</label>
+        <select id="filterPangkalan" class="w-full border rounded-lg p-2"></select>
+      </div>
+      <div class="flex items-end gap-2">
+        <button onclick="applyFilter()" class="bg-blue-500 text-white px-4 py-2 rounded-lg shadow">Filter</button>
+        <button onclick="resetFilter()" class="bg-gray-400 text-white px-4 py-2 rounded-lg shadow">Reset</button>
+      </div>
+    </div>
+
+    <!-- Export -->
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button onclick="exportCSV()" class="bg-green-500 text-white px-4 py-2 rounded-lg shadow">Export CSV</button>
+      <button onclick="exportWA()" class="bg-teal-500 text-white px-4 py-2 rounded-lg shadow">Export WA</button>
+      <button onclick="exportPDF()" class="bg-red-500 text-white px-4 py-2 rounded-lg shadow">Export PDF</button>
+    </div>
+
+    <!-- Spinner -->
+    <div id="spinner" class="text-center py-4 hidden">
+      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
+      <p class="text-sm mt-2">Memuat data...</p>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto">
+      <table id="rekap-table" class="min-w-full border rounded-lg text-sm">
+        <thead class="bg-blue-600 text-white">
+          <tr>
+            <th class="px-2 py-1 border">Tanggal</th>
+            <th class="px-2 py-1 border">PT</th>
+            <th class="px-2 py-1 border">Pangkalan</th>
+            <th class="px-2 py-1 border">Pengiriman</th>
+            <th class="px-2 py-1 border">Retur</th>
+            <th class="px-2 py-1 border">SA</th>
+            <th class="px-2 py-1 border">Harga TBG</th>
+            <th class="px-2 py-1 border">Tagihan</th>
+            <th class="px-2 py-1 border">Brimola</th>
+            <th class="px-2 py-1 border">Bukti TF</th>
+            <th class="px-2 py-1 border">Total Bayar</th>
+            <th class="px-2 py-1 border">Bagi Hasil</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbyXFdF9DdKpoXTnnl9QgXi0BnLCraad90GAnMMoKAzB3rpyFjkKxcodjtNvquAMGPWJsQ/exec";
+    let allData = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadData();
+    });
+
+    async function loadData() {
+      toggleSpinner(true);
+      try {
+        const params = new URLSearchParams({ action: "getAllData" });
+        const res = await fetch(`${API_URL}?${params}`);
+        const json = await res.json();
+        allData = json.rekap || [];
+        renderFilters();
+        renderTable(allData);
+      } catch (err) {
+        console.error("Fetch error", err);
+        alert("Gagal memuat data");
+      } finally {
+        toggleSpinner(false);
+      }
+    }
+
+    function renderFilters() {
+      const ptSet = new Set(allData.map(r => r.pt));
+      const pangkalanSet = new Set(allData.map(r => r.pangkalan));
+
+      fillSelect("filterPT", ptSet);
+      fillSelect("filterPangkalan", pangkalanSet);
+    }
+
+    function fillSelect(id, values) {
+      const sel = document.getElementById(id);
+      sel.innerHTML = '<option value="">-- Semua --</option>';
+      [...values].sort().forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v;
+        sel.appendChild(opt);
+      });
+    }
+
+    function renderTable(data) {
+      const tbody = document.querySelector("#rekap-table tbody");
+      tbody.innerHTML = "";
+      data.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class='border px-2'>${row.tanggal}</td>
+          <td class='border px-2'>${row.pt}</td>
+          <td class='border px-2'>${row.pangkalan}</td>
+          <td class='border px-2 text-right'>${row.pengiriman}</td>
+          <td class='border px-2 text-right'>${row.retur}</td>
+          <td class='border px-2 text-right'>${row.saPengiriman}</td>
+          <td class='border px-2 text-right'>${row.hargaTbg}</td>
+          <td class='border px-2 text-right'>${row.totalTagihan}</td>
+          <td class='border px-2 text-right'>${row.bayar_lewat_brimola}</td>
+          <td class='border px-2 text-right'>${row.bukti_tf}</td>
+          <td class='border px-2 text-right'>${row.totalBayar}</td>
+          <td class='border px-2 text-right'>${row.bagi_hasil}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function applyFilter() {
+      const tgl = document.getElementById("filterTanggal").value;
+      const pt = document.getElementById("filterPT").value;
+      const pangkalan = document.getElementById("filterPangkalan").value;
+
+      let filtered = allData;
+      if (tgl) {
+        const ddmmyy = tgl.split("-").reverse().join("/");
+        filtered = filtered.filter(r => r.tanggal === ddmmyy);
+      }
+      if (pt) filtered = filtered.filter(r => r.pt === pt);
+      if (pangkalan) filtered = filtered.filter(r => r.pangkalan === pangkalan);
+
+      renderTable(filtered);
+    }
+
+    function resetFilter() {
+      document.getElementById("filterTanggal").value = "";
+      document.getElementById("filterPT").value = "";
+      document.getElementById("filterPangkalan").value = "";
+      renderTable(allData);
+    }
+
+    function exportCSV() {
+      let csv = "Tanggal,PT,Pangkalan,Pengiriman,Retur,SA,HargaTBG,Tagihan,Brimola,BuktiTF,TotalBayar,BagiHasil\n";
+      allData.forEach(r => {
+        csv += `${r.tanggal},${r.pt},${r.pangkalan},${r.pengiriman},${r.retur},${r.saPengiriman},${r.hargaTbg},${r.totalTagihan},${r.bayar_lewat_brimola},${r.bukti_tf},${r.totalBayar},${r.bagi_hasil}\n`;
+      });
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "rekap.csv";
+      a.click();
+    }
+
+    function exportWA() {
+      let txt = "Rekap i-Shipping:\n";
+      allData.slice(0,20).forEach(r => {
+        txt += `${r.tanggal} | ${r.pt} | ${r.pangkalan} | Pengiriman:${r.pengiriman}\n`;
+      });
+      window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`);
+    }
+
+    function exportPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.text("Rekap i-Shipping", 14, 10);
+      doc.autoTable({
+        head: [["Tanggal","PT","Pangkalan","Pengiriman","Retur","SA","HargaTBG","Tagihan","Brimola","BuktiTF","TotalBayar","BagiHasil"]],
+        body: allData.map(r => [r.tanggal,r.pt,r.pangkalan,r.pengiriman,r.retur,r.saPengiriman,r.hargaTbg,r.totalTagihan,r.bayar_lewat_brimola,r.bukti_tf,r.totalBayar,r.bagi_hasil]),
+        styles: { fontSize: 7 }
+      });
+      doc.save("rekap.pdf");
+    }
+
+    function toggleSpinner(show) {
+      document.getElementById("spinner").classList.toggle("hidden", !show);
+    }
+  </script>
+</body>
+</html>
