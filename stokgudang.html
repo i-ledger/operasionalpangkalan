@@ -63,7 +63,7 @@
   Ganti value BACKEND_URL dengan URL deploy Apps Script lo (exec URL)
   Contoh: const BACKEND_URL = 'https://script.google.com/macros/s/AKfy.../exec';
 */
-const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxKBW8n60FrnfnlQfxrnLeCP_SX4z6dp7C-m91FnO97uZ1GVjim4vGfyhEDWsaaolyn0A/exec';
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyc4fFC0vCRj7JPrkKYOCToxm3_pkUe15kKizL4wuPzXRXEguSd0e1f3xzoD8tuVBuRwg/exec';
 
 // utils
 const $ = sel => document.querySelector(sel);
@@ -97,22 +97,29 @@ const numberFmt = v => (Number(v) || 0);
 
 async function fetchRekap(month, year){
   $('#spinner').classList.remove('hidden');
-  try {
-    const url = new URL(BACKEND_URL);
-    url.searchParams.set('action','getRekapSemuaPangkalan');
-    url.searchParams.set('month', month);
-    url.searchParams.set('year', year);
-    const res = await fetch(url.toString(), { method: 'GET' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    return data && data.rows ? data.rows : [];
-  } catch (err) {
-    console.error(err);
-    alert('Gagal memuat rekap: ' + err.message);
-    return [];
-  } finally {
-    $('#spinner').classList.add('hidden');
-  }
+  return new Promise((resolve, reject)=>{
+    try {
+      const cbName = 'cbRekap' + Date.now();
+      window[cbName] = (data)=>{
+        resolve(data && data.rows ? data.rows : []);
+        delete window[cbName];
+        script.remove();
+        $('#spinner').classList.add('hidden');
+      };
+      const url = BACKEND_URL
+        + '?action=getRekapSemuaPangkalan'
+        + '&month=' + month
+        + '&year=' + year
+        + '&callback=' + cbName;
+      const script = document.createElement('script');
+      script.src = url;
+      script.onerror = ()=>{ reject(new Error('Gagal load JSONP')); $('#spinner').classList.add('hidden'); };
+      document.body.appendChild(script);
+    } catch(err){
+      $('#spinner').classList.add('hidden');
+      reject(err);
+    }
+  });
 }
 
 function renderTable(rows){
