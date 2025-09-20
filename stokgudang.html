@@ -130,8 +130,8 @@ function renderTable(rows){
     const tr = document.createElement('tr');
     tr.className = i % 2 === 0 ? '' : 'bg-slate-50';
     const penerimaan = numberFmt(r.penerimaan);
-    const b = numberFmt(r.total_brimola);
-    const l = numberFmt(r.total_luar_brimola);
+    const b = numberFmt(r.total_bayar_lewat_brimola);
+    const l = numberFmt(r.total_bukti_transfer);
     const bh = numberFmt(r.total_bagi_hasil);
 
     totPenerimaan += penerimaan;
@@ -166,8 +166,8 @@ function rowsToCSV(rows){
       `"${(r.nama_pangkalan||'').toString().replace(/"/g,'""')}"`,
       `"${(r.nama_pt||'').toString().replace(/"/g,'""')}"`,
       (Number(r.penerimaan)||0),
-      (Number(r.total_brimola)||0),
-      (Number(r.total_luar_brimola)||0),
+      (Number(r.total_bayar_lewat_brimola)||0),
+      (Number(r.total_bukti_transfer)||0),
       (Number(r.total_bagi_hasil)||0)
     ].join(',');
     lines.push(line);
