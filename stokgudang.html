@@ -179,6 +179,8 @@ const header = [
   'Total Pembayaran Brimola','Total Pembayaran di Luar Brimola',
   'Total Pembayaran Bagi Hasil','Sisa Pembayaran Refill','Sisa Pembayaran Bagi Hasil'
 ];
+  const lines = [header.join(',')];
+  rows.forEach(r=>{
   const line = [
   `"${(r.nama_pangkalan||'').toString().replace(/"/g,'""')}"`,
   `"${(r.nama_pt||'').toString().replace(/"/g,'""')}"`,
