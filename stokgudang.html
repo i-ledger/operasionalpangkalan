@@ -173,15 +173,13 @@ function renderTable(rows){
   window.__rekap_last = rows || [];
 }
 
-
 function rowsToCSV(rows){
 const header = [
   'Nama Pangkalan','Nama PT','Penerimaan Bulan Ini',
   'Total Pembayaran Brimola','Total Pembayaran di Luar Brimola',
   'Total Pembayaran Bagi Hasil','Sisa Pembayaran Refill','Sisa Pembayaran Bagi Hasil'
 ];
-...
-const line = [
+  const line = [
   `"${(r.nama_pangkalan||'').toString().replace(/"/g,'""')}"`,
   `"${(r.nama_pt||'').toString().replace(/"/g,'""')}"`,
   (Number(r.penerimaan)||0),
