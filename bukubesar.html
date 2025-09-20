@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Buku Besar - i-ledger</title>
+  <title>Rekap Bukti TF Pangkalan</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gradient-to-br from-cyan-100 to-blue-200 min-h-screen p-2 sm:p-4">
@@ -16,13 +16,13 @@
     <!-- Sidebar -->
     <aside class="bg-white rounded-xl shadow-md p-4 w-full sm:w-64">
      <a href="dashboard.html" class="w-full block text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg mb-4 transition-all duration-200 shadow">Dashboard</a>
-      <h3 class="text-lg font-semibold text-blue-600 mb-2">Daftar Pos</h3>
+      <h3 class="text-lg font-semibold text-blue-600 mb-2">Nama PT</h3>
       <ul id="posList" class="space-y-2 text-blue-600"></ul>
     </aside>
 
     <!-- Main content -->
     <main class="flex-1 bg-white rounded-xl shadow-md p-4">
-      <h2 class="text-2xl font-semibold text-gray-800 mb-4">Data Buku Besar - i-Ledger</h2>
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">Rekap Bukti TF Pangkalan</h2>
       <div class="flex flex-wrap gap-3 items-end mb-4">
         <label class="flex flex-col text-sm text-gray-700">
           Mulai:
@@ -44,13 +44,13 @@
           <thead class="bg-blue-600 text-white">
             <tr>
               <th class="p-3">Timestamp</th>
-              <th class="p-3">Nama</th>
-              <th class="p-3">Uraian</th>
-              <th class="p-3">Pos</th>
+              <th class="p-3">Uraian Pembayaran</th>
+              <th class="p-3">Nama Pangkalan</th>
+              <th class="p-3">Nama PT</th>
               <th class="p-3">Nominal</th>
               <th class="p-3">Foto Nota</th>
-              <th class="p-3">Pembayaran</th>
-              <th class="p-3">Bukti Transfer</th>
+              <th class="p-3">Keterangan</th>
+              <th class="p-3">Bukti Serah Terima</th>
             </tr>
           </thead>
           <tbody id="ledgerTableBody" class="bg-white"></tbody>
@@ -204,7 +204,7 @@ const fotoNota = item.foto && item.foto.includes('https://')
 
 const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https://') 
   ? `<a href="${item.buktitransfer}" target="_blank"><img src="https://drive.google.com/thumbnail?id=${extractDriveId(item.buktitransfer)}&sz=w200" alt="Bukti Transfer" /></a>` 
-  : '<span class="error">Bukti Transfer tidak ada</span>';
+  : '<span class="error">Pembayaran Via TF</span>';
 
         const row = document.createElement("tr");
         row.innerHTML = 
