@@ -81,7 +81,7 @@
       .then(r => r.json())
       .then(data => {
         data.forEach(row => {
-          dbPangkalan[row.uraian] = { id: row.id_brimola, password: row.Password };
+          dbPangkalan[row.uraian] = { id: row.id_brimola, password: row.password };
         });
       });
 
