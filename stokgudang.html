@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="id">
 <head>
@@ -6,76 +5,99 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Rekap Pangkalan — i-Shipping</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Spinner animasi */
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #3b82f6;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-900 p-6">
+<body class="bg-slate-50 text-slate-900 p-4 sm:p-6">
   <div class="max-w-6xl mx-auto">
-    <h1 class="text-2xl font-semibold mb-4">Rekap Pangkalan</h1>
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+      <h1 class="text-xl sm:text-2xl font-semibold">Rekap Pangkalan</h1>
+      <a href="dashboard.html" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded shadow text-sm sm:text-base">
+        Dashboard
+      </a>
+    </div>
 
-    <div class="bg-white p-4 rounded shadow mb-4 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+    <!-- Filter -->
+    <div class="bg-white p-4 rounded shadow mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
       <div>
         <label class="block text-sm mb-1">Bulan</label>
-        <select id="selMonth" class="w-full border rounded p-2"></select>
+        <select id="selMonth" class="w-full border rounded p-2 text-sm"></select>
       </div>
       <div>
         <label class="block text-sm mb-1">Tahun</label>
-        <select id="selYear" class="w-full border rounded p-2"></select>
+        <select id="selYear" class="w-full border rounded p-2 text-sm"></select>
       </div>
-      <div class="flex gap-2">
-        <button id="btnLoad" class="bg-blue-600 text-white px-4 py-2 rounded shadow">Muat Rekap</button>
-        <button id="btnCSV" class="bg-green-600 text-white px-4 py-2 rounded shadow">Download CSV</button>
-        <div id="spinner" class="hidden items-center text-sm text-gray-500 ml-2">Loading...</div>
+      <div class="flex flex-wrap gap-2 sm:col-span-2">
+        <button id="btnLoad" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow text-sm">
+          Muat Rekap
+        </button>
+        <button id="btnCSV" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow text-sm">
+          Download CSV
+        </button>
+        <div id="spinner" class="hidden flex items-center gap-2 text-gray-500 text-sm">
+          <div class="spinner"></div>
+          <span>Loading...</span>
+        </div>
       </div>
     </div>
 
-    <div class="bg-white rounded shadow p-4">
+    <!-- Table -->
+    <div class="bg-white rounded shadow p-2 sm:p-4">
       <div class="overflow-x-auto">
-        <table id="tbl" class="min-w-full table-auto border-collapse">
+        <table id="tbl" class="min-w-full table-auto border-collapse text-sm sm:text-base">
           <thead>
             <tr class="bg-slate-100 text-left">
               <th class="p-2 border">#</th>
               <th class="p-2 border">Nama Pangkalan</th>
               <th class="p-2 border">Nama PT</th>
               <th class="p-2 border text-right">Penerimaan Bulan Ini</th>
-              <th class="p-2 border text-right">Total Pembayaran Brimola</th>
-              <th class="p-2 border text-right">Total Pembayaran di Luar Brimola</th>
-              <th class="p-2 border text-right">Total Pembayaran Bagi Hasil</th>
-              <th class="p-2 border text-right">Sisa Pembayaran Refill</th>
-              <th class="p-2 border text-right">Sisa Pembayaran Bagi Hasil</th>
+              <th class="p-2 border text-right">Total Brimola</th>
+              <th class="p-2 border text-right">Total Luar Brimola</th>
+              <th class="p-2 border text-right">Total Bagi Hasil</th>
+              <th class="p-2 border text-right">Sisa Refill</th>
+              <th class="p-2 border text-right">Sisa Bagi Hasil</th>
             </tr>
           </thead>
           <tbody id="tbody">
             <!-- rows -->
           </tbody>
           <tfoot>
-            <tr class="bg-slate-50">
-              <td colspan="3" class="p-2 border font-semibold">TOTAL</td>
-              <td id="totalPenerimaan" class="p-2 border text-right font-semibold">0</td>
-              <td id="totalBrimola" class="p-2 border text-right font-semibold">Rp 0</td>
-              <td id="totalLuar" class="p-2 border text-right font-semibold">Rp 0</td>
-              <td id="totalBagi" class="p-2 border text-right font-semibold">Rp 0</td>
-              <td id="totalSisaRefill" class="p-2 border text-right font-semibold">Rp 0</td>
-              <td id="totalSisaBagi" class="p-2 border text-right font-semibold">Rp 0</td>
+            <tr class="bg-slate-50 font-semibold">
+              <td colspan="3" class="p-2 border">TOTAL</td>
+              <td id="totalPenerimaan" class="p-2 border text-right">0</td>
+              <td id="totalBrimola" class="p-2 border text-right">Rp 0</td>
+              <td id="totalLuar" class="p-2 border text-right">Rp 0</td>
+              <td id="totalBagi" class="p-2 border text-right">Rp 0</td>
+              <td id="totalSisaRefill" class="p-2 border text-right">Rp 0</td>
+              <td id="totalSisaBagi" class="p-2 border text-right">Rp 0</td>
             </tr>
           </tfoot>
         </table>
       </div>
     </div>
-
   </div>
 
 <script>
-/*
-  Ganti value BACKEND_URL dengan URL deploy Apps Script lo (exec URL)
-  Contoh: const BACKEND_URL = 'https://script.google.com/macros/s/AKfy.../exec';
-*/
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx3f6rnnK72q_uogQ1F-EptjIPZwa-cinuHaZsndM4NoQ55TdYbMzkZUj7VBycPHpuMyQ/exec';
-
-// utils
 const $ = sel => document.querySelector(sel);
 const money = v => {
   if (v === null || v === undefined) return 'Rp 0';
   const n = Number(v) || 0;
-  return n.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+  return n.toLocaleString('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0});
 };
 const numberFmt = v => (Number(v) || 0);
 
@@ -84,18 +106,17 @@ const numberFmt = v => (Number(v) || 0);
   const selM = $('#selMonth'), selY = $('#selYear');
   const now = new Date();
   for (let m=1;m<=12;m++){
-    const opt = document.createElement('option');
-    opt.value = m;
-    opt.textContent = m.toString().padStart(2,'0');
-    if (m === (now.getMonth()+1)) opt.selected = true;
+    const opt=document.createElement('option');
+    opt.value=m;
+    opt.textContent=m.toString().padStart(2,'0');
+    if(m===(now.getMonth()+1)) opt.selected=true;
     selM.appendChild(opt);
   }
-  const startYear = now.getFullYear() - 3;
-  for (let y = startYear; y <= now.getFullYear() + 1; y++){
-    const opt = document.createElement('option');
-    opt.value = y;
-    opt.textContent = y;
-    if (y === now.getFullYear()) opt.selected = true;
+  const startYear=now.getFullYear()-3;
+  for (let y=startYear;y<=now.getFullYear()+1;y++){
+    const opt=document.createElement('option');
+    opt.value=y; opt.textContent=y;
+    if(y===now.getFullYear()) opt.selected=true;
     selY.appendChild(opt);
   }
 })();
@@ -103,133 +124,81 @@ const numberFmt = v => (Number(v) || 0);
 async function fetchRekap(month, year){
   $('#spinner').classList.remove('hidden');
   return new Promise((resolve, reject)=>{
-    try {
-      const cbName = 'cbRekap' + Date.now();
-      window[cbName] = (data)=>{
-        resolve(data && data.rows ? data.rows : []);
-        delete window[cbName];
-        script.remove();
+    try{
+      const cbName='cbRekap'+Date.now();
+      window[cbName]=(data)=>{
+        resolve(data && data.rows?data.rows:[]);
+        delete window[cbName]; script.remove();
         $('#spinner').classList.add('hidden');
       };
-      const url = BACKEND_URL
-        + '?action=getRekapSemuaPangkalan'
-        + '&month=' + month
-        + '&year=' + year
-        + '&callback=' + cbName;
-      const script = document.createElement('script');
-      script.src = url;
-      script.onerror = ()=>{ reject(new Error('Gagal load JSONP')); $('#spinner').classList.add('hidden'); };
+      const url=BACKEND_URL+'?action=getRekapSemuaPangkalan&month='+month+'&year='+year+'&callback='+cbName;
+      const script=document.createElement('script');
+      script.src=url;
+      script.onerror=()=>{reject(new Error('Gagal load JSONP'));$('#spinner').classList.add('hidden');};
       document.body.appendChild(script);
-    } catch(err){
-      $('#spinner').classList.add('hidden');
-      reject(err);
-    }
+    }catch(err){$('#spinner').classList.add('hidden');reject(err);}
   });
 }
 
 function renderTable(rows){
-  const tbody = $('#tbody');
-  tbody.innerHTML = '';
-  let totPenerimaan = 0, totBrim = 0, totLuar = 0, totBagi = 0, totSisaRefill = 0, totSisaBagi = 0;
-
+  const tbody=$('#tbody'); tbody.innerHTML='';
+  let totPenerimaan=0, totBrim=0, totLuar=0, totBagi=0, totSisaRefill=0, totSisaBagi=0;
   rows.forEach((r,i)=>{
-    const tr = document.createElement('tr');
-    tr.className = i % 2 === 0 ? '' : 'bg-slate-50';
-    const penerimaan = numberFmt(r.penerimaan);
-    const b = numberFmt(r.total_brimola);
-    const l = numberFmt(r.total_luar_brimola);
-    const bh = numberFmt(r.total_bagi_hasil);
-    const sr = numberFmt(r.sisa_refill);
-    const sb = numberFmt(r.sisa_bagi_hasil);
-
-    totPenerimaan += penerimaan;
-    totBrim += b; 
-    totLuar += l; 
-    totBagi += bh;
-    totSisaRefill += sr;
-    totSisaBagi += sb;
-
-    tr.innerHTML = `
-      <td class="p-2 border align-top">${i+1}</td>
-      <td class="p-2 border align-top">${r.nama_pangkalan || '-'}</td>
-      <td class="p-2 border align-top">${r.nama_pt || '-'}</td>
-      <td class="p-2 border text-right align-top">${penerimaan}</td>
-      <td class="p-2 border text-right align-top">${money(b)}</td>
-      <td class="p-2 border text-right align-top">${money(l)}</td>
-      <td class="p-2 border text-right align-top">${money(bh)}</td>
-      <td class="p-2 border text-right align-top">${money(sr)}</td>
-      <td class="p-2 border text-right align-top">${money(sb)}</td>
-    `;
+    const tr=document.createElement('tr');
+    tr.className=i%2===0?'':'bg-slate-50';
+    const penerimaan=numberFmt(r.penerimaan);
+    const b=numberFmt(r.total_brimola), l=numberFmt(r.total_luar_brimola),
+          bh=numberFmt(r.total_bagi_hasil), sr=numberFmt(r.sisa_refill), sb=numberFmt(r.sisa_bagi_hasil);
+    totPenerimaan+=penerimaan; totBrim+=b; totLuar+=l; totBagi+=bh; totSisaRefill+=sr; totSisaBagi+=sb;
+    tr.innerHTML=`
+      <td class="p-2 border">${i+1}</td>
+      <td class="p-2 border">${r.nama_pangkalan||'-'}</td>
+      <td class="p-2 border">${r.nama_pt||'-'}</td>
+      <td class="p-2 border text-right">${penerimaan}</td>
+      <td class="p-2 border text-right">${money(b)}</td>
+      <td class="p-2 border text-right">${money(l)}</td>
+      <td class="p-2 border text-right">${money(bh)}</td>
+      <td class="p-2 border text-right">${money(sr)}</td>
+      <td class="p-2 border text-right">${money(sb)}</td>`;
     tbody.appendChild(tr);
   });
-
-  $('#totalPenerimaan').textContent = totPenerimaan;
-  $('#totalBrimola').textContent = money(totBrim);
-  $('#totalLuar').textContent = money(totLuar);
-  $('#totalBagi').textContent = money(totBagi);
-  $('#totalSisaRefill').textContent = money(totSisaRefill);
-  $('#totalSisaBagi').textContent = money(totSisaBagi);
-
-  window.__rekap_last = rows || [];
+  $('#totalPenerimaan').textContent=totPenerimaan;
+  $('#totalBrimola').textContent=money(totBrim);
+  $('#totalLuar').textContent=money(totLuar);
+  $('#totalBagi').textContent=money(totBagi);
+  $('#totalSisaRefill').textContent=money(totSisaRefill);
+  $('#totalSisaBagi').textContent=money(totSisaBagi);
+  window.__rekap_last=rows||[];
 }
 
 function rowsToCSV(rows){
-const header = [
-  'Nama Pangkalan','Nama PT','Penerimaan Bulan Ini',
-  'Total Pembayaran Brimola','Total Pembayaran di Luar Brimola',
-  'Total Pembayaran Bagi Hasil','Sisa Pembayaran Refill','Sisa Pembayaran Bagi Hasil'
-];
-  const lines = [header.join(',')];
+  const header=['Nama Pangkalan','Nama PT','Penerimaan Bulan Ini','Total Brimola','Total Luar Brimola','Total Bagi Hasil','Sisa Refill','Sisa Bagi Hasil'];
+  const lines=[header.join(',')];
   rows.forEach(r=>{
-  const line = [
-  `"${(r.nama_pangkalan||'').toString().replace(/"/g,'""')}"`,
-  `"${(r.nama_pt||'').toString().replace(/"/g,'""')}"`,
-  (Number(r.penerimaan)||0),
-  (Number(r.total_brimola)||0),
-  (Number(r.total_luar_brimola)||0),
-  (Number(r.total_bagi_hasil)||0),
-  (Number(r.sisa_refill)||0),
-  (Number(r.sisa_bagi_hasil)||0)
-].join(',');
+    const line=[`"${(r.nama_pangkalan||'').replace(/"/g,'""')}"`,`"${(r.nama_pt||'').replace(/"/g,'""')}"`,
+      Number(r.penerimaan)||0,Number(r.total_brimola)||0,Number(r.total_luar_brimola)||0,
+      Number(r.total_bagi_hasil)||0,Number(r.sisa_refill)||0,Number(r.sisa_bagi_hasil)||0].join(',');
     lines.push(line);
   });
   return lines.join('\n');
 }
 
-$('#btnLoad').addEventListener('click', async ()=>{
-  const month = $('#selMonth').value;
-  const year = $('#selYear').value;
-  if (!BACKEND_URL || BACKEND_URL.includes('REPLACE_WITH')) {
-    alert('Ganti BACKEND_URL di script dengan URL deploy Apps Script lo.');
-    return;
-  }
-  const rows = await fetchRekap(month, year);
+$('#btnLoad').addEventListener('click',async()=>{
+  const rows=await fetchRekap($('#selMonth').value,$('#selYear').value);
   renderTable(rows);
 });
 
-// CSV download
-$('#btnCSV').addEventListener('click', ()=>{
-  const rows = window.__rekap_last || [];
-  if (!rows.length) { alert('Belum ada data. Klik "Muat Rekap" dulu.'); return; }
-  const csv = rowsToCSV(rows);
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const month = $('#selMonth').value, year = $('#selYear').value;
-  a.href = url;
-  a.download = `rekap_pangkalan_${year}_${month}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+$('#btnCSV').addEventListener('click',()=>{
+  const rows=window.__rekap_last||[];
+  if(!rows.length){alert('Belum ada data. Klik "Muat Rekap" dulu.');return;}
+  const csv=rowsToCSV(rows), blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download=`rekap_pangkalan_${$('#selYear').value}_${$('#selMonth').value}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 });
 
-// auto load once on open
 (async function autoLoad(){
-  const month = $('#selMonth').value;
-  const year = $('#selYear').value;
-  if (!BACKEND_URL || BACKEND_URL.includes('REPLACE_WITH')) return;
-  const rows = await fetchRekap(month, year);
+  const rows=await fetchRekap($('#selMonth').value,$('#selYear').value);
   renderTable(rows);
 })();
 </script>
