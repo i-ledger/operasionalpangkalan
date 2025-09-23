@@ -20,6 +20,8 @@
       <input id="doyangdimilikiInput" placeholder="DO yang dimiliki" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
       <input id="hargarefillInput" placeholder="Harga Refill" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
       <input id="hargabagihasilInput" placeholder="Harga Bagi Hasil" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
+      <input id="id_brimola" placeholder="ID Brimola" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
+      <input id="Password" placeholder="Password" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
       <button onclick="tambahPos()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md px-4 py-2 col-span-1">Tambah</button>
     </div>
 
@@ -34,6 +36,8 @@
             <th class="p-3">DO yang dimiliki</th>
             <th class="p-3">Harga Refill</th>
             <th class="p-3">Harga Bagi Hasil</th>
+            <th class="p-3">ID Brimola</th>
+            <th class="p-3">Password</th>
             <th class="p-3">Aksi</th>
           </tr>
         </thead>
@@ -68,6 +72,8 @@
               <td class="p-3">${item.doyangdimiliki}</td>
               <td class="p-3">${item.hargarefill}</td>
               <td class="p-3">${item.hargabagihasil}</td>
+              <td class="p-3">${item.id_brimola}</td>
+              <td class="p-3">${item.Password}</td>
               <td class="p-3">
                 <button class="bg-yellow-400 text-black px-3 py-1 rounded-md text-sm mr-2" onclick="editPos(${i})">✏️ Edit</button>
                 <button class="bg-red-500 text-white px-3 py-1 rounded-md text-sm" onclick="hapusPos(${i + 2})">🗑️ Hapus</button>
@@ -84,6 +90,8 @@
       const doyangdimiliki = document.getElementById("doyangdimilikiInput").value.trim();
       const hargarefill = document.getElementById("hargarefillInput").value.trim();
       const hargabagihasil = document.getElementById("hargabagihasilInput").value.trim();
+      const hargarefill = document.getElementById("id_brimolaInput").value.trim();
+      const hargabagihasil = document.getElementById("PasswordInput").value.trim();
       if (!uraian || !pos) return alert("Minimal isi Nama Pangkalan dan Nama PT.");
 
       fetch(getAPIUrl("add"), {
@@ -92,7 +100,7 @@
           sheet: "db_pangkalan",
           action: "add",
           payload: {
-            values: [uraian, pos, doyangdimiliki, hargarefill, hargabagihasil]
+            values: [uraian, pos, doyangdimiliki, hargarefill, hargabagihasi,id_brimola,Password]
           }
         })
       })
@@ -113,6 +121,9 @@
       const newDo = prompt("Edit DO:", current.doyangdimiliki);
       const newRefill = prompt("Edit Harga Refill:", current.hargarefill);
       const newBagi = prompt("Edit Harga Bagi Hasil:", current.hargabagihasil);
+      const newidbrimola = prompt("Edit Harga Refill:", current.id_brimola);
+      const newPassword = prompt("Edit Harga Bagi Hasil:", current.hargaPassword);
+      
 
       fetch(getAPIUrl("edit"), {
         method: 'POST',
@@ -126,7 +137,9 @@
               newPos.trim().toUpperCase(),
               newDo,
               newRefill,
-              newBagi
+              newBagi,
+              newidbrimola,
+              newPassword
             ]
           }
         })
