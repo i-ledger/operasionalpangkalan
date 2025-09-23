@@ -18,7 +18,7 @@
       <input list="uraianList" id="uraianInput" placeholder="Nama Pangkalan" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
       <input type="text" id="posInput" placeholder="Nama PT" readonly class="bg-gray-100 border border-gray-300 rounded-md px-3 py-2 w-full" />
       <input id="kodeBrivaInput" placeholder="Kode Briva" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
-      <input id="tanggalInput" placeholder="Tanggal dd/mm/yyyy atau '-'" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
+      <input type="date" id="tanggalInput" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
       <input id="brimolaOlehInput" placeholder="Brimola Oleh" readonly class="bg-gray-100 border border-gray-300 rounded-md px-3 py-2 w-full" />
       <button onclick="tambahBrimola()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md px-4 py-2 col-span-1">Tambah</button>
     </div>
@@ -75,6 +75,21 @@
       posInput.value = uraianMap[uraianInput.value] || '';
     });
 
+    // Auto update Brimola Oleh ketika tanggal berubah
+    tanggalInput.addEventListener('change', () => {
+      if (!tanggalInput.value) {
+        tanggalInput.value = "-";
+        brimolaOlehInput.value = "Pangkalan";
+      } else {
+        const d = new Date(tanggalInput.value);
+        const dd = String(d.getDate()).padStart(2,'0');
+        const mm = String(d.getMonth()+1).padStart(2,'0');
+        const yyyy = d.getFullYear();
+        tanggalInput.value = `${dd}/${mm}/${yyyy}`;
+        brimolaOlehInput.value = "Agen";
+      }
+    });
+
     function loadPOS() {
       fetch(getAPIUrl("Brimola_Agen"))
         .then(res => res.json())
@@ -108,13 +123,13 @@
       let brimolaOleh;
 
       if (!uraian || !pos) return alert("Nama Pangkalan dan Nama PT wajib diisi.");
-
       if (kodeBriva !== '-' && !/^\d+$/.test(kodeBriva)) return alert("Kode Briva hanya boleh angka atau '-'");
-      if (tanggal !== '-') {
-        if (!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(tanggal)) return alert("Format tanggal salah, gunakan dd/mm/yyyy atau '-'");
-        brimolaOleh = "Agen";
-      } else {
+
+      if (!tanggal || tanggal === '-') {
+        tanggal = "-";
         brimolaOleh = "Pangkalan";
+      } else {
+        brimolaOleh = "Agen";
       }
 
       brimolaOlehInput.value = brimolaOleh;
