@@ -14,14 +14,17 @@
     </div>
 
     <!-- Input -->
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-2">
       <input list="uraianList" id="uraianInput" placeholder="Nama Pangkalan" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
       <input type="text" id="posInput" placeholder="Nama PT" readonly class="bg-gray-100 border border-gray-300 rounded-md px-3 py-2 w-full" />
       <input id="kodeBrivaInput" placeholder="Kode Briva" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
       <input type="date" id="tanggalInput" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
       <input id="brimolaOlehInput" placeholder="Brimola Oleh" readonly class="bg-gray-100 border border-gray-300 rounded-md px-3 py-2 w-full" />
-      <button onclick="tambahBrimola()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md px-4 py-2 col-span-1">Tambah</button>
+      <button onclick="tambahBrimola()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md px-4 py-2 col-span-1 mt-2">Tambah</button>
     </div>
+
+    <!-- Info ID & Password -->
+    <div id="infoBrimola" class="mb-4 text-sm text-gray-700 font-semibold"></div>
 
     <datalist id="uraianList"></datalist>
 
@@ -51,12 +54,14 @@
 
     let dataPOS = [];
     let uraianMap = {};
+    let dbPangkalan = {};
 
     const uraianInput = document.getElementById("uraianInput");
     const posInput = document.getElementById("posInput");
     const kodeBrivaInput = document.getElementById("kodeBrivaInput");
     const tanggalInput = document.getElementById("tanggalInput");
     const brimolaOlehInput = document.getElementById("brimolaOlehInput");
+    const infoBrimola = document.getElementById("infoBrimola");
     const tbody = document.querySelector("#brimolaTable tbody");
 
     // Load mapping Nama Pangkalan -> Nama PT
@@ -71,15 +76,29 @@
         });
       });
 
-    // Auto isi Nama PT berdasarkan Nama Pangkalan
+    // Load db_pangkalan untuk ID & Password
+    fetch(getAPIUrl("db_pangkalan"))
+      .then(r => r.json())
+      .then(data => {
+        data.forEach(row => {
+          dbPangkalan[row.uraian] = { id: row.id_brimola, password: row.Password };
+        });
+      });
+
+    // Auto isi Nama PT & tampilkan ID/Password
     uraianInput.addEventListener('input', () => {
-      posInput.value = uraianMap[uraianInput.value] || '';
+      const nama = uraianInput.value;
+      posInput.value = uraianMap[nama] || '';
+      if (dbPangkalan[nama]) {
+        infoBrimola.innerHTML = `ID Brimola: <span class="font-bold">${dbPangkalan[nama].id}</span> | Password: <span class="font-bold">${dbPangkalan[nama].password}</span>`;
+      } else {
+        infoBrimola.innerHTML = '';
+      }
     });
 
-    // Format tanggal dd/mm/yyyy
     function formatTanggal(tgl) {
       if (!tgl || tgl === '-') return '-';
-      if (/^\d{2}\/\d{2}\/\d{4}$/.test(tgl)) return tgl; // sudah dd/mm/yyyy
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(tgl)) return tgl;
       const d = new Date(tgl);
       const dd = String(d.getDate()).padStart(2,'0');
       const mm = String(d.getMonth()+1).padStart(2,'0');
@@ -87,7 +106,6 @@
       return `${dd}/${mm}/${yyyy}`;
     }
 
-    // Update Brimola Oleh saat pilih tanggal
     tanggalInput.addEventListener('change', () => {
       if (!tanggalInput.value) {
         tanggalInput.dataset.value = '-';
@@ -154,6 +172,7 @@
         kodeBrivaInput.value = '';
         tanggalInput.value = '';
         brimolaOlehInput.value = '';
+        infoBrimola.innerHTML = '';
         loadPOS();
       })
       .catch(err => alert("❌ Gagal tambah data: "+err.message));
