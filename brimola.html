@@ -98,7 +98,7 @@
         const mm = String(d.getMonth()+1).padStart(2,'0');
         const yyyy = d.getFullYear();
         tanggalInput.dataset.value = `${dd}/${mm}/${yyyy}`;
-        brimolaOlehInput.value = "Agen";
+        brimolaOlehInput.value = "AGEN";
       }
     });
 
@@ -132,7 +132,7 @@
       const uraian = uraianInput.value.trim().toUpperCase();
       let kodeBriva = kodeBrivaInput.value.trim();
       let tanggal = tanggalInput.value ? tanggalInput.dataset.value : '-';
-      let brimolaOleh = tanggal !== '-' ? "Agen" : "Pangkalan";
+      let brimolaOleh = tanggal !== '-' ? "AGEN" : "PANGKALAN";
 
       if (!uraian || !pos) return alert("Nama Pangkalan dan Nama PT wajib diisi.");
       if (kodeBriva !== '-' && !/^\d+$/.test(kodeBriva)) return alert("Kode Briva hanya boleh angka atau '-'");
