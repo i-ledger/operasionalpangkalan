@@ -144,7 +144,7 @@
         body: JSON.stringify({
           sheet: "Brimola_Agen",
           action: "add",
-          payload: { values: [uraian, pos, kodeBriva, tanggal, brimolaOleh] }
+          payload: { values: [pos, Uraian, kodeBriva, tanggal, brimolaOleh] }
         })
       })
       .then(res => res.json())
