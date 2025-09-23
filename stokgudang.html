@@ -101,7 +101,7 @@ const money = v => {
 };
 const numberFmt = v => (Number(v) || 0);
 
-// populate month & year
+// === Inisialisasi bulan & tahun ===
 (function initMonthYear(){
   const selM = $('#selMonth'), selY = $('#selYear');
   const now = new Date();
@@ -121,6 +121,7 @@ const numberFmt = v => (Number(v) || 0);
   }
 })();
 
+// === Ambil data JSONP ===
 async function fetchRekap(month, year){
   $('#spinner').classList.remove('hidden');
   return new Promise((resolve, reject)=>{
@@ -140,20 +141,22 @@ async function fetchRekap(month, year){
   });
 }
 
+// === Render tabel bertahap ===
 function renderTable(rows) {
   const tbody = $('#tbody');
   tbody.innerHTML = '';
-  
+
+  // total global
   let totPenerimaan = 0, totBrim = 0, totLuar = 0, totBagi = 0, totSisaRefill = 0, totSisaBagi = 0;
 
   let i = 0;
-  const chunkSize = 100; // render per 100 baris biar ringan
+  const batchSize = 50; // render per 50 baris
 
-  function renderChunk() {
+  function renderBatch(deadline) {
     const frag = document.createDocumentFragment();
-    const end = Math.min(i + chunkSize, rows.length);
+    let count = 0;
 
-    for (; i < end; i++) {
+    while (i < rows.length && count < batchSize) {
       const r = rows[i];
       const tr = document.createElement('tr');
       tr.className = i % 2 === 0 ? '' : 'bg-slate-50';
@@ -184,31 +187,37 @@ function renderTable(rows) {
         <td class="p-2 border text-right">${money(sb)}</td>
       `;
       frag.appendChild(tr);
+      i++;
+      count++;
     }
 
     tbody.appendChild(frag);
 
     if (i < rows.length) {
-      requestAnimationFrame(renderChunk); // lanjut render batch berikutnya
+      // lanjut render batch berikutnya tanpa nge-freeze UI
+      if (deadline && deadline.timeRemaining() > 0) {
+        renderBatch(deadline);
+      } else {
+        requestIdleCallback(renderBatch);
+      }
     } else {
-      // update total kalau sudah selesai
+      // update total akhir
       $('#totalPenerimaan').textContent = totPenerimaan;
       $('#totalBrimola').textContent = money(totBrim);
       $('#totalLuar').textContent = money(totLuar);
       $('#totalBagi').textContent = money(totBagi);
       $('#totalSisaRefill').textContent = money(totSisaRefill);
       $('#totalSisaBagi').textContent = money(totSisaBagi);
-
+      $('#spinner').classList.add('hidden');
       window.__rekap_last = rows || [];
-      $('#spinner').classList.add('hidden'); // matikan spinner
     }
   }
 
   $('#spinner').classList.remove('hidden');
-  requestAnimationFrame(renderChunk);
+  requestIdleCallback(renderBatch);
 }
 
-
+// === Export ke CSV ===
 function rowsToCSV(rows){
   const header=['Nama Pangkalan','Nama PT','Penerimaan Bulan Ini','Total Brimola','Total Luar Brimola','Total Bagi Hasil','Sisa Refill','Sisa Bagi Hasil'];
   const lines=[header.join(',')];
@@ -221,6 +230,7 @@ function rowsToCSV(rows){
   return lines.join('\n');
 }
 
+// === Event listener ===
 $('#btnLoad').addEventListener('click',async()=>{
   const rows=await fetchRekap($('#selMonth').value,$('#selYear').value);
   renderTable(rows);
@@ -235,10 +245,13 @@ $('#btnCSV').addEventListener('click',()=>{
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 });
 
+// === Auto load saat pertama buka ===
 (async function autoLoad(){
   const rows=await fetchRekap($('#selMonth').value,$('#selYear').value);
   renderTable(rows);
 })();
+</script>
+
 </script>
 </body>
 </html>
