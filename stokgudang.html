@@ -6,7 +6,6 @@
   <title>Rekap Pangkalan — i-Shipping</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Spinner animasi */
     .spinner {
       border: 3px solid #f3f3f3;
       border-top: 3px solid #3b82f6;
@@ -72,9 +71,7 @@
               <th class="p-2 border text-right">Sisa Bagi Hasil</th>
             </tr>
           </thead>
-          <tbody id="tbody">
-            <!-- rows -->
-          </tbody>
+          <tbody id="tbody"></tbody>
           <tfoot>
             <tr class="bg-slate-50 font-semibold">
               <td colspan="3" class="p-2 border">TOTAL</td>
@@ -92,16 +89,12 @@
   </div>
 
 <script>
-const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyTxquOUPh__dCBtZN4CyE-QhVQdRyXyPf7dBSvV4q-xL42j-DIgqLjPWZY-EdEyAaWfw/exec';
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbznWeA7NPf_B8uB6FGqRHLad0WL4LO69LthKRH-wZ1lw2cKLvXwcRy9R0szwbXyaBpS6A/exec';
 const $ = sel => document.querySelector(sel);
-const money = v => {
-  if (v === null || v === undefined) return 'Rp 0';
-  const n = Number(v) || 0;
-  return n.toLocaleString('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0});
-};
+const money = v => (Number(v)||0).toLocaleString('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0});
 const numberFmt = v => (Number(v) || 0);
 
-// populate month & year
+// === Init bulan & tahun ===
 (function initMonthYear(){
   const selM = $('#selMonth'), selY = $('#selYear');
   const now = new Date();
@@ -121,56 +114,61 @@ const numberFmt = v => (Number(v) || 0);
   }
 })();
 
+// === Fetch data dari backend (pakai JSON langsung) ===
 async function fetchRekap(month, year){
   $('#spinner').classList.remove('hidden');
-  return new Promise((resolve, reject)=>{
-    try{
-      const cbName='cbRekap'+Date.now();
-      window[cbName]=(data)=>{
-        resolve(data && data.rows?data.rows:[]);
-        delete window[cbName]; script.remove();
-        $('#spinner').classList.add('hidden');
-      };
-      const url=BACKEND_URL+'?action=getRekapSemuaPangkalan&month='+month+'&year='+year+'&callback='+cbName;
-      const script=document.createElement('script');
-      script.src=url;
-      script.onerror=()=>{reject(new Error('Gagal load JSONP'));$('#spinner').classList.add('hidden');};
-      document.body.appendChild(script);
-    }catch(err){$('#spinner').classList.add('hidden');reject(err);}
-  });
+  try {
+    const res = await fetch(`${BACKEND_URL}?action=getRekapSemuaPangkalan&month=${month}&year=${year}`);
+    const data = await res.json();
+    return data && data.rows ? data.rows : [];
+  } catch(err) {
+    console.error(err);
+    alert("Gagal memuat data");
+    return [];
+  } finally {
+    $('#spinner').classList.add('hidden');
+  }
 }
 
+// === Render tabel ===
 function renderTable(rows){
-  const tbody=$('#tbody'); tbody.innerHTML='';
-  let totPenerimaan=0, totBrim=0, totLuar=0, totBagi=0, totSisaRefill=0, totSisaBagi=0;
+  const tbody=$('#tbody');
+  let html='', totPenerimaan=0, totBrim=0, totLuar=0, totBagi=0, totSisaRefill=0, totSisaBagi=0;
+
   rows.forEach((r,i)=>{
-    const tr=document.createElement('tr');
-    tr.className=i%2===0?'':'bg-slate-50';
     const penerimaan=numberFmt(r.penerimaan);
     const b=numberFmt(r.total_brimola), l=numberFmt(r.total_luar_brimola),
           bh=numberFmt(r.total_bagi_hasil), sr=numberFmt(r.sisa_refill), sb=numberFmt(r.sisa_bagi_hasil);
+
     totPenerimaan+=penerimaan; totBrim+=b; totLuar+=l; totBagi+=bh; totSisaRefill+=sr; totSisaBagi+=sb;
-    tr.innerHTML=`
-      <td class="p-2 border">${i+1}</td>
-      <td class="p-2 border">${r.nama_pangkalan||'-'}</td>
-      <td class="p-2 border">${r.nama_pt||'-'}</td>
-      <td class="p-2 border text-right">${penerimaan}</td>
-      <td class="p-2 border text-right">${money(b)}</td>
-      <td class="p-2 border text-right">${money(l)}</td>
-      <td class="p-2 border text-right">${money(bh)}</td>
-      <td class="p-2 border text-right">${money(sr)}</td>
-      <td class="p-2 border text-right">${money(sb)}</td>`;
-    tbody.appendChild(tr);
+
+    html += `
+      <tr class="${i%2===0?'':'bg-slate-50'}">
+        <td class="p-2 border">${i+1}</td>
+        <td class="p-2 border">${r.nama_pangkalan||'-'}</td>
+        <td class="p-2 border">${r.nama_pt||'-'}</td>
+        <td class="p-2 border text-right">${penerimaan}</td>
+        <td class="p-2 border text-right">${money(b)}</td>
+        <td class="p-2 border text-right">${money(l)}</td>
+        <td class="p-2 border text-right">${money(bh)}</td>
+        <td class="p-2 border text-right">${money(sr)}</td>
+        <td class="p-2 border text-right">${money(sb)}</td>
+      </tr>`;
   });
+
+  tbody.innerHTML = html;
+
   $('#totalPenerimaan').textContent=totPenerimaan;
   $('#totalBrimola').textContent=money(totBrim);
   $('#totalLuar').textContent=money(totLuar);
   $('#totalBagi').textContent=money(totBagi);
   $('#totalSisaRefill').textContent=money(totSisaRefill);
   $('#totalSisaBagi').textContent=money(totSisaBagi);
+
   window.__rekap_last=rows||[];
 }
 
+// === CSV Export ===
 function rowsToCSV(rows){
   const header=['Nama Pangkalan','Nama PT','Penerimaan Bulan Ini','Total Brimola','Total Luar Brimola','Total Bagi Hasil','Sisa Refill','Sisa Bagi Hasil'];
   const lines=[header.join(',')];
@@ -183,9 +181,14 @@ function rowsToCSV(rows){
   return lines.join('\n');
 }
 
+// === Event binding ===
+let isLoading=false;
 $('#btnLoad').addEventListener('click',async()=>{
+  if(isLoading) return;
+  isLoading=true;
   const rows=await fetchRekap($('#selMonth').value,$('#selYear').value);
   renderTable(rows);
+  isLoading=false;
 });
 
 $('#btnCSV').addEventListener('click',()=>{
@@ -197,6 +200,7 @@ $('#btnCSV').addEventListener('click',()=>{
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 });
 
+// === Auto load pertama kali ===
 (async function autoLoad(){
   const rows=await fetchRekap($('#selMonth').value,$('#selYear').value);
   renderTable(rows);
