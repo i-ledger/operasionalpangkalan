@@ -101,7 +101,7 @@ const money = v => {
 };
 const numberFmt = v => (Number(v) || 0);
 
-// === Inisialisasi bulan & tahun ===
+// populate month & year
 (function initMonthYear(){
   const selM = $('#selMonth'), selY = $('#selYear');
   const now = new Date();
@@ -121,7 +121,6 @@ const numberFmt = v => (Number(v) || 0);
   }
 })();
 
-// === Ambil data JSONP ===
 async function fetchRekap(month, year){
   $('#spinner').classList.remove('hidden');
   return new Promise((resolve, reject)=>{
@@ -141,83 +140,37 @@ async function fetchRekap(month, year){
   });
 }
 
-// === Render tabel bertahap ===
-function renderTable(rows) {
-  const tbody = $('#tbody');
-  tbody.innerHTML = '';
-
-  // total global
-  let totPenerimaan = 0, totBrim = 0, totLuar = 0, totBagi = 0, totSisaRefill = 0, totSisaBagi = 0;
-
-  let i = 0;
-  const batchSize = 50; // render per 50 baris
-
-  function renderBatch(deadline) {
-    const frag = document.createDocumentFragment();
-    let count = 0;
-
-    while (i < rows.length && count < batchSize) {
-      const r = rows[i];
-      const tr = document.createElement('tr');
-      tr.className = i % 2 === 0 ? '' : 'bg-slate-50';
-
-      const penerimaan = numberFmt(r.penerimaan);
-      const b = numberFmt(r.total_brimola);
-      const l = numberFmt(r.total_luar_brimola);
-      const bh = numberFmt(r.total_bagi_hasil);
-      const sr = numberFmt(r.sisa_refill);
-      const sb = numberFmt(r.sisa_bagi_hasil);
-
-      totPenerimaan += penerimaan;
-      totBrim += b;
-      totLuar += l;
-      totBagi += bh;
-      totSisaRefill += sr;
-      totSisaBagi += sb;
-
-      tr.innerHTML = `
-        <td class="p-2 border">${i+1}</td>
-        <td class="p-2 border">${r.nama_pangkalan || '-'}</td>
-        <td class="p-2 border">${r.nama_pt || '-'}</td>
-        <td class="p-2 border text-right">${penerimaan}</td>
-        <td class="p-2 border text-right">${money(b)}</td>
-        <td class="p-2 border text-right">${money(l)}</td>
-        <td class="p-2 border text-right">${money(bh)}</td>
-        <td class="p-2 border text-right">${money(sr)}</td>
-        <td class="p-2 border text-right">${money(sb)}</td>
-      `;
-      frag.appendChild(tr);
-      i++;
-      count++;
-    }
-
-    tbody.appendChild(frag);
-
-    if (i < rows.length) {
-      // lanjut render batch berikutnya tanpa nge-freeze UI
-      if (deadline && deadline.timeRemaining() > 0) {
-        renderBatch(deadline);
-      } else {
-        requestIdleCallback(renderBatch);
-      }
-    } else {
-      // update total akhir
-      $('#totalPenerimaan').textContent = totPenerimaan;
-      $('#totalBrimola').textContent = money(totBrim);
-      $('#totalLuar').textContent = money(totLuar);
-      $('#totalBagi').textContent = money(totBagi);
-      $('#totalSisaRefill').textContent = money(totSisaRefill);
-      $('#totalSisaBagi').textContent = money(totSisaBagi);
-      $('#spinner').classList.add('hidden');
-      window.__rekap_last = rows || [];
-    }
-  }
-
-  $('#spinner').classList.remove('hidden');
-  requestIdleCallback(renderBatch);
+function renderTable(rows){
+  const tbody=$('#tbody'); tbody.innerHTML='';
+  let totPenerimaan=0, totBrim=0, totLuar=0, totBagi=0, totSisaRefill=0, totSisaBagi=0;
+  rows.forEach((r,i)=>{
+    const tr=document.createElement('tr');
+    tr.className=i%2===0?'':'bg-slate-50';
+    const penerimaan=numberFmt(r.penerimaan);
+    const b=numberFmt(r.total_brimola), l=numberFmt(r.total_luar_brimola),
+          bh=numberFmt(r.total_bagi_hasil), sr=numberFmt(r.sisa_refill), sb=numberFmt(r.sisa_bagi_hasil);
+    totPenerimaan+=penerimaan; totBrim+=b; totLuar+=l; totBagi+=bh; totSisaRefill+=sr; totSisaBagi+=sb;
+    tr.innerHTML=`
+      <td class="p-2 border">${i+1}</td>
+      <td class="p-2 border">${r.nama_pangkalan||'-'}</td>
+      <td class="p-2 border">${r.nama_pt||'-'}</td>
+      <td class="p-2 border text-right">${penerimaan}</td>
+      <td class="p-2 border text-right">${money(b)}</td>
+      <td class="p-2 border text-right">${money(l)}</td>
+      <td class="p-2 border text-right">${money(bh)}</td>
+      <td class="p-2 border text-right">${money(sr)}</td>
+      <td class="p-2 border text-right">${money(sb)}</td>`;
+    tbody.appendChild(tr);
+  });
+  $('#totalPenerimaan').textContent=totPenerimaan;
+  $('#totalBrimola').textContent=money(totBrim);
+  $('#totalLuar').textContent=money(totLuar);
+  $('#totalBagi').textContent=money(totBagi);
+  $('#totalSisaRefill').textContent=money(totSisaRefill);
+  $('#totalSisaBagi').textContent=money(totSisaBagi);
+  window.__rekap_last=rows||[];
 }
 
-// === Export ke CSV ===
 function rowsToCSV(rows){
   const header=['Nama Pangkalan','Nama PT','Penerimaan Bulan Ini','Total Brimola','Total Luar Brimola','Total Bagi Hasil','Sisa Refill','Sisa Bagi Hasil'];
   const lines=[header.join(',')];
@@ -230,7 +183,6 @@ function rowsToCSV(rows){
   return lines.join('\n');
 }
 
-// === Event listener ===
 $('#btnLoad').addEventListener('click',async()=>{
   const rows=await fetchRekap($('#selMonth').value,$('#selYear').value);
   renderTable(rows);
@@ -245,13 +197,10 @@ $('#btnCSV').addEventListener('click',()=>{
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 });
 
-// === Auto load saat pertama buka ===
 (async function autoLoad(){
   const rows=await fetchRekap($('#selMonth').value,$('#selYear').value);
   renderTable(rows);
 })();
-</script>
-
 </script>
 </body>
 </html>
