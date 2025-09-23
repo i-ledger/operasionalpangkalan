@@ -144,7 +144,7 @@
         body: JSON.stringify({
           sheet: "Brimola_Agen",
           action: "add",
-          payload: { values: [pos, Uraian, kodeBriva, tanggal, brimolaOleh] }
+          payload: { values: [pos, uraian, kodeBriva, tanggal, brimolaOleh] }
         })
       })
       .then(res => res.json())
@@ -169,7 +169,7 @@
       if (newKode === null) return;
       const newTanggal = prompt("Edit Tanggal (dd/mm/yyyy atau '-'):", current.hargarefill);
       if (newTanggal === null) return;
-      const newBrimola = newTanggal !== '-' ? "Agen" : "Pangkalan";
+      const newBrimola = newTanggal !== '-' ? "AGEN" : "PANGKALAN";
 
       fetch(getAPIUrl("edit"), {
         method: 'POST',
