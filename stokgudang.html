@@ -17,6 +17,7 @@
       z-index: 50;
       flex-direction: column;
       font-family: sans-serif;
+      transition: opacity 0.4s;
     }
     .progress-bar {
       width: 80%;
@@ -123,47 +124,59 @@ const numberFmt = v => (Number(v) || 0);
 // Loading overlay control
 function showLoading() {
   $('#loadingOverlay').classList.remove('hidden');
+  $('#loadingOverlay').style.opacity = "1";
   updateProgress(0);
-  simulateProgress();
 }
 function hideLoading() {
-  $('#loadingOverlay').classList.add('hidden');
+  const overlay = $('#loadingOverlay');
+  overlay.style.opacity = "0";
+  setTimeout(()=> overlay.classList.add('hidden'),400);
 }
 function updateProgress(percent) {
   $('#progressFill').style.width = percent + '%';
   $('#progressText').textContent = percent + '%';
 }
-// fake smooth progress
-function simulateProgress() {
-  let p = 0;
-  const interval = setInterval(()=>{
-    if (p < 90) {
-      p += Math.floor(Math.random()*5)+1;
-      if(p>90) p=90;
-      updateProgress(p);
-    } else {
-      clearInterval(interval);
-    }
-  },200);
-}
 
 async function fetchRekap(month, year){
   showLoading();
+  const start = performance.now();
+  let progressInterval;
+
   return new Promise((resolve, reject)=>{
     try{
       const cbName='cbRekap'+Date.now();
+
+      // monitor progress real-time
+      progressInterval = setInterval(()=>{
+        const elapsed = performance.now() - start;
+        // asumsi fetch normal max 8 detik (progress skala ke 90%)
+        const estMax = 8000;
+        let percent = Math.min(90, Math.floor((elapsed/estMax)*100));
+        updateProgress(percent);
+      },200);
+
       window[cbName]=(data)=>{
+        clearInterval(progressInterval);
         updateProgress(100);
-        setTimeout(hideLoading,300);
+        setTimeout(hideLoading,400); // kasih delay biar smooth
         resolve(data && data.rows?data.rows:[]);
         delete window[cbName]; script.remove();
       };
+
       const url=BACKEND_URL+'?action=getRekapSemuaPangkalan&month='+month+'&year='+year+'&callback='+cbName;
       const script=document.createElement('script');
       script.src=url;
-      script.onerror=()=>{hideLoading();reject(new Error('Gagal load JSONP'));};
+      script.onerror=()=>{
+        clearInterval(progressInterval);
+        hideLoading();
+        reject(new Error('Gagal load JSONP'));
+      };
       document.body.appendChild(script);
-    }catch(err){hideLoading();reject(err);}
+    }catch(err){
+      clearInterval(progressInterval);
+      hideLoading();
+      reject(err);
+    }
   });
 }
 
