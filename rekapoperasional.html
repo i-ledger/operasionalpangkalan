@@ -1,137 +1,136 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Rekap Operasional</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* Striping tabel biar ringan */
-    #rekap-table tbody tr:nth-child(even){ background:#f9fafb; }
-    #rekap-table tbody tr:nth-child(odd){ background:#fff; }
-    #rekap-table th, #rekap-table td { white-space:nowrap; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Rekap Operasional</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  /* Striping tabel biar ringan */
+  #rekap-table tbody tr:nth-child(even){ background:#f9fafb; }
+  #rekap-table tbody tr:nth-child(odd){ background:#fff; }
+  #rekap-table th, #rekap-table td { white-space:nowrap; }
+</style>
 </head>
 <body class="bg-blue-50 min-h-screen p-4 font-sans">
-  <div class="max-w-5xl mx-auto">
+<div class="max-w-5xl mx-auto">
 
-    <!-- Header -->
-    <header class="flex items-center justify-between mb-4 bg-blue-200 p-3 rounded-lg shadow">
-      <h1 class="text-xl font-bold text-blue-900">📊 Rekap Operasional</h1>
-      <div class="flex items-center gap-2">
-        <button onclick="goDashboard()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg shadow hover:bg-blue-700">🏠 Dashboard</button>
-        <div id="spinner" class="hidden fixed inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center z-50">
-          <svg class="animate-spin h-12 w-12 text-blue-400 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-          </svg>
-          <span class="text-white text-lg font-semibold">Loading...</span>
+  <!-- Header -->
+  <header class="flex items-center justify-between mb-4 bg-blue-200 p-3 rounded-lg shadow">
+    <h1 class="text-xl font-bold text-blue-900">📊 Rekap Operasional</h1>
+    <div class="flex items-center gap-2">
+      <button onclick="goDashboard()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg shadow hover:bg-blue-700">🏠 Dashboard</button>
+      <div id="spinner" class="hidden fixed inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center z-50">
+        <svg class="animate-spin h-12 w-12 text-blue-400 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+        </svg>
+        <span class="text-white text-lg font-semibold">Loading...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filter Section -->
+  <section class="bg-white p-4 rounded-xl shadow mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-blue-900">Nama PT</label>
+        <select id="select-pt" class="mt-1 block w-full rounded-md border-gray-300"></select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-blue-900">Nama Pangkalan</label>
+        <select id="select-pangkalan" multiple size="5" class="mt-1 block w-full rounded-md border-gray-300"></select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-blue-900">Bulan</label>
+        <select id="select-month" class="mt-1 block w-full rounded-md border-gray-300"></select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-blue-900">Tahun</label>
+        <select id="select-year" class="mt-1 block w-full rounded-md border-gray-300"></select>
+      </div>
+    </div>
+
+    <!-- Info Box -->
+    <div class="mt-4 grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
+      <div class="bg-blue-100 p-3 rounded-lg shadow">
+        <div class="text-xs text-gray-600">DO yang dimiliki</div>
+        <div id="do-owned" class="text-lg font-semibold">-</div>
+      </div>
+      <div class="bg-blue-100 p-3 rounded-lg shadow">
+        <div class="text-xs text-gray-600">Harga Tabung</div>
+        <div id="price" class="text-lg font-semibold">-</div>
+      </div>
+      <div class="bg-blue-100 p-3 rounded-lg shadow">
+        <div class="text-xs text-gray-600">Harga Bagi Hasil</div>
+        <div id="harga-bagi-hasil" class="text-lg font-semibold">-</div>
+      </div>
+      <div class="bg-blue-100 p-3 rounded-lg shadow">
+        <div class="text-xs text-gray-600">Total Penerimaan</div>
+        <div id="total-penerimaan" class="text-lg font-semibold">-</div>
+      </div>
+      <div class="bg-blue-100 p-3 rounded-lg shadow">
+        <div class="text-xs text-gray-600">Tabung Kerjasama</div>
+        <div id="tabung-kerjasama" class="text-lg font-semibold">-</div>
+      </div>
+      <div class="bg-blue-100 p-3 rounded-lg shadow">
+        <div class="text-xs text-gray-600">Sisa Bagi Hasil</div>
+        <div id="sisa-bagi-hasil" class="text-lg font-semibold">-</div>
+      </div>
+    </div>
+
+    <div class="mt-4 flex flex-wrap gap-2">
+      <button id="btn-load" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">🔎 Tampilkan Rekap</button>
+      <button id="btn-export-xlsx" class="px-4 py-2 border border-blue-400 text-blue-700 rounded-lg shadow">📥 Export Excel</button>
+
+      <div class="relative inline-block text-left">
+        <button onclick="toggleMenu()" class="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700">📤 Bagikan</button>
+        <div id="share-menu" class="hidden absolute mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
+          <button onclick="shareRekapWA()" class="w-full text-left px-4 py-2 hover:bg-gray-100">📱 WhatsApp</button>
+          <button onclick="downloadPDF()" class="w-full text-left px-4 py-2 hover:bg-gray-100">📄 Download PDF</button>
         </div>
       </div>
-    </header>
+    </div>
+  </section>
 
-    <!-- Filter Section -->
-    <section class="bg-white p-4 rounded-xl shadow mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-blue-900">Nama PT</label>
-          <select id="select-pt" class="mt-1 block w-full rounded-md border-gray-300"></select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-blue-900">Nama Pangkalan</label>
-          <select id="select-pangkalan" multiple size="5" class="mt-1 block w-full rounded-md border-gray-300"></select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-blue-900">Bulan</label>
-          <select id="select-month" class="mt-1 block w-full rounded-md border-gray-300"></select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-blue-900">Tahun</label>
-          <select id="select-year" class="mt-1 block w-full rounded-md border-gray-300"></select>
-        </div>
-      </div>
-
-      <!-- Info Box -->
-      <div class="mt-4 grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
-        <div class="bg-blue-100 p-3 rounded-lg shadow">
-          <div class="text-xs text-gray-600">DO yang dimiliki</div>
-          <div id="do-owned" class="text-lg font-semibold">-</div>
-        </div>
-        <div class="bg-blue-100 p-3 rounded-lg shadow">
-          <div class="text-xs text-gray-600">Harga Tabung</div>
-          <div id="price" class="text-lg font-semibold">-</div>
-        </div>
-        <div class="bg-blue-100 p-3 rounded-lg shadow">
-          <div class="text-xs text-gray-600">Harga Bagi Hasil</div>
-          <div id="harga-bagi-hasil" class="text-lg font-semibold">-</div>
-        </div>
-        <div class="bg-blue-100 p-3 rounded-lg shadow">
-          <div class="text-xs text-gray-600">Total Penerimaan</div>
-          <div id="total-penerimaan" class="text-lg font-semibold">-</div>
-        </div>
-        <div class="bg-blue-100 p-3 rounded-lg shadow">
-          <div class="text-xs text-gray-600">Tabung Kerjasama</div>
-          <div id="tabung-kerjasama" class="text-lg font-semibold">-</div>
-        </div>
-        <div class="bg-blue-100 p-3 rounded-lg shadow">
-          <div class="text-xs text-gray-600">Sisa Bagi Hasil</div>
-          <div id="sisa-bagi-hasil" class="text-lg font-semibold">-</div>
-        </div>
-      </div>
-
-      <div class="mt-4 flex flex-wrap gap-2">
-        <button id="btn-load" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">🔎 Tampilkan Rekap</button>
-        <button id="btn-export-xlsx" class="px-4 py-2 border border-blue-400 text-blue-700 rounded-lg shadow">📥 Export CSV</button>
-        
-        <!-- Dropdown Bagikan -->
-        <div class="relative inline-block text-left">
-          <button onclick="toggleMenu()" class="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700">
-            📤 Bagikan
-          </button>
-          <div id="share-menu" class="hidden absolute mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
-            <button onclick="shareRekapWA()" class="w-full text-left px-4 py-2 hover:bg-gray-100">📱 WhatsApp</button>
-            <button onclick="downloadPDF()" class="w-full text-left px-4 py-2 hover:bg-gray-100">📄 Download PDF</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Table Wrapper -->
-    <section id="rekap-wrapper" class="bg-white p-4 rounded-xl shadow">
-      <div class="overflow-auto">
-        <table id="rekap-table" class="min-w-full border border-gray-300">
-          <thead class="bg-blue-200 text-blue-900 font-bold">
-            <tr>
-              <th class="px-3 py-2 border">Tanggal</th>
-              <th class="px-3 py-2 border">Laporan Driver</th>
-              <th class="px-3 py-2 border">Retur</th>
-              <th class="px-3 py-2 border">Dikirim</th>
-              <th class="px-3 py-2 border">SA Pangkalan</th>
-              <th class="px-3 py-2 border">Pengiriman</th>
-              <th class="px-3 py-2 border">Nominal Dibayar</th>
-              <th class="px-3 py-2 border">Brimola Oleh</th>
-              <th class="px-3 py-2 border">Bayar Brimola</th>
-              <th class="px-3 py-2 border">Bukti TF</th>
-              <th class="px-3 py-2 border">Bagi Hasil</th>
-              <th class="px-3 py-2 border text-blue-900">Total TBG</th>
-            </tr>
-          </thead>
-          <tbody id="rekap-body" class="bg-white"></tbody>
-          <tfoot class="bg-blue-100 font-semibold">
-            <tr>
-              <td colspan="5" class="px-3 py-2 text-right border">TOTAL</td>
-              <td id="total-pengiriman" class="px-3 py-2 border text-right whitespace-nowrap">0</td>
-              <td></td><td></td><td></td><td></td>
-              <td id="total-bagi-hasil" class="px-3 py-2 border text-right whitespace-nowrap">0</td>
-              <td id="grand-total" class="px-3 py-2 border text-right whitespace-nowrap text-blue-800">0</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </section>
-  </div>
+  <!-- Table Wrapper -->
+  <section id="rekap-wrapper" class="bg-white p-4 rounded-xl shadow">
+    <div class="overflow-auto">
+      <table id="rekap-table" class="min-w-full border border-gray-300">
+        <thead class="bg-blue-200 text-blue-900 font-bold">
+          <tr>
+            <th class="px-3 py-2 border">Tanggal</th>
+            <th class="px-3 py-2 border">Laporan Driver</th>
+            <th class="px-3 py-2 border">Retur</th>
+            <th class="px-3 py-2 border">Dikirim</th>
+            <th class="px-3 py-2 border">SA Pangkalan</th>
+            <th class="px-3 py-2 border">Pengiriman</th>
+            <th class="px-3 py-2 border">Nominal Dibayar</th>
+            <th class="px-3 py-2 border">Brimola Oleh</th>
+            <th class="px-3 py-2 border">Bayar Brimola</th>
+            <th class="px-3 py-2 border">Bukti TF</th>
+            <th class="px-3 py-2 border">Bagi Hasil</th>
+            <th class="px-3 py-2 border text-blue-900">Total Tbg</th>
+          </tr>
+        </thead>
+        <tbody id="rekap-body" class="bg-white"></tbody>
+        <tfoot class="bg-blue-100 font-semibold">
+          <tr>
+            <td colspan="5" class="px-3 py-2 text-right border">TOTAL</td>
+            <td id="total-pengiriman" class="px-3 py-2 border text-right whitespace-nowrap">0</td>
+            <td></td><td></td><td></td><td></td>
+            <td id="total-bagi-hasil" class="px-3 py-2 border text-right whitespace-nowrap">0</td>
+            <td id="grand-total" class="px-3 py-2 border text-right whitespace-nowrap text-blue-800">0</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+</div>
 
 <script>
+let namaPangkalan = '', bulanTahun='';
+
 function toggleMenu(){ document.getElementById("share-menu").classList.toggle("hidden"); }
 function goDashboard(){ window.location.href="dashboard.html"; }
 
@@ -155,6 +154,7 @@ async function fetchJSON(url){
   finally{ hideSpinner(); }
 }
 
+// Options Bulan & Tahun
 function makeMonthOptions(){
   const sel = document.getElementById('select-month');
   const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -292,22 +292,27 @@ function hitungTabungKerjasama(data){
   document.getElementById('sisa-bagi-hasil').innerHTML = formatRupiah(sisa);
 }
 
+// Inisialisasi
+window.addEventListener('DOMContentLoaded',()=>{
+  makeMonthOptions();
+  makeYearOptions();
+  loadPTs();
+  document.getElementById('select-pt').addEventListener('change', e=> loadPangkalanForPT(e.target.value));
+  document.getElementById('btn-load').addEventListener('click', loadRekap);
+});
+
+// =====================================================
+// ==== Export Excel / WA / PDF ====
 document.getElementById('btn-export-xlsx').addEventListener('click', async ()=>{
-  if(!window.XLSX){
-    await loadLib("https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js");
-  }
+  if(!window.XLSX){ await loadLib("https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"); }
   const wb = XLSX.utils.book_new();
   const table = document.getElementById('rekap-table');
   const ws = XLSX.utils.table_to_sheet(table);
-  
-  // Tambah judul di atas sheet
   XLSX.utils.sheet_add_aoa(ws, [[`Rekap Operasional — ${namaPangkalan} — ${bulanTahun}`]], {origin:"A1"});
-  
   XLSX.utils.book_append_sheet(wb, ws, "Rekap");
   XLSX.writeFile(wb, `rekap_${namaPangkalan}_${bulanTahun}.xlsx`);
 });
 
-// ==== Lazy load libs ====
 async function loadLib(url){
   if(!document.querySelector(`script[src="${url}"]`)){
     return new Promise(resolve=>{
@@ -316,50 +321,35 @@ async function loadLib(url){
     });
   }
 }
-// Share via WA
+
 async function shareRekapWA(){
   await loadLib("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js");
   const wrapper=document.getElementById("rekap-wrapper");
-  const canvas=await html2canvas(wrapper,{scale:2}); // scale 2 biar lebih tajam
+  const canvas=await html2canvas(wrapper,{scale:2});
   const dataUrl=canvas.toDataURL("image/png");
   const blob=await (await fetch(dataUrl)).blob();
   const file=new File([blob],`rekap_${namaPangkalan}_${bulanTahun}.png`,{type:"image/png"});
   if(navigator.canShare && navigator.canShare({files:[file]})){
     await navigator.share({files:[file],title:`Rekap Operasional ${namaPangkalan} ${bulanTahun}`});
-  } else {
-    alert("Browser tidak mendukung Web Share API untuk file.");
-  }
+  } else { alert("Browser tidak mendukung Web Share API untuk file."); }
 }
 
-// Download PDF
 async function downloadPDF(){
   await loadLib("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js");
   await loadLib("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
   const { jsPDF }=window.jspdf;
   const wrapper=document.getElementById("rekap-wrapper");
-
   const canvas=await html2canvas(wrapper,{scale:2});
   const imgData=canvas.toDataURL("image/png");
-
   const pdf=new jsPDF("l","pt","a4");
   const pageW=pdf.internal.pageSize.getWidth();
   const imgW=pageW-40;
   const imgH=canvas.height*imgW/canvas.width;
-
   pdf.setFontSize(14);
   pdf.text(`Rekap Operasional — ${namaPangkalan} — ${bulanTahun}`, pageW/2, 30, {align:"center"});
   pdf.addImage(imgData,"PNG",20,50,imgW,imgH);
-
   pdf.save(`rekap_${namaPangkalan}_${bulanTahun}.pdf`);
 }
-// Init
-window.addEventListener('DOMContentLoaded',()=>{
-  makeMonthOptions();
-  makeYearOptions();
-  loadPTs();
-  document.getElementById('select-pt').addEventListener('change',e=> loadPangkalanForPT(e.target.value));
-  document.getElementById('btn-load').addEventListener('click', loadRekap);
-});
 </script>
 </body>
 </html>
