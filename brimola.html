@@ -52,6 +52,13 @@
     let dataPOS = [];
     let uraianMap = {};
 
+    const uraianInput = document.getElementById("uraianInput");
+    const posInput = document.getElementById("posInput");
+    const kodeBrivaInput = document.getElementById("kodeBrivaInput");
+    const tanggalInput = document.getElementById("tanggalInput");
+    const brimolaOlehInput = document.getElementById("brimolaOlehInput");
+    const tbody = document.querySelector("#brimolaTable tbody");
+
     // Load mapping Nama Pangkalan -> Nama PT
     fetch(getAPIUrl("pos"))
       .then(r => r.json())
@@ -64,28 +71,33 @@
         });
       });
 
-    const uraianInput = document.getElementById("uraianInput");
-    const posInput = document.getElementById("posInput");
-    const kodeBrivaInput = document.getElementById("kodeBrivaInput");
-    const tanggalInput = document.getElementById("tanggalInput");
-    const brimolaOlehInput = document.getElementById("brimolaOlehInput");
-    const tbody = document.querySelector("#brimolaTable tbody");
-
+    // Auto isi Nama PT berdasarkan Nama Pangkalan
     uraianInput.addEventListener('input', () => {
       posInput.value = uraianMap[uraianInput.value] || '';
     });
 
-    // Auto update Brimola Oleh ketika tanggal berubah
+    // Format tanggal dd/mm/yyyy
+    function formatTanggal(tgl) {
+      if (!tgl || tgl === '-') return '-';
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(tgl)) return tgl; // sudah dd/mm/yyyy
+      const d = new Date(tgl);
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }
+
+    // Update Brimola Oleh saat pilih tanggal
     tanggalInput.addEventListener('change', () => {
       if (!tanggalInput.value) {
-        tanggalInput.value = "-";
+        tanggalInput.dataset.value = '-';
         brimolaOlehInput.value = "Pangkalan";
       } else {
         const d = new Date(tanggalInput.value);
         const dd = String(d.getDate()).padStart(2,'0');
         const mm = String(d.getMonth()+1).padStart(2,'0');
         const yyyy = d.getFullYear();
-        tanggalInput.value = `${dd}/${mm}/${yyyy}`;
+        tanggalInput.dataset.value = `${dd}/${mm}/${yyyy}`;
         brimolaOlehInput.value = "Agen";
       }
     });
@@ -103,7 +115,7 @@
               <td class="p-3">${item.uraian}</td>
               <td class="p-3">${item.pos}</td>
               <td class="p-3">${item.doyangdimiliki}</td>
-              <td class="p-3">${item.hargarefill}</td>
+              <td class="p-3">${formatTanggal(item.hargarefill)}</td>
               <td class="p-3">${item.hargabagihasil}</td>
               <td class="p-3">
                 <button class="bg-yellow-400 text-black px-3 py-1 rounded-md text-sm mr-2" onclick="editPos(${i})">✏️ Edit</button>
@@ -119,30 +131,20 @@
       const uraian = uraianInput.value.trim().toUpperCase();
       const pos = posInput.value.trim().toUpperCase();
       let kodeBriva = kodeBrivaInput.value.trim();
-      let tanggal = tanggalInput.value.trim();
-      let brimolaOleh;
+      let tanggal = tanggalInput.value ? tanggalInput.dataset.value : '-';
+      let brimolaOleh = tanggal !== '-' ? "Agen" : "Pangkalan";
 
       if (!uraian || !pos) return alert("Nama Pangkalan dan Nama PT wajib diisi.");
       if (kodeBriva !== '-' && !/^\d+$/.test(kodeBriva)) return alert("Kode Briva hanya boleh angka atau '-'");
 
-      if (!tanggal || tanggal === '-') {
-        tanggal = "-";
-        brimolaOleh = "Pangkalan";
-      } else {
-        brimolaOleh = "Agen";
-      }
-
       brimolaOlehInput.value = brimolaOleh;
 
-      // Tambah ke spreadsheet
       fetch(getAPIUrl("add"), {
         method: 'POST',
         body: JSON.stringify({
           sheet: "Brimola_Agen",
           action: "add",
-          payload: {
-            values: [uraian, pos, kodeBriva, tanggal, brimolaOleh]
-          }
+          payload: { values: [uraian, pos, kodeBriva, tanggal, brimolaOleh] }
         })
       })
       .then(res => res.json())
@@ -165,7 +167,7 @@
       if (newPos === null) return;
       const newKode = prompt("Edit Kode Briva:", current.doyangdimiliki);
       if (newKode === null) return;
-      const newTanggal = prompt("Edit Tanggal:", current.hargarefill);
+      const newTanggal = prompt("Edit Tanggal (dd/mm/yyyy atau '-'):", current.hargarefill);
       if (newTanggal === null) return;
       const newBrimola = newTanggal !== '-' ? "Agen" : "Pangkalan";
 
@@ -189,11 +191,7 @@
       if (!confirm("Yakin ingin menghapus baris "+row+"?")) return;
       fetch(getAPIUrl("delete"), {
         method: 'POST',
-        body: JSON.stringify({
-          sheet: "Brimola_Agen",
-          action: "delete",
-          payload: { row }
-        })
+        body: JSON.stringify({ sheet: "Brimola_Agen", action: "delete", payload: { row } })
       })
       .then(res => res.json())
       .then(loadPOS)
@@ -202,7 +200,7 @@
 
     loadPOS();
 
-    // Auto logout
+    // Auto logout 5 menit
     setTimeout(() => {
       localStorage.clear();
       window.location.href = "login.html";
