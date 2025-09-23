@@ -49,7 +49,10 @@
     const id_spreadsheet = localStorage.getItem("id_spreadsheet");
     if (!id_spreadsheet || localStorage.getItem("loggedIn") !== "true") window.location.href = "login.html";
 
-    let uraianMap = {}; // untuk mapping Nama Pangkalan -> Nama PT
+    let dataPOS = [];
+    let uraianMap = {};
+
+    // Load mapping Nama Pangkalan -> Nama PT
     fetch(getAPIUrl("pos"))
       .then(r => r.json())
       .then(data => {
@@ -72,19 +75,41 @@
       posInput.value = uraianMap[uraianInput.value] || '';
     });
 
+    function loadPOS() {
+      fetch(getAPIUrl("Brimola_Agen"))
+        .then(res => res.json())
+        .then(data => {
+          dataPOS = data;
+          tbody.innerHTML = '';
+          dataPOS.forEach((item, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td class="p-3">${i+1}</td>
+              <td class="p-3">${item.uraian}</td>
+              <td class="p-3">${item.pos}</td>
+              <td class="p-3">${item.doyangdimiliki}</td>
+              <td class="p-3">${item.hargarefill}</td>
+              <td class="p-3">${item.hargabagihasil}</td>
+              <td class="p-3">
+                <button class="bg-yellow-400 text-black px-3 py-1 rounded-md text-sm mr-2" onclick="editPos(${i})">✏️ Edit</button>
+                <button class="bg-red-500 text-white px-3 py-1 rounded-md text-sm" onclick="hapusPos(${i+2})">🗑️ Hapus</button>
+              </td>`;
+            tbody.appendChild(tr);
+          });
+        })
+        .catch(err => alert("❌ Gagal load data: "+err.message));
+    }
+
     function tambahBrimola() {
-      const uraian = uraianInput.value.trim();
-      const pos = posInput.value.trim();
+      const uraian = uraianInput.value.trim().toUpperCase();
+      const pos = posInput.value.trim().toUpperCase();
       let kodeBriva = kodeBrivaInput.value.trim();
       let tanggal = tanggalInput.value.trim();
       let brimolaOleh;
 
       if (!uraian || !pos) return alert("Nama Pangkalan dan Nama PT wajib diisi.");
 
-      // Validasi Kode Briva
       if (kodeBriva !== '-' && !/^\d+$/.test(kodeBriva)) return alert("Kode Briva hanya boleh angka atau '-'");
-
-      // Validasi Tanggal
       if (tanggal !== '-') {
         if (!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(tanggal)) return alert("Format tanggal salah, gunakan dd/mm/yyyy atau '-'");
         brimolaOleh = "Agen";
@@ -94,36 +119,73 @@
 
       brimolaOlehInput.value = brimolaOleh;
 
-      // Tambah ke tabel
-      const tr = document.createElement('tr');
-      const no = tbody.children.length + 1;
-      tr.innerHTML = `
-        <td class="p-3">${no}</td>
-        <td class="p-3">${uraian}</td>
-        <td class="p-3">${pos}</td>
-        <td class="p-3">${kodeBriva}</td>
-        <td class="p-3">${tanggal}</td>
-        <td class="p-3">${brimolaOleh}</td>
-        <td class="p-3">
-          <button class="bg-red-500 text-white px-3 py-1 rounded-md text-sm" onclick="hapusBaris(this)">🗑️ Hapus</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-
-      // Reset input
-      uraianInput.value = '';
-      posInput.value = '';
-      kodeBrivaInput.value = '';
-      tanggalInput.value = '';
-      brimolaOlehInput.value = '';
+      // Tambah ke spreadsheet
+      fetch(getAPIUrl("add"), {
+        method: 'POST',
+        body: JSON.stringify({
+          sheet: "Brimola_Agen",
+          action: "add",
+          payload: {
+            values: [uraian, pos, kodeBriva, tanggal, brimolaOleh]
+          }
+        })
+      })
+      .then(res => res.json())
+      .then(() => {
+        uraianInput.value = '';
+        posInput.value = '';
+        kodeBrivaInput.value = '';
+        tanggalInput.value = '';
+        brimolaOlehInput.value = '';
+        loadPOS();
+      })
+      .catch(err => alert("❌ Gagal tambah data: "+err.message));
     }
 
-    function hapusBaris(btn) {
-      const tr = btn.closest('tr');
-      tr.remove();
-      // Update nomor
-      Array.from(tbody.children).forEach((row, i) => row.children[0].textContent = i + 1);
+    function editPos(index) {
+      const current = dataPOS[index];
+      const newUraian = prompt("Edit Nama Pangkalan:", current.uraian);
+      if (newUraian === null) return;
+      const newPos = prompt("Edit Nama PT:", current.pos);
+      if (newPos === null) return;
+      const newKode = prompt("Edit Kode Briva:", current.doyangdimiliki);
+      if (newKode === null) return;
+      const newTanggal = prompt("Edit Tanggal:", current.hargarefill);
+      if (newTanggal === null) return;
+      const newBrimola = newTanggal !== '-' ? "Agen" : "Pangkalan";
+
+      fetch(getAPIUrl("edit"), {
+        method: 'POST',
+        body: JSON.stringify({
+          sheet: "Brimola_Agen",
+          action: "edit",
+          payload: {
+            row: index + 2,
+            values: [newUraian.trim().toUpperCase(), newPos.trim().toUpperCase(), newKode, newTanggal, newBrimola]
+          }
+        })
+      })
+      .then(res => res.json())
+      .then(loadPOS)
+      .catch(err => alert("❌ Gagal edit data: "+err.message));
     }
+
+    function hapusPos(row) {
+      if (!confirm("Yakin ingin menghapus baris "+row+"?")) return;
+      fetch(getAPIUrl("delete"), {
+        method: 'POST',
+        body: JSON.stringify({
+          sheet: "Brimola_Agen",
+          action: "delete",
+          payload: { row }
+        })
+      })
+      .then(res => res.json())
+      .then(loadPOS)
+      .catch(err => alert("❌ Gagal hapus data: "+err.message));
+    }
+
+    loadPOS();
 
     // Auto logout
     setTimeout(() => {
