@@ -6,51 +6,27 @@
   <title>Rekap Pangkalan — i-Shipping</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Progress overlay */
-    #loadingOverlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(255, 255, 255, 0.9);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 50;
-      flex-direction: column;
-      font-family: sans-serif;
-      transition: opacity 0.4s;
+    /* Spinner animasi */
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #3b82f6;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      animation: spin 0.8s linear infinite;
     }
-    .progress-bar {
-      width: 80%;
-      max-width: 400px;
-      height: 20px;
-      background: #e5e7eb;
-      border-radius: 9999px;
-      overflow: hidden;
-      margin-top: 10px;
-    }
-    .progress-bar-fill {
-      height: 100%;
-      width: 0%;
-      background: #2563eb;
-      transition: width 0.2s;
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
-<body class="bg-blue-50 text-slate-900 p-4 sm:p-6">
-  <!-- Loading Overlay -->
-  <div id="loadingOverlay" class="hidden">
-    <div class="text-lg font-medium text-blue-700">Memuat data...</div>
-    <div class="progress-bar">
-      <div id="progressFill" class="progress-bar-fill"></div>
-    </div>
-    <div id="progressText" class="mt-2 text-sm text-blue-600">0%</div>
-  </div>
-
+<body class="bg-slate-50 text-slate-900 p-4 sm:p-6">
   <div class="max-w-6xl mx-auto">
     <!-- Header -->
     <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
-      <h1 class="text-xl sm:text-2xl font-semibold text-blue-700">Rekap Pangkalan</h1>
-      <a href="dashboard.html" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow text-sm sm:text-base">
+      <h1 class="text-xl sm:text-2xl font-semibold">Rekap Pangkalan</h1>
+      <a href="dashboard.html" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded shadow text-sm sm:text-base">
         Dashboard
       </a>
     </div>
@@ -72,6 +48,10 @@
         <button id="btnCSV" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow text-sm">
           Download CSV
         </button>
+        <div id="spinner" class="hidden flex items-center gap-2 text-gray-500 text-sm">
+          <div class="spinner"></div>
+          <span>Loading...</span>
+        </div>
       </div>
     </div>
 
@@ -80,7 +60,7 @@
       <div class="overflow-x-auto">
         <table id="tbl" class="min-w-full table-auto border-collapse text-sm sm:text-base">
           <thead>
-            <tr class="bg-blue-100 text-left">
+            <tr class="bg-slate-100 text-left">
               <th class="p-2 border">#</th>
               <th class="p-2 border">Nama Pangkalan</th>
               <th class="p-2 border">Nama PT</th>
@@ -96,7 +76,7 @@
             <!-- rows -->
           </tbody>
           <tfoot>
-            <tr class="bg-blue-50 font-semibold">
+            <tr class="bg-slate-50 font-semibold">
               <td colspan="3" class="p-2 border">TOTAL</td>
               <td id="totalPenerimaan" class="p-2 border text-right">0</td>
               <td id="totalBrimola" class="p-2 border text-right">Rp 0</td>
@@ -112,7 +92,7 @@
   </div>
 
 <script>
-const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyvMQaxcO_g2UxIrbC_y2GlVov_exW6SiMH9eBfKPG6oO9SyWNUp3Id30xLPRGjA2nkOA/exec';
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx6WyDQyjEUhjLc2SBo6BilevF2CRxjHubwszk1Hu72zyjh0iMhSl94x4UHC8hZNfwHoQ/exec';
 const $ = sel => document.querySelector(sel);
 const money = v => {
   if (v === null || v === undefined) return 'Rp 0';
@@ -121,62 +101,42 @@ const money = v => {
 };
 const numberFmt = v => (Number(v) || 0);
 
-// Loading overlay control
-function showLoading() {
-  $('#loadingOverlay').classList.remove('hidden');
-  $('#loadingOverlay').style.opacity = "1";
-  updateProgress(0);
-}
-function hideLoading() {
-  const overlay = $('#loadingOverlay');
-  overlay.style.opacity = "0";
-  setTimeout(()=> overlay.classList.add('hidden'),400);
-}
-function updateProgress(percent) {
-  $('#progressFill').style.width = percent + '%';
-  $('#progressText').textContent = percent + '%';
-}
+// populate month & year
+(function initMonthYear(){
+  const selM = $('#selMonth'), selY = $('#selYear');
+  const now = new Date();
+  for (let m=1;m<=12;m++){
+    const opt=document.createElement('option');
+    opt.value=m;
+    opt.textContent=m.toString().padStart(2,'0');
+    if(m===(now.getMonth()+1)) opt.selected=true;
+    selM.appendChild(opt);
+  }
+  const startYear=now.getFullYear()-3;
+  for (let y=startYear;y<=now.getFullYear()+1;y++){
+    const opt=document.createElement('option');
+    opt.value=y; opt.textContent=y;
+    if(y===now.getFullYear()) opt.selected=true;
+    selY.appendChild(opt);
+  }
+})();
 
 async function fetchRekap(month, year){
-  showLoading();
-  const start = performance.now();
-  let progressInterval;
-
+  $('#spinner').classList.remove('hidden');
   return new Promise((resolve, reject)=>{
     try{
       const cbName='cbRekap'+Date.now();
-
-      // monitor progress real-time
-      progressInterval = setInterval(()=>{
-        const elapsed = performance.now() - start;
-        // asumsi fetch normal max 8 detik (progress skala ke 90%)
-        const estMax = 8000;
-        let percent = Math.min(90, Math.floor((elapsed/estMax)*100));
-        updateProgress(percent);
-      },200);
-
       window[cbName]=(data)=>{
-        clearInterval(progressInterval);
-        updateProgress(100);
-        setTimeout(hideLoading,400); // kasih delay biar smooth
         resolve(data && data.rows?data.rows:[]);
         delete window[cbName]; script.remove();
+        $('#spinner').classList.add('hidden');
       };
-
       const url=BACKEND_URL+'?action=getRekapSemuaPangkalan&month='+month+'&year='+year+'&callback='+cbName;
       const script=document.createElement('script');
       script.src=url;
-      script.onerror=()=>{
-        clearInterval(progressInterval);
-        hideLoading();
-        reject(new Error('Gagal load JSONP'));
-      };
+      script.onerror=()=>{reject(new Error('Gagal load JSONP'));$('#spinner').classList.add('hidden');};
       document.body.appendChild(script);
-    }catch(err){
-      clearInterval(progressInterval);
-      hideLoading();
-      reject(err);
-    }
+    }catch(err){$('#spinner').classList.add('hidden');reject(err);}
   });
 }
 
@@ -185,7 +145,7 @@ function renderTable(rows){
   let totPenerimaan=0, totBrim=0, totLuar=0, totBagi=0, totSisaRefill=0, totSisaBagi=0;
   rows.forEach((r,i)=>{
     const tr=document.createElement('tr');
-    tr.className=i%2===0?'':'bg-blue-50/30';
+    tr.className=i%2===0?'':'bg-slate-50';
     const penerimaan=numberFmt(r.penerimaan);
     const b=numberFmt(r.total_brimola), l=numberFmt(r.total_luar_brimola),
           bh=numberFmt(r.total_bagi_hasil), sr=numberFmt(r.sisa_refill), sb=numberFmt(r.sisa_bagi_hasil);
@@ -223,26 +183,6 @@ function rowsToCSV(rows){
   return lines.join('\n');
 }
 
-// Init
-(function initMonthYear(){
-  const selM=$('#selMonth'), selY=$('#selYear');
-  const now=new Date();
-  for (let m=1;m<=12;m++){
-    const opt=document.createElement('option');
-    opt.value=m;
-    opt.textContent=m.toString().padStart(2,'0');
-    if(m===(now.getMonth()+1)) opt.selected=true;
-    selM.appendChild(opt);
-  }
-  const startYear=now.getFullYear()-3;
-  for (let y=startYear;y<=now.getFullYear()+1;y++){
-    const opt=document.createElement('option');
-    opt.value=y; opt.textContent=y;
-    if(y===now.getFullYear()) opt.selected=true;
-    selY.appendChild(opt);
-  }
-})();
-
 $('#btnLoad').addEventListener('click',async()=>{
   const rows=await fetchRekap($('#selMonth').value,$('#selYear').value);
   renderTable(rows);
@@ -257,7 +197,6 @@ $('#btnCSV').addEventListener('click',()=>{
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 });
 
-// Auto load awal
 (async function autoLoad(){
   const rows=await fetchRekap($('#selMonth').value,$('#selYear').value);
   renderTable(rows);
