@@ -24,9 +24,17 @@
     </div>
 
     <!-- Info ID & Password -->
-    <div id="infoBrimola" class="mb-4 text-sm text-gray-700 font-semibold"></div>
+    <div id="infoBrimola" class="mb-2 text-sm text-gray-700 font-semibold"></div>
+
+    <!-- Filter Pangkalan -->
+    <input type="text" id="filterPangkalan" placeholder="Filter Nama Pangkalan..." class="border border-gray-300 rounded-md px-3 py-2 w-full mb-2">
 
     <datalist id="uraianList"></datalist>
+
+    <!-- Spinner -->
+    <div id="spinner" class="hidden fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-16 w-16"></div>
+    </div>
 
     <!-- Table -->
     <div class="overflow-auto rounded-lg border border-gray-200">
@@ -47,6 +55,18 @@
     </div>
   </div>
 
+  <style>
+    /* Spinner animasi */
+    .loader {
+      border-top-color: #3498db;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg);}
+      100% { transform: rotate(360deg);}
+    }
+  </style>
+
   <script src="config.js"></script>
   <script>
     const id_spreadsheet = localStorage.getItem("id_spreadsheet");
@@ -63,6 +83,12 @@
     const brimolaOlehInput = document.getElementById("brimolaOlehInput");
     const infoBrimola = document.getElementById("infoBrimola");
     const tbody = document.querySelector("#brimolaTable tbody");
+    const spinner = document.getElementById("spinner");
+    const filterPangkalan = document.getElementById("filterPangkalan");
+
+    function showSpinner(show) {
+      spinner.classList.toggle("hidden", !show);
+    }
 
     // Load mapping Nama Pangkalan -> Nama PT
     fetch(getAPIUrl("pos"))
@@ -120,30 +146,39 @@
       }
     });
 
-    function loadPOS() {
+    function loadPOS(filter = '') {
+      showSpinner(true);
       fetch(getAPIUrl("Brimola_Agen"))
         .then(res => res.json())
         .then(data => {
           dataPOS = data;
           tbody.innerHTML = '';
           dataPOS.forEach((item, i) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td class="p-3">${i+1}</td>
-              <td class="p-3">${item.uraian}</td>
-              <td class="p-3">${item.pos}</td>
-              <td class="p-3">${item.doyangdimiliki}</td>
-              <td class="p-3">${formatTanggal(item.hargarefill)}</td>
-              <td class="p-3">${item.hargabagihasil}</td>
-              <td class="p-3">
-                <button class="bg-yellow-400 text-black px-3 py-1 rounded-md text-sm mr-2" onclick="editPos(${i})">✏️ Edit</button>
-                <button class="bg-red-500 text-white px-3 py-1 rounded-md text-sm" onclick="hapusPos(${i+2})">🗑️ Hapus</button>
-              </td>`;
-            tbody.appendChild(tr);
+            if (item.uraian.toLowerCase().includes(filter.toLowerCase())) {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td class="p-3">${i+1}</td>
+                <td class="p-3">${item.uraian}</td>
+                <td class="p-3">${item.pos}</td>
+                <td class="p-3">${item.doyangdimiliki}</td>
+                <td class="p-3">${formatTanggal(item.hargarefill)}</td>
+                <td class="p-3">${item.hargabagihasil}</td>
+                <td class="p-3">
+                  <button class="bg-yellow-400 text-black px-3 py-1 rounded-md text-sm mr-2" onclick="editPos(${i})">✏️ Edit</button>
+                  <button class="bg-red-500 text-white px-3 py-1 rounded-md text-sm" onclick="hapusPos(${i+2})">🗑️ Hapus</button>
+                </td>`;
+              tbody.appendChild(tr);
+            }
           });
         })
-        .catch(err => alert("❌ Gagal load data: "+err.message));
+        .catch(err => alert("❌ Gagal load data: "+err.message))
+        .finally(() => showSpinner(false));
     }
+
+    // Filter pangkalan
+    filterPangkalan.addEventListener('input', () => {
+      loadPOS(filterPangkalan.value);
+    });
 
     function tambahBrimola() {
       const pos = posInput.value.trim().toUpperCase();
@@ -157,6 +192,7 @@
 
       brimolaOlehInput.value = brimolaOleh;
 
+      showSpinner(true);
       fetch(getAPIUrl("add"), {
         method: 'POST',
         body: JSON.stringify({
@@ -173,9 +209,10 @@
         tanggalInput.value = '';
         brimolaOlehInput.value = '';
         infoBrimola.innerHTML = '';
-        loadPOS();
+        loadPOS(filterPangkalan.value);
       })
-      .catch(err => alert("❌ Gagal tambah data: "+err.message));
+      .catch(err => alert("❌ Gagal tambah data: "+err.message))
+      .finally(() => showSpinner(false));
     }
 
     function editPos(index) {
@@ -190,6 +227,7 @@
       if (newTanggal === null) return;
       const newBrimola = newTanggal !== '-' ? "AGEN" : "PANGKALAN";
 
+      showSpinner(true);
       fetch(getAPIUrl("edit"), {
         method: 'POST',
         body: JSON.stringify({
@@ -202,19 +240,22 @@
         })
       })
       .then(res => res.json())
-      .then(loadPOS)
-      .catch(err => alert("❌ Gagal edit data: "+err.message));
+      .then(() => loadPOS(filterPangkalan.value))
+      .catch(err => alert("❌ Gagal edit data: "+err.message))
+      .finally(() => showSpinner(false));
     }
 
     function hapusPos(row) {
       if (!confirm("Yakin ingin menghapus baris "+row+"?")) return;
+      showSpinner(true);
       fetch(getAPIUrl("delete"), {
         method: 'POST',
         body: JSON.stringify({ sheet: "Brimola_Agen", action: "delete", payload: { row } })
       })
       .then(res => res.json())
-      .then(loadPOS)
-      .catch(err => alert("❌ Gagal hapus data: "+err.message));
+      .then(() => loadPOS(filterPangkalan.value))
+      .catch(err => alert("❌ Gagal hapus data: "+err.message))
+      .finally(() => showSpinner(false));
     }
 
     loadPOS();
@@ -226,4 +267,4 @@
     }, 5 * 60 * 1000);
   </script>
 </body>
-</html>
+</
