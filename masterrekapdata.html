@@ -189,16 +189,24 @@
     return match ? match[0] : "";
   }
 
-  async function fetchData() {
-    document.getElementById("loadingSpinner").style.display = "block";
-    try {
-      const res = await fetch(endpoint);
-      allData = await res.json();
-      filterByDate(); // langsung pake filter sesuai tanggal input
-    } finally {
-      document.getElementById("loadingSpinner").style.display = "none";
-    }
+async function fetchData() {
+  document.getElementById("loadingSpinner").style.display = "block";
+  try {
+    const res = await fetch(endpoint);
+    const rawData = await res.json();
+
+    // tambahin row index manual (baris 1 = header, data mulai baris 2)
+    allData = rawData.map((item, i) => ({
+      ...item,
+      row: i + 2
+    }));
+
+    filterByDate(); // langsung pake filter sesuai tanggal input
+  } finally {
+    document.getElementById("loadingSpinner").style.display = "none";
   }
+}
+
 
   async function fetchPos() {
     const res = await fetch(posEndpoint);
