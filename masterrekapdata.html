@@ -377,7 +377,7 @@ async function deleteRow(row) {
       body: JSON.stringify({
         action: "delete",
         sheet: "Transaksi",
-        payload: { row: row }
+        payload: { row: selectedItem.row,   }
       })
     });
 
