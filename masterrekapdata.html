@@ -246,7 +246,7 @@ const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https:/
     <button class="px-2 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded"
       onclick='openEditModal(${JSON.stringify(item)}, ${index})'>✏️Edit</button>
     <button class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded"
-      onclick='deleteRow(${index + 2})'>🗑️Hapus</button>
+      onclick='deleteRow(${item.row})'>🗑️Hapus</button>
   </div>
 </td>
         `;
