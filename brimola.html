@@ -15,9 +15,7 @@
 
     <!-- Input -->
     <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-2">
-      <select id="uraianInput" class="border border-gray-300 rounded-md px-3 py-2 w-full">
-        <option value="">Pilih Nama Pangkalan</option>
-      </select>
+      <input list="uraianList" id="uraianInput" placeholder="Nama Pangkalan" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
       <input type="text" id="posInput" placeholder="Nama PT" readonly class="bg-gray-100 border border-gray-300 rounded-md px-3 py-2 w-full" />
       <input id="kodeBrivaInput" placeholder="Kode Briva" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
       <input type="date" id="tanggalInput" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
@@ -27,6 +25,11 @@
 
     <!-- Info ID & Password -->
     <div id="infoBrimola" class="mb-2 text-sm text-gray-700 font-semibold"></div>
+
+    <!-- Filter Pangkalan -->
+    <input type="text" id="filterPangkalan" placeholder="Filter Nama Pangkalan..." class="border border-gray-300 rounded-md px-3 py-2 w-full mb-2">
+
+    <datalist id="uraianList"></datalist>
 
     <!-- Spinner -->
     <div id="spinner" class="hidden fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
@@ -81,6 +84,7 @@
     const infoBrimola = document.getElementById("infoBrimola");
     const tbody = document.querySelector("#brimolaTable tbody");
     const spinner = document.getElementById("spinner");
+    const filterPangkalan = document.getElementById("filterPangkalan");
 
     function showSpinner(show) {
       spinner.classList.toggle("hidden", !show);
@@ -94,8 +98,7 @@
           uraianMap[row.uraian] = row.pos;
           const option = document.createElement('option');
           option.value = row.uraian;
-          option.textContent = row.uraian;
-          uraianInput.appendChild(option);
+          document.getElementById('uraianList').appendChild(option);
         });
       });
 
@@ -109,7 +112,7 @@
       });
 
     // Auto isi Nama PT & tampilkan ID/Password
-    uraianInput.addEventListener('change', () => {
+    uraianInput.addEventListener('input', () => {
       const nama = uraianInput.value;
       posInput.value = uraianMap[nama] || '';
       if (dbPangkalan[nama]) {
@@ -151,7 +154,7 @@
           dataPOS = data;
           tbody.innerHTML = '';
           dataPOS.forEach((item, i) => {
-            if (!filter || item.uraian === filter) {
+            if (item.uraian.toLowerCase().includes(filter.toLowerCase())) {
               const tr = document.createElement('tr');
               tr.innerHTML = `
                 <td class="p-3">${i+1}</td>
@@ -172,9 +175,9 @@
         .finally(() => showSpinner(false));
     }
 
-    // Filter dropdown otomatis loadPOS
-    uraianInput.addEventListener('change', () => {
-      loadPOS(uraianInput.value);
+    // Filter pangkalan
+    filterPangkalan.addEventListener('input', () => {
+      loadPOS(filterPangkalan.value);
     });
 
     function tambahBrimola() {
@@ -206,7 +209,7 @@
         tanggalInput.value = '';
         brimolaOlehInput.value = '';
         infoBrimola.innerHTML = '';
-        loadPOS();
+        loadPOS(filterPangkalan.value);
       })
       .catch(err => alert("❌ Gagal tambah data: "+err.message))
       .finally(() => showSpinner(false));
@@ -237,7 +240,7 @@
         })
       })
       .then(res => res.json())
-      .then(loadPOS)
+      .then(() => loadPOS(filterPangkalan.value))
       .catch(err => alert("❌ Gagal edit data: "+err.message))
       .finally(() => showSpinner(false));
     }
