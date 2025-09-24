@@ -251,8 +251,8 @@ const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https:/
           <td>${buktitransfer}</td>
 <td>
   <div class="flex gap-1">
-    <button class="px-2 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded"
-      onclick='openEditModal(${JSON.stringify(item)}, ${index})'>✏️Edit</button>
+<button class="px-2 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded"
+  onclick='openEditModal(${JSON.stringify(item)})'>✏️Edit</button>
     <button class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded"
       onclick='deleteRow(${item.row})'>🗑️Hapus</button>
   </div>
@@ -326,17 +326,18 @@ function formatTanggalIndonesia(datetimeStr) {
   return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }    
 // ✅ Saat buka modal
-function openEditModal(item, index) {
-  selectedItem = { ...item, row: index + 2 };
+function openEditModal(item) {
+  selectedItem = { ...item }; // langsung pakai row asli dari fetchData
   document.getElementById("editRow").value = selectedItem.row;
-  document.getElementById("editTimestamp").value = formatTanggalIndonesia(item.timestamp);
+  document.getElementById("editTimestamp").value = item.timestamp || "";
   document.getElementById("editNama").value = item.nama || "";
   document.getElementById("editUraian").value = item.uraian || "";
   document.getElementById("editPos").value = item.pos || "";
   document.getElementById("editNominal").value = item.nominal || "";
   document.getElementById("editPembayaran").value = item.pembayaran || "Cash";
   document.getElementById("editModal").classList.remove("hidden");
-    }
+}
+
 
     function closeEditModal() {
       document.getElementById("editModal").classList.add("hidden");
