@@ -329,7 +329,7 @@ function formatTanggalIndonesia(datetimeStr) {
 function openEditModal(item) {
   selectedItem = { ...item }; // langsung pakai row asli dari fetchData
   document.getElementById("editRow").value = selectedItem.row;
-  document.getElementById("editTimestamp").value = item.timestamp || "";
+  document.getElementById("editTimestamp").value = formatTanggalIndonesia(item.timestamp);
   document.getElementById("editNama").value = item.nama || "";
   document.getElementById("editUraian").value = item.uraian || "";
   document.getElementById("editPos").value = item.pos || "";
