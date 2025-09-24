@@ -225,7 +225,7 @@
 
 const fotoNota = item.foto && item.foto.includes('https://') 
   ? `<a href="${item.foto}" target="_blank"><img src="https://drive.google.com/thumbnail?id=${extractDriveId(item.foto)}&sz=w200" alt="Foto Nota" /></a>` 
-  : '<span class="error">Foto Nota tidak ada</span>';
+  : '<span class="error">-</span>';
 
 const buktitransfer = item.buktitransfer && item.buktitransfer.includes('https://') 
   ? `<a href="${item.buktitransfer}" target="_blank"><img src="https://drive.google.com/thumbnail?id=${extractDriveId(item.buktitransfer)}&sz=w200" alt="Bukti Transfer" /></a>` 
