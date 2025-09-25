@@ -247,7 +247,17 @@ function renderTable(rows){
     const buktiTransfer = Number(r.bukti_transfer) || 0;
     const pengiriman = Number(r.pengiriman) || 0;
     const bagiHasil = Number(r.bagi_hasil) || 0;
-    const totalTBG = bayarBrimola - nominalHarusDibayar + buktiTransfer;
+
+    let totalTBG = 0;
+
+    // 🔑 Bedakan logika Agen vs Pangkalan
+    if (r.brimola_oleh && r.brimola_oleh.toLowerCase().includes("agen")) {
+      // Kalau Brimola oleh Agen
+      totalTBG = bayarBrimola - nominalHarusDibayar + buktiTransfer;
+    } else {
+      // Kalau Brimola oleh Pangkalan
+      totalTBG = nominalHarusDibayar - bayarBrimola + buktiTransfer;
+    }
 
     grandTotal += totalTBG;
     totalPengiriman += pengiriman;
