@@ -254,6 +254,13 @@ function renderTable(rows){
     totalPengiriman += pengiriman;
     totalBagiHasil += bagiHasil;
 
+    // wrap Brimola Oleh
+    const brimolaHTML = (r.brimola_oleh || '')
+      .split(';')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .join('<br>');
+
     const tr = document.createElement('tr'); 
     tr.innerHTML = `
       <td class="px-3 py-2 text-sm">${r.tanggal}</td>
@@ -263,7 +270,7 @@ function renderTable(rows){
       <td class="px-3 py-2 text-sm">${r.master_sa}</td>
       <td class="px-3 py-2 text-sm text-right">${pengiriman}</td>
       <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.nominal_harus_dibayar)}</td>
-      <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
+      <td class="px-3 py-2 text-xs leading-snug">${brimolaHTML}</td>
       <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bayar_lewat_brimola)}</td>
       <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bukti_transfer)}</td>
       <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bagi_hasil)}</td>
@@ -278,6 +285,7 @@ function renderTable(rows){
 
   return { totalPengiriman, totalBagiHasil, grandTotal };
 }
+
 
 function hitungTabungKerjasama(data){
   const tP = Number(data.total_penerimaan)||0;
