@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rekap SA - JH - Pengiriman</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    #rekap-table th, #rekap-table td {
+      border: 1px solid #ddd;
+      padding: 4px;
+      text-align: center;
+      font-size: 12px;
+    }
+    #rekap-table th {
+      background: #f3f4f6;
+    }
+    #rekap-table tfoot td {
+      font-weight: bold;
+      background: #e5e7eb;
+    }
+  </style>
+</head>
+<body class="p-4 bg-gray-100">
+  <h1 class="text-xl font-bold mb-4">Rekap SA, JH, dan Pengiriman</h1>
+
+  <!-- FILTER -->
+  <div class="flex gap-2 mb-4">
+    <select id="filterPT" class="border p-2 rounded">
+      <option value="">Pilih PT</option>
+    </select>
+    <select id="filterPangkalan" class="border p-2 rounded">
+      <option value="">Pilih Pangkalan</option>
+    </select>
+    <input type="month" id="filterBulan" class="border p-2 rounded" />
+    <button onclick="loadData()" class="bg-blue-500 text-white px-4 py-2 rounded">Tampilkan</button>
+  </div>
+
+  <!-- TABEL -->
+  <div class="overflow-auto">
+    <table id="rekap-table" class="border-collapse w-full bg-white text-sm"></table>
+  </div>
+
+  <script>
+    // simulasi data (nanti lu ganti fetch dari Apps Script)
+    const masterSA = [
+      { pangkalan: "Aan Karnamah", pt: "PT. SINARAPI JATAYU PERMAI" },
+      { pangkalan: "Abdul Rohman", pt: "PT. SINARAPI JATAYU PERMAI" },
+      { pangkalan: "Ade Rukmana", pt: "PT. SINARAPI JATAYU PERMAI" },
+    ];
+    const dataSA = { "2025-09-01": { "Aan Karnamah": 94, "Ade Rukmana": 180 } };
+    const dataJH = { "2025-09-01": { "Aan Karnamah": 94, "Ade Rukmana": 180 } };
+    const dataP  = { "2025-09-01": { "Aan Karnamah": 0,  "Ade Rukmana": 180 } };
+
+    function getLastDate(year, month) {
+      return new Date(year, month, 0).getDate();
+    }
+
+    function loadData() {
+      const bulanInput = document.getElementById("filterBulan").value || "2025-09";
+      const [year, month] = bulanInput.split("-");
+      const lastDate = getLastDate(year, month);
+
+      const table = document.getElementById("rekap-table");
+      table.innerHTML = "";
+
+      // header baris 1
+      let header1 = `<tr>
+        <th rowspan="2">Nama Pangkalan</th>
+        <th rowspan="2">Nama PT</th>`;
+      for (let d = 1; d <= lastDate; d++) {
+        header1 += `<th colspan="3">${String(d).padStart(2,"0")}/${month}/${year}</th>`;
+      }
+      header1 += `</tr>`;
+
+      // header baris 2
+      let header2 = `<tr>`;
+      for (let d = 1; d <= lastDate; d++) {
+        header2 += `<th>SA</th><th>J</th><th>P</th>`;
+      }
+      header2 += `</tr>`;
+      table.innerHTML += header1 + header2;
+
+      // isi data
+      masterSA.forEach(row => {
+        let tr = `<tr>
+          <td>${row.pangkalan}</td>
+          <td>${row.pt}</td>`;
+        for (let d = 1; d <= lastDate; d++) {
+          const key = `${year}-${month}-${String(d).padStart(2,"0")}`;
+          const sa = dataSA[key]?.[row.pangkalan] || 0;
+          const jh = dataJH[key]?.[row.pangkalan] || 0;
+          const p  = dataP[key]?.[row.pangkalan]  || 0;
+          tr += `<td>${sa}</td><td>${jh}</td><td>${p}</td>`;
+        }
+        tr += `</tr>`;
+        table.innerHTML += tr;
+      });
+
+      // baris total
+      let totalRow = `<tr><td colspan="2">JUMLAH</td>`;
+      for (let d = 1; d <= lastDate; d++) {
+        const key = `${year}-${month}-${String(d).padStart(2,"0")}`;
+        let sumSA = 0, sumJH = 0, sumP = 0;
+        masterSA.forEach(r => {
+          sumSA += dataSA[key]?.[r.pangkalan] || 0;
+          sumJH += dataJH[key]?.[r.pangkalan] || 0;
+          sumP  += dataP[key]?.[r.pangkalan]  || 0;
+        });
+        totalRow += `<td>${sumSA}</td><td>${sumJH}</td><td>${sumP}</td>`;
+      }
+      totalRow += `</tr>`;
+      table.innerHTML += totalRow;
+    }
+
+    // init bulan sekarang
+    document.getElementById("filterBulan").value = new Date().toISOString().slice(0,7);
+    loadData();
+  </script>
+</body>
+</html>
