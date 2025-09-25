@@ -242,22 +242,19 @@ function renderTable(rows){
   let grandTotal = 0, totalPengiriman=0, totalBagiHasil=0;
 
   rows.forEach(r=>{
-    const bayarBrimola = Number(r.bayar_lewat_brimola) || 0;
+    // Logika bayar brimola per baris
+    let bayarBrimola = 0;
+    if (r.brimola_oleh && r.brimola_oleh.toLowerCase() === "pangkalan") {
+      bayarBrimola = (Number(r.master_sa) || 0) * (Number(r.harga_tabung) || 0);
+    } else {
+      bayarBrimola = 0;
+    }
+
     const nominalHarusDibayar = Number(r.nominal_harus_dibayar) || 0;
     const buktiTransfer = Number(r.bukti_transfer) || 0;
     const pengiriman = Number(r.pengiriman) || 0;
     const bagiHasil = Number(r.bagi_hasil) || 0;
-
-    let totalTBG = 0;
-
-    // 🔑 Bedakan logika Agen vs Pangkalan
-    if (r.brimola_oleh && r.brimola_oleh.toLowerCase().includes("agen")) {
-      // Kalau Brimola oleh Agen
-      totalTBG = bayarBrimola - nominalHarusDibayar + buktiTransfer;
-    } else {
-      // Kalau Brimola oleh Pangkalan
-      totalTBG = nominalHarusDibayar - bayarBrimola + buktiTransfer;
-    }
+    const totalTBG = bayarBrimola - nominalHarusDibayar + buktiTransfer;
 
     grandTotal += totalTBG;
     totalPengiriman += pengiriman;
@@ -271,11 +268,11 @@ function renderTable(rows){
       <td class="px-3 py-2 text-sm">${r.dikirim}</td>
       <td class="px-3 py-2 text-sm">${r.master_sa}</td>
       <td class="px-3 py-2 text-sm text-right">${pengiriman}</td>
-      <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.nominal_harus_dibayar)}</td>
+      <td class="px-3 py-2 text-sm text-right">${formatRupiah(nominalHarusDibayar)}</td>
       <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
-      <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bayar_lewat_brimola)}</td>
-      <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bukti_transfer)}</td>
-      <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bagi_hasil)}</td>
+      <td class="px-3 py-2 text-sm text-right">${formatRupiah(bayarBrimola)}</td>
+      <td class="px-3 py-2 text-sm text-right">${formatRupiah(buktiTransfer)}</td>
+      <td class="px-3 py-2 text-sm text-right">${formatRupiah(bagiHasil)}</td>
       <td class="px-3 py-2 text-sm text-right text-blue-600 font-semibold">${formatRupiah(totalTBG)}</td>
     `;
     tbody.appendChild(tr);
@@ -287,6 +284,7 @@ function renderTable(rows){
 
   return { totalPengiriman, totalBagiHasil, grandTotal };
 }
+
 
 function hitungTabungKerjasama(data){
   const tP = Number(data.total_penerimaan)||0;
