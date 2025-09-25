@@ -241,17 +241,39 @@ function renderTable(rows){
   tbody.innerHTML='';
   let grandTotal = 0, totalPengiriman=0, totalBagiHasil=0;
 
+  // Gabungkan data per tanggal
+  const grouped = {};
   rows.forEach(r=>{
-    const bayarBrimola = Number(r.bayar_lewat_brimola) || 0;
-    const nominalHarusDibayar = Number(r.nominal_harus_dibayar) || 0;
-    const buktiTransfer = Number(r.bukti_transfer) || 0;
-    const pengiriman = Number(r.pengiriman) || 0;
-    const bagiHasil = Number(r.bagi_hasil) || 0;
-    const totalTBG = bayarBrimola - nominalHarusDibayar + buktiTransfer;
+    const tgl = r.tanggal;
+    if(!grouped[tgl]){
+      grouped[tgl] = {
+        tanggal: r.tanggal,
+        laporan_pengiriman: r.laporan_pengiriman,
+        retur: r.retur,
+        dikirim: r.dikirim,
+        master_sa: r.master_sa,
+        pengiriman: 0,
+        nominal_harus_dibayar: 0,
+        brimola_oleh: [],
+        bayar_lewat_brimola: 0,
+        bukti_transfer: 0,
+        bagi_hasil: 0
+      };
+    }
+    grouped[tgl].pengiriman += Number(r.pengiriman) || 0;
+    grouped[tgl].nominal_harus_dibayar += Number(r.nominal_harus_dibayar) || 0;
+    grouped[tgl].brimola_oleh.push(r.brimola_oleh);
+    grouped[tgl].bayar_lewat_brimola += Number(r.bayar_lewat_brimola) || 0;
+    grouped[tgl].bukti_transfer += Number(r.bukti_transfer) || 0;
+    grouped[tgl].bagi_hasil += Number(r.bagi_hasil) || 0;
+  });
+
+  Object.values(grouped).forEach(r=>{
+    const totalTBG = r.bayar_lewat_brimola - r.nominal_harus_dibayar + r.bukti_transfer;
 
     grandTotal += totalTBG;
-    totalPengiriman += pengiriman;
-    totalBagiHasil += bagiHasil;
+    totalPengiriman += r.pengiriman;
+    totalBagiHasil += r.bagi_hasil;
 
     const tr = document.createElement('tr'); 
     tr.innerHTML = `
@@ -260,9 +282,9 @@ function renderTable(rows){
       <td class="px-3 py-2 text-sm">${r.retur}</td>
       <td class="px-3 py-2 text-sm">${r.dikirim}</td>
       <td class="px-3 py-2 text-sm">${r.master_sa}</td>
-      <td class="px-3 py-2 text-sm text-right">${pengiriman}</td>
+      <td class="px-3 py-2 text-sm text-right">${r.pengiriman}</td>
       <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.nominal_harus_dibayar)}</td>
-      <td class="px-3 py-2 text-sm">${r.brimola_oleh}</td>
+      <td class="px-3 py-2 text-sm">${r.brimola_oleh.join('; ')}</td>
       <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bayar_lewat_brimola)}</td>
       <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bukti_transfer)}</td>
       <td class="px-3 py-2 text-sm text-right">${formatRupiah(r.bagi_hasil)}</td>
@@ -277,6 +299,7 @@ function renderTable(rows){
 
   return { totalPengiriman, totalBagiHasil, grandTotal };
 }
+
 
 function hitungTabungKerjasama(data){
   const tP = Number(data.total_penerimaan)||0;
