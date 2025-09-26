@@ -6,10 +6,41 @@
   <title>Rekap Gabungan Per Bulan</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .scroll-container { overflow-x: auto; white-space: nowrap; }
+    .scroll-container { 
+      overflow-x: auto; 
+      overflow-y: auto; 
+      max-height: 70vh; /* sesuaikan tinggi tabel */
+      white-space: nowrap; 
+    }
     table { border-collapse: collapse; min-width: 100%; font-size: 13px; }
-    th, td { border: 1px solid #d1d5db; padding: 6px 10px; text-align: Left; white-space: nowrap; }
-    th { background: #f1f5f9; }
+    th, td { border: 1px solid #d1d5db; padding: 6px 10px; text-align: left; white-space: nowrap; }
+
+    /* Header sticky */
+    thead th { 
+      background: #f1f5f9; 
+      position: sticky; 
+      top: 0; 
+      z-index: 3; 
+    }
+
+    /* Kolom pertama dan kedua sticky */
+    tbody td:first-child,
+    tbody td:nth-child(2),
+    thead th:first-child,
+    thead th:nth-child(2) {
+      position: sticky;
+      left: 0;
+      background: #f1f5f9;
+      z-index: 2; 
+      border-right: 1px solid #d1d5db;
+    }
+
+    /* Header kolom pertama & kedua biar tetap di atas */
+    thead th:first-child,
+    thead th:nth-child(2) {
+      z-index: 4;
+    }
+
     td img { width: 50px; border-radius: 6px; }
   </style>
 </head>
@@ -36,13 +67,8 @@
 
       <select id="year" class="border rounded p-2"></select>
 
-      <select id="filterPangkalan" class="border rounded p-2" multiple size="5">
-        <!-- opsi akan di-populate -->
-      </select>
-
-      <select id="filterPT" class="border rounded p-2" multiple size="5">
-        <!-- opsi akan di-populate -->
-      </select>
+      <select id="filterPangkalan" class="border rounded p-2" multiple size="5"></select>
+      <select id="filterPT" class="border rounded p-2" multiple size="5"></select>
 
       <button onclick="loadRekap()" class="bg-blue-500 hover:bg-blue-600 text-white rounded px-4 py-2">
         🔍 Tampilkan
@@ -77,7 +103,6 @@
     const filterPangkalan = document.getElementById('filterPangkalan');
     const filterPT = document.getElementById('filterPT');
 
-    // Populate filter Pangkalan & PT dan default semua terpilih
     function populateFilters(data) {
       const pangkalanSet = new Set();
       const ptSet = new Set();
@@ -86,23 +111,14 @@
         ptSet.add(row.namaPT);
       });
 
-      pangkalanSet.forEach(p => {
-        const opt = new Option(p, p, true, true); // default selected semua
-        filterPangkalan.appendChild(opt);
-      });
-
-      ptSet.forEach(p => {
-        const opt = new Option(p, p, true, true); // default selected semua
-        filterPT.appendChild(opt);
-      });
+      pangkalanSet.forEach(p => filterPangkalan.appendChild(new Option(p, p, true, true)));
+      ptSet.forEach(p => filterPT.appendChild(new Option(p, p, true, true)));
     }
 
-    // Load rekap
     function loadRekap() {
       const month = document.getElementById('month').value;
       const year = document.getElementById('year').value;
 
-      // Ambil multi-select values
       const pangkalanArr = Array.from(filterPangkalan.selectedOptions).map(o => o.value);
       const ptArr = Array.from(filterPT.selectedOptions).map(o => o.value);
 
@@ -120,10 +136,7 @@
         document.getElementById('tabel-container').innerHTML = `<p class='text-red-500'>❌ ${json.message}</p>`;
         return;
       }
-
-      // populate filter options jika belum ada
       if (filterPangkalan.options.length === 0) populateFilters(json.info.result);
-
       renderTable(json.info);
     }
 
@@ -132,7 +145,6 @@
       const tanggalSet = info.tanggalSet || [];
       let data = info.result || [];
 
-      // Filter multi-select
       const selectedPangkalan = Array.from(filterPangkalan.selectedOptions).map(o => o.value);
       const selectedPT = Array.from(filterPT.selectedOptions).map(o => o.value);
 
@@ -154,7 +166,6 @@
       tanggalSet.forEach(() => html += `<th>SA 📅</th><th>JH 📃</th><th>P 🚚</th>`);
       html += `</tr></thead><tbody>`;
 
-      // Total per tanggal
       const totalPerTanggal = {};
       tanggalSet.forEach(tgl => { totalPerTanggal[tgl] = { SA:0, JH:0, IS:0 }; });
 
@@ -165,9 +176,7 @@
           const valSA = isi.SA || 0;
           const valJH = isi.JH || 0;
           const valIS = isi.IS || 0;
-
           html += `<td>${valSA}</td><td>${valJH}</td><td>${valIS ? valIS + ' 🚚' : '-'}</td>`;
-
           totalPerTanggal[tgl].SA += Number(valSA);
           totalPerTanggal[tgl].JH += Number(valJH);
           totalPerTanggal[tgl].IS += Number(valIS);
@@ -175,15 +184,12 @@
         html += `</tr>`;
       });
 
-      // Baris TOTAL
       html += `<tr class="font-semibold bg-gray-200"><td colspan="2">TOTAL</td>`;
       tanggalSet.forEach(tgl => {
         const t = totalPerTanggal[tgl];
         html += `<td>${t.SA}</td><td>${t.JH}</td><td>${t.IS ? t.IS + ' 🚚' : '-'}</td>`;
       });
-      html += `</tr>`;
-
-      html += `</tbody></table>`;
+      html += `</tr></tbody></table>`;
       container.innerHTML = html;
     }
 
