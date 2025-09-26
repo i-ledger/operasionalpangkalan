@@ -110,7 +110,7 @@
         html += `<tr><td>${row.namaPangkalan}</td><td>${row.namaPT}</td>`;
         tanggalSet.forEach(tgl => {
           const isi = row.data[tgl] || {};
-          html += `<td>${isi.SA || '-'}</td><td>${isi.JH + ' 📋' :'-'}</td><td>${isi.IS ? isi.IS + ' 🚚' : '-'}</td>`;
+          html += `<td>${isi.SA || '-'}</td><td>${isi.JH || '-'}</td><td>${isi.IS ? isi.IS + ' 🚚' : '-'}</td>`;
         });
         html += `</tr>`;
       });
