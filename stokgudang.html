@@ -17,7 +17,7 @@
   <div class="p-4">
     <h1 class="text-xl font-semibold mb-4">📊 Rekap Gabungan Per Bulan</h1>
 
-    <!-- Filter Bulan & Tahun -->
+    <!-- Filter Bulan, Tahun, Pangkalan & PT -->
     <div class="flex flex-wrap gap-2 items-center mb-4">
       <select id="month" class="border rounded p-2">
         <option value="1">Januari</option>
@@ -33,7 +33,17 @@
         <option value="11">November</option>
         <option value="12">Desember</option>
       </select>
+
       <select id="year" class="border rounded p-2"></select>
+
+      <select id="filterPangkalan" class="border rounded p-2">
+        <option value="">Semua Pangkalan</option>
+      </select>
+
+      <select id="filterPT" class="border rounded p-2">
+        <option value="">Semua PT</option>
+      </select>
+
       <button onclick="loadRekap()" class="bg-blue-500 hover:bg-blue-600 text-white rounded px-4 py-2">
         🔍 Tampilkan
       </button>
@@ -52,7 +62,7 @@
   <script>
     const endpoint = 'https://script.google.com/macros/s/AKfycbydoGomFeFuc6YNVN9UYyBNJCKUjsfoU-sBQyT7bnjoKgAPrTYridJN09wZlqS6JB52yw/exec';
 
-    // === Dropdown tahun ===
+    // Dropdown tahun
     const yearSelect = document.getElementById('year');
     const currentYear = new Date().getFullYear();
     for (let y = currentYear - 2; y <= currentYear + 1; y++) {
@@ -64,15 +74,33 @@
     }
     document.getElementById('month').value = new Date().getMonth() + 1;
 
-    // === Load Rekap ===
+    // Populate filter Pangkalan & PT (ambil dari endpoint atau static)
+    const filterPangkalan = document.getElementById('filterPangkalan');
+    const filterPT = document.getElementById('filterPT');
+
+    function populateFilters(data) {
+      const pangkalanSet = new Set();
+      const ptSet = new Set();
+      data.forEach(row => {
+        pangkalanSet.add(row.namaPangkalan);
+        ptSet.add(row.namaPT);
+      });
+      pangkalanSet.forEach(p => filterPangkalan.appendChild(new Option(p, p)));
+      ptSet.forEach(p => filterPT.appendChild(new Option(p, p)));
+    }
+
+    // Load rekap
     function loadRekap() {
       const month = document.getElementById('month').value;
       const year = document.getElementById('year').value;
+      const pangkalan = document.getElementById('filterPangkalan').value;
+      const pt = document.getElementById('filterPT').value;
+
       document.getElementById('spinner').classList.remove('hidden');
       document.getElementById('tabel-container').innerHTML = '';
 
       const script = document.createElement('script');
-      script.src = `${endpoint}?action=getRekapGabungan&month=${month}&year=${year}&callback=renderTableJSONP`;
+      script.src = `${endpoint}?action=getRekapGabungan&month=${month}&year=${year}&pangkalan=${encodeURIComponent(pangkalan)}&pt=${encodeURIComponent(pt)}&callback=renderTableJSONP`;
       document.body.appendChild(script);
     }
 
@@ -82,17 +110,26 @@
         document.getElementById('tabel-container').innerHTML = `<p class='text-red-500'>❌ ${json.message}</p>`;
         return;
       }
+
+      // populate filter options jika belum ada
+      if (filterPangkalan.options.length <= 1) populateFilters(json.info.result);
+
       renderTable(json.info);
     }
 
-    // === Render Tabel ===
     function renderTable(info) {
       const container = document.getElementById('tabel-container');
       const tanggalSet = info.tanggalSet || [];
-      const data = info.result || [];
+      let data = info.result || [];
 
-      if (tanggalSet.length === 0) {
-        container.innerHTML = `<p class='text-gray-500'>Tidak ada data untuk bulan ini.</p>`;
+      // Filter berdasarkan Pangkalan & PT
+      const selectedPangkalan = document.getElementById('filterPangkalan').value;
+      const selectedPT = document.getElementById('filterPT').value;
+      if (selectedPangkalan) data = data.filter(r => r.namaPangkalan === selectedPangkalan);
+      if (selectedPT) data = data.filter(r => r.namaPT === selectedPT);
+
+      if (tanggalSet.length === 0 || data.length === 0) {
+        container.innerHTML = `<p class='text-gray-500'>Tidak ada data untuk filter ini.</p>`;
         return;
       }
 
