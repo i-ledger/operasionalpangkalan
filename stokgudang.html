@@ -6,7 +6,7 @@
 <title>Rekap Gabungan Per Bulan</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  body { font-family: 'Inter', sans-serif; }
+  body { font-family: 'Inter', sans-serif; background-color: #ebf8ff; }
 
   .scroll-container { 
     overflow-x: auto; 
@@ -19,7 +19,7 @@
   th, td { border: 1px solid #d1d5db; padding: 6px 8px; text-align: left; white-space: nowrap; }
 
   thead th { 
-    background: #f1f5f9; 
+    background: #bfdbfe; 
     position: sticky; 
     top: 0; 
     z-index: 3; 
@@ -29,54 +29,49 @@
   thead th:first-child {
     position: sticky;
     left: 0;
-    background: #f1f5f9;
+    background: #bfdbfe;
     z-index: 2; 
     border-right: 1px solid #d1d5db;
   }
 
   td img { width: 40px; border-radius: 6px; }
 
-  /* Spinner biru */
-  .spinner {
-    border: 4px solid #cbd5e1; /* abu-abu terang */
-    border-top: 4px solid #3b82f6; /* biru */
+  /* Spinner biru fullscreen */
+  #spinner {
+    display: none;
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(0,0,0,0.3);
+    display: flex; justify-content: center; align-items: center; flex-direction: column;
+  }
+  .spinner-circle {
+    border: 4px solid #bfdbfe;
+    border-top: 4px solid #3b82f6;
     border-radius: 50%;
-    width: 40px;
-    height: 40px;
+    width: 50px; height: 50px;
     animation: spin 1s linear infinite;
-    margin: auto;
+    margin-bottom: 10px;
   }
+  @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
 
-  @keyframes spin {
-    0% { transform: rotate(0deg);}
-    100% { transform: rotate(360deg);}
-  }
+  .info-box { background: #bfdbfe; padding: 0.5rem; border-radius: 0.5rem; text-align:center; font-size: 12px; }
 </style>
 </head>
-<body class="bg-gray-50">
-<div class="p-4">
+<body class="p-4">
 
-<h1 class="text-xl font-semibold mb-4 text-center">📊 Rekap Gabungan Per Bulan</h1>
+<h1 class="text-xl font-bold mb-4 text-center text-blue-900">📊 Rekap Gabungan Per Bulan</h1>
 
-<!-- Filter Bulan, Tahun, Pangkalan & PT -->
+<!-- Filter Section -->
 <div class="flex flex-wrap gap-2 items-center justify-center mb-4">
   <select id="month" class="border rounded p-2 text-sm">
-    <option value="1">Januari</option>
-    <option value="2">Februari</option>
-    <option value="3">Maret</option>
-    <option value="4">April</option>
-    <option value="5">Mei</option>
-    <option value="6">Juni</option>
-    <option value="7">Juli</option>
-    <option value="8">Agustus</option>
-    <option value="9">September</option>
-    <option value="10">Oktober</option>
-    <option value="11">November</option>
-    <option value="12">Desember</option>
+    <option value="1">Januari</option><option value="2">Februari</option>
+    <option value="3">Maret</option><option value="4">April</option>
+    <option value="5">Mei</option><option value="6">Juni</option>
+    <option value="7">Juli</option><option value="8">Agustus</option>
+    <option value="9">September</option><option value="10">Oktober</option>
+    <option value="11">November</option><option value="12">Desember</option>
   </select>
 
   <select id="year" class="border rounded p-2 text-sm"></select>
-
   <select id="filterPangkalan" class="border rounded p-2 text-sm" multiple size="3"></select>
   <select id="filterPT" class="border rounded p-2 text-sm" multiple size="3"></select>
 
@@ -85,13 +80,24 @@
   </button>
 </div>
 
-<div id="spinner" class="text-center my-8 hidden">
-  <div class="spinner"></div>
-  <p class="text-gray-500 mt-2 text-sm">Memuat data...</p>
+<!-- Info Box -->
+<div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-4">
+  <div class="info-box">Total SA<br><span id="total-sa">-</span></div>
+  <div class="info-box">Total JH<br><span id="total-jh">-</span></div>
+  <div class="info-box">Total Pengiriman<br><span id="total-pengiriman">-</span></div>
+  <div class="info-box">Total Nominal<br><span id="total-nominal">-</span></div>
+  <div class="info-box">Tabung Kerjasama<br><span id="tabung-kerjasama">-</span></div>
+  <div class="info-box">Sisa Bagi Hasil<br><span id="sisa-bagi-hasil">-</span></div>
 </div>
 
-<div id="tabel-container" class="scroll-container"></div>
+<!-- Spinner -->
+<div id="spinner">
+  <div class="spinner-circle"></div>
+  <span class="text-white text-lg font-semibold">Memuat data...</span>
 </div>
+
+<!-- Table Section -->
+<div id="tabel-container" class="scroll-container"></div>
 
 <script>
 const endpoint = 'https://script.google.com/macros/s/AKfycbydoGomFeFuc6YNVN9UYyBNJCKUjsfoU-sBQyT7bnjoKgAPrTYridJN09wZlqS6JB52yw/exec';
@@ -120,7 +126,7 @@ function populateFilters(data){
 function loadRekap(){
   const month = document.getElementById('month').value;
   const year = document.getElementById('year').value;
-  document.getElementById('spinner').classList.remove('hidden');
+  document.getElementById('spinner').style.display='flex';
   document.getElementById('tabel-container').innerHTML='';
   const script=document.createElement('script');
   script.src=`${endpoint}?action=getRekapGabungan&month=${month}&year=${year}&callback=renderTableJSONP`;
@@ -128,7 +134,7 @@ function loadRekap(){
 }
 
 function renderTableJSONP(json){
-  document.getElementById('spinner').classList.add('hidden');
+  document.getElementById('spinner').style.display='none';
   if(json.status!=='ok'){document.getElementById('tabel-container').innerHTML=`<p class='text-red-500 text-center'>❌ ${json.message}</p>`;return;}
   if(filterPangkalan.options.length===0) populateFilters(json.info.result);
   renderTable(json.info);
@@ -176,7 +182,7 @@ function renderTable(info){
     html+=`</tr>`;
   });
 
-  html+=`<tr class="font-semibold bg-gray-200"><td colspan="2">TOTAL</td>`;
+  html+=`<tr class="font-semibold bg-blue-100"><td colspan="2">TOTAL</td>`;
   tanggalSet.forEach(tgl=>{
     const t=totalPerTanggal[tgl];
     html+=`<td>${t.SA}</td><td>${t.JH}</td><td>${t.IS?t.IS+' 🚚':'-'}</td>`;
