@@ -6,31 +6,18 @@
   <title>Rekap Gabungan Per Bulan</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .scroll-container {
-      overflow-x: auto;
-      white-space: nowrap;
-    }
-    table {
-      border-collapse: collapse;
-      min-width: 100%;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 6px 10px;
-      text-align: center;
-      white-space: nowrap;
-    }
-    th {
-      background: #f1f5f9;
-    }
+    .scroll-container { overflow-x: auto; white-space: nowrap; }
+    table { border-collapse: collapse; min-width: 100%; font-size: 13px; }
+    th, td { border: 1px solid #d1d5db; padding: 6px 10px; text-align: center; white-space: nowrap; }
+    th { background: #f1f5f9; }
+    td img { width: 50px; border-radius: 6px; }
   </style>
 </head>
 <body class="bg-gray-50">
-
   <div class="p-4">
     <h1 class="text-xl font-semibold mb-4">📊 Rekap Gabungan Per Bulan</h1>
 
-    <!-- Filter bulan & tahun -->
+    <!-- Filter Bulan & Tahun -->
     <div class="flex flex-wrap gap-2 items-center mb-4">
       <select id="month" class="border rounded p-2">
         <option value="1">Januari</option>
@@ -65,7 +52,7 @@
   <script>
     const endpoint = 'https://script.google.com/macros/s/AKfycbx0Z0eGbtnmoPFXlEzmW_FYSyt_qrzaguOpgXFrXUQK6BsmD0UTAh3tSwx-ZD4Rt9HQfw/exec'; // Ganti URL GAS kamu
 
-    // Isi dropdown tahun
+    // === Dropdown tahun ===
     const yearSelect = document.getElementById('year');
     const currentYear = new Date().getFullYear();
     for (let y = currentYear - 2; y <= currentYear + 1; y++) {
@@ -75,10 +62,9 @@
       if (y === currentYear) opt.selected = true;
       yearSelect.appendChild(opt);
     }
-
-    // Set bulan sekarang
     document.getElementById('month').value = new Date().getMonth() + 1;
 
+    // === Fungsi utama ===
     async function loadRekap() {
       const month = document.getElementById('month').value;
       const year = document.getElementById('year').value;
@@ -97,6 +83,7 @@
       }
     }
 
+    // === Render Tabel ===
     function renderTable(info) {
       const container = document.getElementById('tabel-container');
       const tanggalSet = info.tanggalSet || [];
@@ -108,12 +95,11 @@
       }
 
       let html = `
-        <table class="text-sm">
+        <table>
           <thead>
             <tr>
-              <th rowspan="2">NAMA PANGKALAN</th>
-              <th rowspan="2">NAMA PT</th>
-      `;
+              <th rowspan="2">Nama Pangkalan</th>
+              <th rowspan="2">Nama PT</th>`;
       tanggalSet.forEach(tgl => {
         html += `<th colspan="3">${tgl}</th>`;
       });
@@ -127,11 +113,13 @@
         html += `<tr><td>${row.namaPangkalan}</td><td>${row.namaPT}</td>`;
         tanggalSet.forEach(tgl => {
           const isi = row.data[tgl] || {};
-          html += `<td>${isi.SA || '-'}</td><td>${isi.JH || '-'}</td><td>${isi.IS || '-'}</td>`;
+          html += `
+            <td>${isi.SA || '-'}</td>
+            <td>${isi.JH || '-'}</td>
+            <td>${isi.IS ? isi.IS + ' 🚚' : '-'}</td>`;
         });
         html += `</tr>`;
       });
-
       html += `</tbody></table>`;
       container.innerHTML = html;
     }
