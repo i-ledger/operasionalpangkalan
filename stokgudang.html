@@ -6,79 +6,72 @@
 <title>Rekap Gabungan Per Bulan</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-.scroll-container { 
-  overflow-x: auto; 
-  overflow-y: auto; 
-  max-height: 70vh; 
-  white-space: nowrap; 
-}
+  .scroll-container { 
+    overflow-x: auto; 
+    overflow-y: auto; 
+    max-height: 70vh; 
+    white-space: nowrap; 
+  }
 
-table { border-collapse: collapse; min-width: 100%; font-size: 13px; }
-th, td { border: 1px solid #d1d5db; padding: 6px 10px; text-align: left; white-space: nowrap; }
+  table { border-collapse: collapse; min-width: 100%; font-size: 13px; }
+  th, td { border: 1px solid #d1d5db; padding: 6px 10px; text-align: left; white-space: nowrap; }
 
-/* Header sticky atas */
-thead th {
-  background: #f1f5f9;
-  position: sticky;
-  top: 0;
-  z-index: 3;
-}
+  /* Header sticky */
+  thead th { 
+    background: #f1f5f9; 
+    position: sticky; 
+    top: 0; 
+    z-index: 3; 
+  }
 
-/* Nama Pangkalan sticky kiri */
-tbody td:first-child,
-thead th:first-child {
-  position: sticky;
-  left: 0;
-  background: #f1f5f9;
-  z-index: 4;
-  border-right: 1px solid #d1d5db;
-}
+  /* Kolom Nama Pangkalan sticky kiri */
+  tbody td:first-child,
+  thead th:first-child {
+    position: sticky;
+    left: 0;
+    background: #f1f5f9;
+    z-index: 2; 
+    border-right: 1px solid #d1d5db;
+  }
 
-/* Subkolom SA/JH/P per tanggal sticky horizontal */
-thead th.sub {
-  position: sticky;
-  background: #f1f5f9;
-  z-index: 3;
-}
-
-/* td gambar */
-td img { width: 50px; border-radius: 6px; }
+  /* Gambar kecil di td */
+  td img { width: 50px; border-radius: 6px; }
 </style>
 </head>
 <body class="bg-gray-50">
 <div class="p-4">
 <h1 class="text-xl font-semibold mb-4">📊 Rekap Gabungan Per Bulan</h1>
 
-<!-- Filter -->
+<!-- Filter Bulan, Tahun, Pangkalan & PT -->
 <div class="flex flex-wrap gap-2 items-center mb-4">
-<select id="month" class="border rounded p-2">
-  <option value="1">Januari</option>
-  <option value="2">Februari</option>
-  <option value="3">Maret</option>
-  <option value="4">April</option>
-  <option value="5">Mei</option>
-  <option value="6">Juni</option>
-  <option value="7">Juli</option>
-  <option value="8">Agustus</option>
-  <option value="9">September</option>
-  <option value="10">Oktober</option>
-  <option value="11">November</option>
-  <option value="12">Desember</option>
-</select>
+  <select id="month" class="border rounded p-2">
+    <option value="1">Januari</option>
+    <option value="2">Februari</option>
+    <option value="3">Maret</option>
+    <option value="4">April</option>
+    <option value="5">Mei</option>
+    <option value="6">Juni</option>
+    <option value="7">Juli</option>
+    <option value="8">Agustus</option>
+    <option value="9">September</option>
+    <option value="10">Oktober</option>
+    <option value="11">November</option>
+    <option value="12">Desember</option>
+  </select>
 
-<select id="year" class="border rounded p-2"></select>
+  <select id="year" class="border rounded p-2"></select>
 
-<select id="filterPangkalan" class="border rounded p-2" multiple size="5"></select>
-<select id="filterPT" class="border rounded p-2" multiple size="5"></select>
+  <select id="filterPangkalan" class="border rounded p-2" multiple size="5"></select>
+  <select id="filterPT" class="border rounded p-2" multiple size="5"></select>
 
-<button onclick="loadRekap()" class="bg-blue-500 hover:bg-blue-600 text-white rounded px-4 py-2">
-  🔍 Tampilkan
-</button>
+  <button onclick="loadRekap()" class="bg-blue-500 hover:bg-blue-600 text-white rounded px-4 py-2">
+    🔍 Tampilkan
+  </button>
 </div>
 
 <div id="spinner" class="text-center my-8 hidden">
-<div class="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
-<p class="text-gray-500 mt-2">Memuat data...</p>
+  <div class="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+  <p class="text-gray-500 mt-2">Memuat data...</p>
 </div>
 
 <div id="tabel-container" class="scroll-container"></div>
@@ -89,10 +82,10 @@ const endpoint = 'https://script.google.com/macros/s/AKfycbydoGomFeFuc6YNVN9UYyB
 
 const yearSelect = document.getElementById('year');
 const currentYear = new Date().getFullYear();
-for(let y=currentYear-2; y<=currentYear+1; y++){
+for (let y = currentYear - 2; y <= currentYear + 1; y++) {
   const opt = document.createElement('option');
   opt.value = y; opt.textContent = y;
-  if(y===currentYear) opt.selected = true;
+  if (y === currentYear) opt.selected = true;
   yearSelect.appendChild(opt);
 }
 document.getElementById('month').value = new Date().getMonth()+1;
@@ -103,14 +96,14 @@ const filterPT = document.getElementById('filterPT');
 function populateFilters(data){
   const pangkalanSet=new Set();
   const ptSet=new Set();
-  data.forEach(r=>{pangkalanSet.add(r.namaPangkalan); ptSet.add(r.namaPT)});
+  data.forEach(row=>{pangkalanSet.add(row.namaPangkalan); ptSet.add(row.namaPT)});
   pangkalanSet.forEach(p=>filterPangkalan.appendChild(new Option(p,p,true,true)));
   ptSet.forEach(p=>filterPT.appendChild(new Option(p,p,true,true)));
 }
 
 function loadRekap(){
-  const month=document.getElementById('month').value;
-  const year=document.getElementById('year').value;
+  const month = document.getElementById('month').value;
+  const year = document.getElementById('year').value;
   document.getElementById('spinner').classList.remove('hidden');
   document.getElementById('tabel-container').innerHTML='';
   const script=document.createElement('script');
@@ -120,10 +113,7 @@ function loadRekap(){
 
 function renderTableJSONP(json){
   document.getElementById('spinner').classList.add('hidden');
-  if(json.status!=='ok'){
-    document.getElementById('tabel-container').innerHTML=`<p class='text-red-500'>❌ ${json.message}</p>`;
-    return;
-  }
+  if(json.status!=='ok'){document.getElementById('tabel-container').innerHTML=`<p class='text-red-500'>❌ ${json.message}</p>`;return;}
   if(filterPangkalan.options.length===0) populateFilters(json.info.result);
   renderTable(json.info);
 }
@@ -135,8 +125,9 @@ function renderTable(info){
 
   const selectedPangkalan = Array.from(filterPangkalan.selectedOptions).map(o=>o.value);
   const selectedPT = Array.from(filterPT.selectedOptions).map(o=>o.value);
-  if(selectedPangkalan.length) data=data.filter(r=>selectedPangkalan.includes(r.namaPangkalan));
-  if(selectedPT.length) data=data.filter(r=>selectedPT.includes(r.namaPT));
+
+  if(selectedPangkalan.length) data = data.filter(r=>selectedPangkalan.includes(r.namaPangkalan));
+  if(selectedPT.length) data = data.filter(r=>selectedPT.includes(r.namaPT));
 
   if(tanggalSet.length===0 || data.length===0){
     container.innerHTML=`<p class='text-gray-500'>Tidak ada data untuk filter ini.</p>`;
@@ -144,17 +135,11 @@ function renderTable(info){
   }
 
   let html=`<table><thead><tr>
-  <th rowspan="2">Nama Pangkalan</th>
-  <th rowspan="2">Nama PT</th>`;
-
-  // hitung posisi left tiap tanggal
-  let leftOffset=0;
-  const thPositions=[];
-  tanggalSet.forEach(()=>{ thPositions.push(leftOffset); leftOffset+=3*60; /* 3 kolom per tanggal, 60px per kolom */ });
-
-  tanggalSet.forEach((tgl,i)=>html+=`<th colspan="3" class="sub" style="left:${60*2 + i*180}px">${tgl}</th>`);
+    <th rowspan="2">Nama Pangkalan</th>
+    <th rowspan="2">Nama PT</th>`;
+  tanggalSet.forEach(tgl=>html+=`<th colspan="3">${tgl}</th>`);
   html+=`</tr><tr>`;
-  tanggalSet.forEach((_,i)=>html+=`<th class="sub" style="left:${60*2 + i*180}px">SA 📅</th><th class="sub" style="left:${60*2 + i*180}px">JH 📃</th><th class="sub" style="left:${60*2 + i*180}px">P 🚚</th>`);
+  tanggalSet.forEach(()=>html+=`<th>SA 📅</th><th>JH 📃</th><th>P 🚚</th>`);
   html+=`</tr></thead><tbody>`;
 
   const totalPerTanggal={};
