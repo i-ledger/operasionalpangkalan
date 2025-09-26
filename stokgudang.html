@@ -36,9 +36,9 @@
 
       <select id="year" class="border rounded p-2"></select>
 
-      <select id="filterPangkalan" class="border rounded p-2">
-        <option value="">Semua Pangkalan</option>
-      </select>
+<select id="filterPangkalan" class="border rounded p-2" multiple size="5">
+  <!-- opsi akan di-populate -->
+</select>
 
       <select id="filterPT" class="border rounded p-2">
         <option value="">Semua PT</option>
@@ -123,10 +123,13 @@ function renderTable(info) {
   let data = info.result || [];
 
   // Filter berdasarkan Pangkalan & PT
-  const selectedPangkalan = document.getElementById('filterPangkalan').value;
-  const selectedPT = document.getElementById('filterPT').value;
-  if (selectedPangkalan) data = data.filter(r => r.namaPangkalan === selectedPangkalan);
-  if (selectedPT) data = data.filter(r => r.namaPT === selectedPT);
+// Ambil semua yang dipilih (array)
+const selectedPangkalan = Array.from(document.getElementById('filterPangkalan').selectedOptions).map(o => o.value);
+const selectedPT = Array.from(document.getElementById('filterPT').selectedOptions).map(o => o.value);
+
+// Filter data berdasarkan array
+if (selectedPangkalan.length) data = data.filter(r => selectedPangkalan.includes(r.namaPangkalan));
+if (selectedPT.length) data = data.filter(r => selectedPT.includes(r.namaPT));
 
   if (tanggalSet.length === 0 || data.length === 0) {
     container.innerHTML = `<p class='text-gray-500'>Tidak ada data untuk filter ini.</p>`;
