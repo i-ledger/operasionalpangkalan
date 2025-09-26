@@ -1,141 +1,186 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Undangan Rizaldy & Fransiska</title>
-  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rekap Multi-Sheet (MASTER_SA · JH · ISHIPPING)</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
   <style>
-    body {font-family: 'Poppins', sans-serif; background: #fffaf3; color: #3d3d3d; overflow-x:hidden;}
-    h1, h2, h3 {font-family: 'Great Vibes', cursive; color: #c19b47;}
-    .overlay {background: rgba(0,0,0,0.4);} 
-    .btn-primary {background-color: #c19b47; color: white; padding: 10px 25px; border-radius: 9999px; transition:0.3s;}
-    .btn-primary:hover {background-color: #a58335; transform:scale(1.05);}
-    .fade-in {opacity: 0; transform: translateY(40px);}
-    .slide-in {opacity: 0; transform: translateX(-40px);}
-    #loadingScreen {position:fixed; inset:0; background:#fff5e1; display:flex; align-items:center; justify-content:center; flex-direction:column; z-index:50;}
-    #loadingScreen h2 {font-family:'Great Vibes',cursive; color:#c19b47; font-size:2.5rem; margin-top:1rem;}
+    table { border-collapse: collapse; }
+    th, td { border: 1px solid #e5e7eb; padding: 6px 8px; white-space: nowrap; }
+    thead th { position: sticky; top: 0; background: white; z-index: 10; }
+    .small { font-size: 11px; }
   </style>
 </head>
-<body class="text-center">
+<body class="p-4 bg-gray-50">
+  <div class="max-w-full">
+    <div class="mb-4 flex gap-3 items-center">
+      <h1 class="text-xl font-semibold">Rekap Multi-Sheet</h1>
+      <div class="text-sm text-gray-600">(ambil data dari MASTER_SA, JH, dan ISHIPPING)</div>
+    </div>
 
-  <!-- Splash Screen -->
-  <div id="loadingScreen">
-    <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-[#c19b47]"></div>
-    <h2>Rizaldy & Fransiska</h2>
+    <div class="mb-4 flex gap-2">
+      <input id="apiUrl" class="border p-2 rounded w-full" placeholder="Paste Apps Script URL (contoh: https://script.google.com/macros/s/XXX/exec)" />
+      <button id="btnLoad" class="bg-blue-600 text-white px-4 py-2 rounded">Load</button>
+    </div>
+
+    <div id="msg" class="text-sm text-gray-600 mb-3"></div>
+
+    <div id="tableWrap" class="overflow-auto border rounded bg-white">
+      <!-- table inserted here -->
+    </div>
   </div>
 
-  <!-- Hero Section -->
-  <section id="hero" class="relative h-screen flex flex-col justify-center items-center bg-cover bg-center" style="background-image:url('https://images.unsplash.com/photo-1529634899531-9e3ea9f1a2d6?auto=format&fit=crop&w=1500&q=80');">
-    <div class="overlay absolute inset-0"></div>
-    <div class="relative z-10 text-white fade-in">
-      <h2 class="text-4xl md:text-6xl mb-2">Undangan Pernikahan</h2>
-      <h1 class="text-5xl md:text-7xl mb-4">Rizaldy & Fransiska</h1>
-      <p class="text-lg mb-6">29 September 2025</p>
-      <a href="#acara" class="btn-primary">Lihat Undangan</a>
-    </div>
-  </section>
+<script>
+/*
+  Cara kerja (asumsi minimal):
+  - Frontend mengirim GET ke endpoint Apps Script dengan parameter `action`:
+      ?action=getMasterSA
+      ?action=getJH
+      ?action=getIshipping
+  - Masing-masing endpoint mengembalikan JSON sederhana:
+      { headers: ["NAMA PANGKALAN","NAMA PT","01/01/2025","02/01/2025",...],
+        data: [ ["AAN KARNAMAH","PT...", 0, 150, ...], [...], ... ] }
+  - Jika backend berbeda, sesuaikan nama action atau ubah fungsi fetchSheet() di bawah.
+*/
 
-  <!-- Countdown -->
-  <section class="py-12 bg-[#fff5e1] fade-in" id="countdown">
-    <h2 class="text-4xl mb-4">Menuju Hari Bahagia</h2>
-    <div id="timer" class="text-2xl font-semibold"></div>
-  </section>
+const btn = document.getElementById('btnLoad');
+const apiUrlInput = document.getElementById('apiUrl');
+const msg = document.getElementById('msg');
+const tableWrap = document.getElementById('tableWrap');
 
-  <!-- Detail Acara -->
-  <section id="acara" class="py-12 fade-in">
-    <h2 class="text-5xl mb-8">Detail Acara</h2>
-    <div class="max-w-2xl mx-auto">
-      <p class="mb-4">Dengan memohon rahmat dan ridho Allah SWT, kami bermaksud menyelenggarakan pernikahan kami:</p>
-      <h3 class="text-3xl mb-2">Rizaldy Kurniadiredja</h3>
-      <h3 class="text-3xl mb-6">&</h3>
-      <h3 class="text-3xl mb-8">Fransiska Rivka Latif</h3>
-      <div class="bg-white rounded-2xl shadow-md p-6 slide-in">
-        <p><strong>🕌 Akad Nikah:</strong><br>Senin, 29 September 2025 — Pukul 09.00 WIB</p>
-        <p class="mt-4"><strong>🎉 Resepsi:</strong><br>Senin, 29 September 2025 — Pukul 11.00 WIB - Selesai</p>
-        <p class="mt-4"><strong>📍 Lokasi:</strong><br>Hotel Santika Premiere Bandung<br><a href="https://maps.google.com" target="_blank" class="text-[#c19b47] underline">Lihat di Google Maps</a></p>
-      </div>
-    </div>
-  </section>
+btn.addEventListener('click', async () => {
+  const API = apiUrlInput.value.trim();
+  if (!API) return alert('Masukin dulu URL Apps Script kamu.');
+  tableWrap.innerHTML = '<div class="p-6">Loading...</div>';
+  msg.textContent = '';
 
-  <!-- Galeri Foto -->
-  <section id="galeri" class="py-12 bg-[#fff5e1] fade-in">
-    <h2 class="text-5xl mb-8">Galeri Kami</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
-      <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=500&q=80" class="rounded-2xl shadow hover:scale-105 transition-transform">
-      <img src="https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=500&q=80" class="rounded-2xl shadow hover:scale-105 transition-transform">
-      <img src="https://images.unsplash.com/photo-1501973801540-537f08ccae7b?auto=format&fit=crop&w=500&q=80" class="rounded-2xl shadow hover:scale-105 transition-transform">
-      <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=500&q=80" class="rounded-2xl shadow hover:scale-105 transition-transform">
-    </div>
-  </section>
+  try {
+    const [master, jh, iship] = await Promise.all([
+      fetchSheet(API, 'getMasterSA'),
+      fetchSheet(API, 'getJH'),
+      fetchSheet(API, 'getIshipping')
+    ]);
 
-  <!-- RSVP -->
-  <section id="rsvp" class="py-12 fade-in">
-    <h2 class="text-5xl mb-8">Konfirmasi Kehadiran</h2>
-    <form id="rsvpForm" class="max-w-md mx-auto bg-white p-6 rounded-2xl shadow-md">
-      <input type="text" id="nama" placeholder="Nama Anda" class="w-full border p-3 rounded mb-3">
-      <select id="status" class="w-full border p-3 rounded mb-3">
-        <option value="Hadir">Hadir</option>
-        <option value="Tidak Hadir">Tidak Hadir</option>
-      </select>
-      <textarea id="ucapan" placeholder="Ucapan untuk kami" class="w-full border p-3 rounded mb-3"></textarea>
-      <button type="submit" class="btn-primary w-full">Kirim</button>
-    </form>
-    <div id="listUcapan" class="mt-8 max-w-lg mx-auto text-left"></div>
-  </section>
+    const html = buildCombinedTable(master, jh, iship);
+    tableWrap.innerHTML = html;
 
-  <!-- Penutup -->
-  <section class="py-12 bg-[#fff5e1] fade-in">
-    <h2 class="text-5xl mb-4">Terima Kasih</h2>
-    <p class="max-w-xl mx-auto">Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu di hari bahagia kami.</p>
-  </section>
+  } catch (err) {
+    console.error(err);
+    msg.textContent = 'Error: ' + (err.message || err);
+    tableWrap.innerHTML = '';
+  }
+});
 
-  <audio id="music" autoplay loop hidden>
-    <source src="https://www.bensound.com/bensound-music/bensound-romantic.mp3" type="audio/mp3">
-  </audio>
+async function fetchSheet(api, actionName) {
+  // default GET to: API + ?action=xxx
+  const url = api + (api.includes('?') ? '&' : '?') + 'action=' + encodeURIComponent(actionName);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Gagal fetch ' + actionName + ' — ' + res.status);
+  const j = await res.json();
+  // Expect { headers: [...], data: [...] }
+  if (!j.headers || !j.data) {
+    // try to normalize common alternate shape: rows array where first row is headers
+    if (Array.isArray(j) && j.length) {
+      return sheetFromRows(j);
+    }
+    throw new Error('Format data tidak sesuai untuk ' + actionName);
+  }
+  return j;
+}
 
-  <script>
-    window.addEventListener('load', () => {
-      gsap.to('#loadingScreen', {opacity:0, duration:1, onComplete:()=>document.getElementById('loadingScreen').remove()});
-      gsap.utils.toArray('.fade-in').forEach((el, i)=>{
-        gsap.to(el, {opacity:1, y:0, duration:1, delay:i*0.3, scrollTrigger:{trigger:el, start:'top 90%'}});
-      });
-      gsap.utils.toArray('.slide-in').forEach((el, i)=>{
-        gsap.to(el, {opacity:1, x:0, duration:1, delay:i*0.3, scrollTrigger:{trigger:el, start:'top 90%'}});
-      });
+function sheetFromRows(rows) {
+  const headers = rows[0];
+  const data = rows.slice(1);
+  return { headers, data };
+}
+
+function buildCombinedTable(master, jh, iship) {
+  // normalize headers: find date columns (assume first 2 cols are Nama Pangkalan & Nama PT)
+  const keyCols = 2;
+
+  // gather all dates from each sheet headers (skip first two columns)
+  const datesSet = new Set();
+  [master, jh, iship].forEach(s => {
+    if (!s) return;
+    s.headers.slice(keyCols).forEach(h => datesSet.add(h));
+  });
+  const dates = Array.from(datesSet);
+  dates.sort((a,b) => new Date(a.split('/').reverse().join('-')) - new Date(b.split('/').reverse().join('-')));
+
+  // map rows by pangkalan name for each sheet
+  const mapMaster = mapByName(master);
+  const mapJH = mapByName(jh);
+  const mapIship = mapByName(iship);
+
+  // union of all pangkalan names from master + jh + iship
+  const names = new Set([...Object.keys(mapMaster), ...Object.keys(mapJH), ...Object.keys(mapIship)]);
+  const rows = Array.from(names).sort((a,b)=> a.localeCompare(b));
+
+  // build table header
+  let html = '<table class="min-w-full small"><thead><tr>';
+  html += '<th rowspan="2">NAMA PANGKALAN</th>';
+  html += '<th rowspan="2">NAMA PT</th>';
+  dates.forEach(d => {
+    html += `<th colspan="3" class="text-center">${d}</th>`;
+  });
+  html += '</tr><tr>';
+  dates.forEach(() => { html += '<th class="text-center">MASTER_SA</th><th class="text-center">JH</th><th class="text-center">ISHIPPING</th>'; });
+  html += '</tr></thead><tbody>';
+
+  rows.forEach(name => {
+    const mRow = mapMaster[name];
+    const jRow = mapJH[name];
+    const iRow = mapIship[name];
+    const namaPT = (mRow && mRow.pt) || (jRow && jRow.pt) || (iRow && iRow.pt) || '';
+
+    html += '<tr>';
+    html += `<td>${escapeHtml(name)}</td>`;
+    html += `<td>${escapeHtml(namaPT)}</td>`;
+
+    dates.forEach(date => {
+      const mVal = getValueForDate(master, mRow, date) || 0;
+      const jVal = getValueForDate(jh, jRow, date) || 0;
+      const iVal = getValueForDate(iship, iRow, date) || 0;
+      html += `<td class="text-right">${mVal}</td><td class="text-right">${jVal}</td><td class="text-right">${iVal}</td>`;
     });
 
-    // Countdown Timer
-    const countDownDate = new Date("Sep 29, 2025 09:00:00").getTime();
-    const timer = setInterval(() => {
-      const now = new Date().getTime();
-      const distance = countDownDate - now;
-      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-      document.getElementById("timer").innerHTML = `${days} Hari ${hours} Jam ${minutes} Menit ${seconds} Detik`;
-      if (distance < 0) {
-        clearInterval(timer);
-        document.getElementById("timer").innerHTML = "Hari Bahagia Telah Tiba!";
-      }
-    }, 1000);
+    html += '</tr>';
+  });
 
-    // RSVP Form
-    document.getElementById("rsvpForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const nama = document.getElementById("nama").value;
-      const status = document.getElementById("status").value;
-      const ucapan = document.getElementById("ucapan").value;
-      const list = document.getElementById("listUcapan");
-      const div = document.createElement("div");
-      div.className = "bg-white shadow p-4 rounded mb-3 animate-fade-in";
-      div.innerHTML = `<strong>${nama}</strong> (${status})<br><em>${ucapan}</em>`;
-      list.prepend(div);
-      document.getElementById("rsvpForm").reset();
+  html += '</tbody></table>';
+  return html;
+}
+
+function mapByName(sheet) {
+  if (!sheet || !sheet.data) return {};
+  const out = {};
+  const headers = sheet.headers;
+  for (const r of sheet.data) {
+    const name = (r[0] || '').toString().trim();
+    const pt = (r[1] || '').toString().trim();
+    if (!name) continue;
+    // keep row data and a quick map of date->value
+    const dateMap = {};
+    headers.slice(2).forEach((h, idx) => {
+      dateMap[h] = r[2 + idx] === undefined || r[2 + idx] === null ? '' : r[2 + idx];
     });
-  </script>
+    out[name] = { raw: r, pt, map: dateMap };
+  }
+  return out;
+}
+
+function getValueForDate(sheet, mappedRow, date) {
+  if (!sheet || !mappedRow) return '';
+  // mappedRow.map[date]
+  return mappedRow.map[date] || '';
+}
+
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+}
+
+</script>
 </body>
 </html>
