@@ -50,7 +50,7 @@
   </div>
 
   <script>
-    const endpoint = 'https://script.google.com/macros/s/AKfycbzq-8jVi-vnza5rkfqdCuhTsAlnckP7kd-iKQz5XAH9wILUPl-aCfyy5_4Uw-AJlvpKKA/exec';
+    const endpoint = 'https://script.google.com/macros/s/AKfycbylT6JhmBgMMe3VBE9QRqJSeVXDjhFSFnFpjT8_2KavYcgLXx9BI4KlAPSKzwFlN7Mg5Q/exec';
 
     // === Dropdown tahun ===
     const yearSelect = document.getElementById('year');
@@ -110,7 +110,7 @@
         html += `<tr><td>${row.namaPangkalan}</td><td>${row.namaPT}</td>`;
         tanggalSet.forEach(tgl => {
           const isi = row.data[tgl] || {};
-          html += `<td>${isi.SA || '-'}</td><td>${isi.JH || '-'}</td><td>${isi.IS ? isi.IS + ' 🚚' : '-'}</td>`;
+          html += `<td>${isi.SA || '-'}</td><td>${isi.JH + ' 📋' :'-'}</td><td>${isi.IS ? isi.IS + ' 🚚' : '-'}</td>`;
         });
         html += `</tr>`;
       });
