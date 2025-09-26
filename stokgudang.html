@@ -117,44 +117,67 @@
       renderTable(json.info);
     }
 
-    function renderTable(info) {
-      const container = document.getElementById('tabel-container');
-      const tanggalSet = info.tanggalSet || [];
-      let data = info.result || [];
+function renderTable(info) {
+  const container = document.getElementById('tabel-container');
+  const tanggalSet = info.tanggalSet || [];
+  let data = info.result || [];
 
-      // Filter berdasarkan Pangkalan & PT
-      const selectedPangkalan = document.getElementById('filterPangkalan').value;
-      const selectedPT = document.getElementById('filterPT').value;
-      if (selectedPangkalan) data = data.filter(r => r.namaPangkalan === selectedPangkalan);
-      if (selectedPT) data = data.filter(r => r.namaPT === selectedPT);
+  // Filter berdasarkan Pangkalan & PT
+  const selectedPangkalan = document.getElementById('filterPangkalan').value;
+  const selectedPT = document.getElementById('filterPT').value;
+  if (selectedPangkalan) data = data.filter(r => r.namaPangkalan === selectedPangkalan);
+  if (selectedPT) data = data.filter(r => r.namaPT === selectedPT);
 
-      if (tanggalSet.length === 0 || data.length === 0) {
-        container.innerHTML = `<p class='text-gray-500'>Tidak ada data untuk filter ini.</p>`;
-        return;
-      }
+  if (tanggalSet.length === 0 || data.length === 0) {
+    container.innerHTML = `<p class='text-gray-500'>Tidak ada data untuk filter ini.</p>`;
+    return;
+  }
 
-      let html = `<table>
-        <thead>
-          <tr>
-            <th rowspan="2">Nama Pangkalan</th>
-            <th rowspan="2">Nama PT</th>`;
-      tanggalSet.forEach(tgl => html += `<th colspan="3">${tgl}</th>`);
-      html += `</tr><tr>`;
-      tanggalSet.forEach(() => html += `<th>SA 📅</th><th>JH 📃</th><th>P 🚚</th>`);
-      html += `</tr></thead><tbody>`;
+  let html = `<table>
+    <thead>
+      <tr>
+        <th rowspan="2">Nama Pangkalan</th>
+        <th rowspan="2">Nama PT</th>`;
+  tanggalSet.forEach(tgl => html += `<th colspan="3">${tgl}</th>`);
+  html += `</tr><tr>`;
+  tanggalSet.forEach(() => html += `<th>SA 📅</th><th>JH 📃</th><th>P 🚚</th>`);
+  html += `</tr></thead><tbody>`;
 
-      data.forEach(row => {
-        html += `<tr><td>${row.namaPangkalan}</td><td>${row.namaPT}</td>`;
-        tanggalSet.forEach(tgl => {
-          const isi = row.data[tgl] || {};
-          html += `<td>${isi.SA || '-'}</td><td>${isi.JH || '-'}</td><td>${isi.IS ? isi.IS + ' 🚚' : '-'}</td>`;
-        });
-        html += `</tr>`;
-      });
+  // Inisialisasi total per tanggal
+  const totalPerTanggal = {};
+  tanggalSet.forEach(tgl => {
+    totalPerTanggal[tgl] = { SA: 0, JH: 0, IS: 0 };
+  });
 
-      html += `</tbody></table>`;
-      container.innerHTML = html;
-    }
+  data.forEach(row => {
+    html += `<tr><td>${row.namaPangkalan}</td><td>${row.namaPT}</td>`;
+    tanggalSet.forEach(tgl => {
+      const isi = row.data[tgl] || {};
+      const valSA = isi.SA || 0;
+      const valJH = isi.JH || 0;
+      const valIS = isi.IS || 0;
+
+      html += `<td>${valSA}</td><td>${valJH}</td><td>${valIS ? valIS + ' 🚚' : '-'}</td>`;
+
+      // Tambah ke total
+      totalPerTanggal[tgl].SA += Number(valSA);
+      totalPerTanggal[tgl].JH += Number(valJH);
+      totalPerTanggal[tgl].IS += Number(valIS);
+    });
+    html += `</tr>`;
+  });
+
+  // Baris total
+  html += `<tr class="font-semibold bg-gray-200"><td colspan="2">TOTAL</td>`;
+  tanggalSet.forEach(tgl => {
+    const t = totalPerTanggal[tgl];
+    html += `<td>${t.SA}</td><td>${t.JH}</td><td>${t.IS ? t.IS + ' 🚚' : '-'}</td>`;
+  });
+  html += `</tr>`;
+
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+}
 
     loadRekap();
   </script>
