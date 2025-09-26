@@ -76,6 +76,7 @@
   document.body.appendChild(script);
 }
 
+      
 function renderTableJSONP(json) {
   document.getElementById('spinner').classList.add('hidden');
   if (json.status !== 'ok') {
@@ -87,45 +88,66 @@ function renderTableJSONP(json) {
 
   
       // === Render Tabel ===
-      function renderTable(info) {
-        const container = document.getElementById('tabel-container');
-        const tanggalSet = info.tanggalSet || [];
-        const data = info.result || [];
-  
-        if (tanggalSet.length === 0) {
-          container.innerHTML = `<p class='text-gray-500'>Tidak ada data untuk bulan ini.</p>`;
-          return;
-        }
-  
-        let html = `
-          <table>
-            <thead>
-              <tr>
-                <th rowspan="2">Nama Pangkalan</th>
-                <th rowspan="2">Nama PT</th>`;
-        tanggalSet.forEach(tgl => {
-          html += `<th colspan="3">${tgl}</th>`;
-        });
-        html += `</tr><tr>`;
-        tanggalSet.forEach(() => {
-          html += `<th>MASTER_SA</th><th>JH</th><th>ISHIPPING</th>`;
-        });
-        html += `</tr></thead><tbody>`;
-  
-        data.forEach(row => {
-          html += `<tr><td>${row.namaPangkalan}</td><td>${row.namaPT}</td>`;
-          tanggalSet.forEach(tgl => {
-            const isi = row.data[tgl] || {};
-            html += `
-              <td>${isi.SA || '-'}</td>
-              <td>${isi.JH || '-'}</td>
-              <td>${isi.IS ? isi.IS + ' 🚚' : '-'}</td>`;
-          });
-          html += `</tr>`;
-        });
-        html += `</tbody></table>`;
-        container.innerHTML = html;
+  function renderTable(info) {
+  const container = document.getElementById('tabel-container');
+  let tanggalSet = info.tanggalSet || [];
+  const data = info.result || [];
+
+  // === Hapus tanggal yang tidak diinginkan & konversi format ke dd/mm/yyyy ===
+  tanggalSet = tanggalSet
+    .filter(t => t !== "2025-08-31T17:00:00.000Z")
+    .map(t => {
+      if (t.includes('T')) {
+        const d = new Date(t);
+        return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
       }
+      return t;
+    });
+
+  // === Standarisasi kunci row.data agar sesuai tanggalSet ===
+  data.forEach(row => {
+    const newData = {};
+    Object.keys(row.data).forEach(tgl => {
+      if (tgl === "2025-08-31T17:00:00.000Z") return; // skip
+      let key = tgl;
+      if (tgl.includes('T')) {
+        const d = new Date(tgl);
+        key = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+      }
+      newData[key] = row.data[tgl];
+    });
+    row.data = newData;
+  });
+
+  if (tanggalSet.length === 0) {
+    container.innerHTML = `<p class='text-gray-500'>Tidak ada data untuk bulan ini.</p>`;
+    return;
+  }
+
+  // === Render tabel ===
+  let html = `
+    <table>
+      <thead>
+        <tr>
+          <th rowspan="2">Nama Pangkalan</th>
+          <th rowspan="2">Nama PT</th>`;
+  tanggalSet.forEach(tgl => html += `<th colspan="3">${tgl}</th>`);
+  html += `</tr><tr>`;
+  tanggalSet.forEach(() => html += `<th>MASTER_SA</th><th>JH</th><th>ISHIPPING</th>`);
+  html += `</tr></thead><tbody>`;
+
+  data.forEach(row => {
+    html += `<tr><td>${row.namaPangkalan}</td><td>${row.namaPT}</td>`;
+    tanggalSet.forEach(tgl => {
+      const isi = row.data[tgl] || {};
+      html += `<td>${isi.SA || '-'}</td><td>${isi.JH || '-'}</td><td>${isi.IS ? isi.IS + ' 🚚' : '-'}</td>`;
+    });
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+}
   
       loadRekap();
     </script>
