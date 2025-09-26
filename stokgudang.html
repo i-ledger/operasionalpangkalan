@@ -1,148 +1,125 @@
-  <!DOCTYPE html>
-  <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rekap Gabungan Per Bulan</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      .scroll-container { overflow-x: auto; white-space: nowrap; }
-      table { border-collapse: collapse; min-width: 100%; font-size: 13px; }
-      th, td { border: 1px solid #d1d5db; padding: 6px 10px; text-align: center; white-space: nowrap; }
-      th { background: #f1f5f9; }
-      td img { width: 50px; border-radius: 6px; }
-    </style>
-  </head>
-  <body class="bg-gray-50">
-    <div class="p-4">
-      <h1 class="text-xl font-semibold mb-4">📊 Rekap Gabungan Per Bulan</h1>
-  
-      <!-- Filter Bulan & Tahun -->
-      <div class="flex flex-wrap gap-2 items-center mb-4">
-        <select id="month" class="border rounded p-2">
-          <option value="1">Januari</option>
-          <option value="2">Februari</option>
-          <option value="3">Maret</option>
-          <option value="4">April</option>
-          <option value="5">Mei</option>
-          <option value="6">Juni</option>
-          <option value="7">Juli</option>
-          <option value="8">Agustus</option>
-          <option value="9">September</option>
-          <option value="10">Oktober</option>
-          <option value="11">November</option>
-          <option value="12">Desember</option>
-        </select>
-        <select id="year" class="border rounded p-2"></select>
-        <button onclick="loadRekap()" class="bg-blue-500 hover:bg-blue-600 text-white rounded px-4 py-2">
-          🔍 Tampilkan
-        </button>
-      </div>
-  
-      <!-- Spinner -->
-      <div id="spinner" class="text-center my-8 hidden">
-        <div class="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
-        <p class="text-gray-500 mt-2">Memuat data...</p>
-      </div>
-  
-      <!-- Container tabel -->
-      <div id="tabel-container" class="scroll-container"></div>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rekap Gabungan Per Bulan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .scroll-container { overflow-x: auto; white-space: nowrap; }
+    table { border-collapse: collapse; min-width: 100%; font-size: 13px; }
+    th, td { border: 1px solid #d1d5db; padding: 6px 10px; text-align: center; white-space: nowrap; }
+    th { background: #f1f5f9; }
+    td img { width: 50px; border-radius: 6px; }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <div class="p-4">
+    <h1 class="text-xl font-semibold mb-4">📊 Rekap Gabungan Per Bulan</h1>
+
+    <!-- Filter Bulan & Tahun -->
+    <div class="flex flex-wrap gap-2 items-center mb-4">
+      <select id="month" class="border rounded p-2">
+        <option value="1">Januari</option>
+        <option value="2">Februari</option>
+        <option value="3">Maret</option>
+        <option value="4">April</option>
+        <option value="5">Mei</option>
+        <option value="6">Juni</option>
+        <option value="7">Juli</option>
+        <option value="8">Agustus</option>
+        <option value="9">September</option>
+        <option value="10">Oktober</option>
+        <option value="11">November</option>
+        <option value="12">Desember</option>
+      </select>
+      <select id="year" class="border rounded p-2"></select>
+      <button onclick="loadRekap()" class="bg-blue-500 hover:bg-blue-600 text-white rounded px-4 py-2">
+        🔍 Tampilkan
+      </button>
     </div>
-  
-    <script>
-      const endpoint = 'https://script.google.com/macros/s/AKfycbwc_9FalAR0HJWL3pVQDy-gLVe2ZbmkPsjVcIw3V0CXK_AUrZxCeCB2hOgXJNZgD9JAlw/exec'; // Ganti URL GAS kamu
-  
-      // === Dropdown tahun ===
-      const yearSelect = document.getElementById('year');
-      const currentYear = new Date().getFullYear();
-      for (let y = currentYear - 2; y <= currentYear + 1; y++) {
-        const opt = document.createElement('option');
-        opt.value = y;
-        opt.textContent = y;
-        if (y === currentYear) opt.selected = true;
-        yearSelect.appendChild(opt);
+
+    <!-- Spinner -->
+    <div id="spinner" class="text-center my-8 hidden">
+      <div class="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+      <p class="text-gray-500 mt-2">Memuat data...</p>
+    </div>
+
+    <!-- Container tabel -->
+    <div id="tabel-container" class="scroll-container"></div>
+  </div>
+
+  <script>
+    const endpoint = 'https://script.google.com/macros/s/AKfycbzq-8jVi-vnza5rkfqdCuhTsAlnckP7kd-iKQz5XAH9wILUPl-aCfyy5_4Uw-AJlvpKKA/exec';
+
+    // === Dropdown tahun ===
+    const yearSelect = document.getElementById('year');
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear - 2; y <= currentYear + 1; y++) {
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = y;
+      if (y === currentYear) opt.selected = true;
+      yearSelect.appendChild(opt);
+    }
+    document.getElementById('month').value = new Date().getMonth() + 1;
+
+    // === Load Rekap ===
+    function loadRekap() {
+      const month = document.getElementById('month').value;
+      const year = document.getElementById('year').value;
+      document.getElementById('spinner').classList.remove('hidden');
+      document.getElementById('tabel-container').innerHTML = '';
+
+      const script = document.createElement('script');
+      script.src = `${endpoint}?action=getRekapGabungan&month=${month}&year=${year}&callback=renderTableJSONP`;
+      document.body.appendChild(script);
+    }
+
+    function renderTableJSONP(json) {
+      document.getElementById('spinner').classList.add('hidden');
+      if (json.status !== 'ok') {
+        document.getElementById('tabel-container').innerHTML = `<p class='text-red-500'>❌ ${json.message}</p>`;
+        return;
       }
-      document.getElementById('month').value = new Date().getMonth() + 1;
-  
-      // === Fungsi utama ===
-   function loadRekap() {
-  const month = document.getElementById('month').value;
-  const year = document.getElementById('year').value;
-  document.getElementById('spinner').classList.remove('hidden');
-  document.getElementById('tabel-container').innerHTML = '';
+      renderTable(json.info);
+    }
 
-  const script = document.createElement('script');
-  script.src = `${endpoint}?action=getRekapGabungan&month=${month}&year=${year}&callback=renderTableJSONP`;
-  document.body.appendChild(script);
-}
+    // === Render Tabel ===
+    function renderTable(info) {
+      const container = document.getElementById('tabel-container');
+      const tanggalSet = info.tanggalSet || [];
+      const data = info.result || [];
 
-      
-function renderTableJSONP(json) {
-  document.getElementById('spinner').classList.add('hidden');
-  if (json.status !== 'ok') {
-    document.getElementById('tabel-container').innerHTML = `<p class='text-red-500'>❌ ${json.message}</p>`;
-    return;
-  }
-  renderTable(json.info);
-}
-
-  
-      // === Render Tabel ===
-  function renderTable(info) {
-  const container = document.getElementById('tabel-container');
-  let tanggalSet = info.tanggalSet || [];
-  const data = info.result || [];
-
-  // === Hapus tanggal yang tidak diinginkan & konversi format ke dd/mm/yyyy ===
-  tanggalSet = tanggalSet
-    .filter(t => t !== "2025-08-31T17:00:00.000Z")
-
-  // === Standarisasi kunci row.data agar sesuai tanggalSet ===
-  data.forEach(row => {
-    const newData = {};
-    Object.keys(row.data).forEach(tgl => {
-      if (tgl === "2025-08-31T17:00:00.000Z") return; // skip
-      let key = tgl;
-      if (tgl.includes('T')) {
-        const d = new Date(tgl);
-        key = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+      if (tanggalSet.length === 0) {
+        container.innerHTML = `<p class='text-gray-500'>Tidak ada data untuk bulan ini.</p>`;
+        return;
       }
-      newData[key] = row.data[tgl];
-    });
-    row.data = newData;
-  });
 
-  if (tanggalSet.length === 0) {
-    container.innerHTML = `<p class='text-gray-500'>Tidak ada data untuk bulan ini.</p>`;
-    return;
-  }
+      let html = `<table>
+        <thead>
+          <tr>
+            <th rowspan="2">Nama Pangkalan</th>
+            <th rowspan="2">Nama PT</th>`;
+      tanggalSet.forEach(tgl => html += `<th colspan="3">${tgl}</th>`);
+      html += `</tr><tr>`;
+      tanggalSet.forEach(() => html += `<th>MASTER_SA</th><th>JH</th><th>ISHIPPING</th>`);
+      html += `</tr></thead><tbody>`;
 
-  // === Render tabel ===
-  let html = `
-    <table>
-      <thead>
-        <tr>
-          <th rowspan="2">Nama Pangkalan</th>
-          <th rowspan="2">Nama PT</th>`;
-  tanggalSet.forEach(tgl => html += `<th colspan="3">${tgl}</th>`);
-  html += `</tr><tr>`;
-  tanggalSet.forEach(() => html += `<th>MASTER_SA</th><th>JH</th><th>ISHIPPING</th>`);
-  html += `</tr></thead><tbody>`;
+      data.forEach(row => {
+        html += `<tr><td>${row.namaPangkalan}</td><td>${row.namaPT}</td>`;
+        tanggalSet.forEach(tgl => {
+          const isi = row.data[tgl] || {};
+          html += `<td>${isi.SA || '-'}</td><td>${isi.JH || '-'}</td><td>${isi.IS ? isi.IS + ' 🚚' : '-'}</td>`;
+        });
+        html += `</tr>`;
+      });
 
-  data.forEach(row => {
-    html += `<tr><td>${row.namaPangkalan}</td><td>${row.namaPT}</td>`;
-    tanggalSet.forEach(tgl => {
-      const isi = row.data[tgl] || {};
-      html += `<td>${isi.SA || '-'}</td><td>${isi.JH || '-'}</td><td>${isi.IS ? isi.IS + ' 🚚' : '-'}</td>`;
-    });
-    html += `</tr>`;
-  });
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    }
 
-  html += `</tbody></table>`;
-  container.innerHTML = html;
-}
-  
-      loadRekap();
-    </script>
-  </body>
-  </html>
+    loadRekap();
+  </script>
+</body>
+</html>
