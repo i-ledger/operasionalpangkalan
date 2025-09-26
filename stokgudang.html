@@ -4,20 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rekap Gabungan Per Bulan</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
-  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .scroll-container { overflow-x: auto; white-space: nowrap; }
     table { border-collapse: collapse; min-width: 100%; font-size: 13px; }
     th, td { border: 1px solid #d1d5db; padding: 6px 10px; text-align: center; white-space: nowrap; }
     th { background: #f1f5f9; }
+    td img { width: 50px; border-radius: 6px; }
   </style>
 </head>
 <body class="bg-gray-50">
   <div class="p-4">
     <h1 class="text-xl font-semibold mb-4">📊 Rekap Gabungan Per Bulan</h1>
 
+    <!-- Filter Bulan, Tahun, Pangkalan & PT -->
     <div class="flex flex-wrap gap-2 items-center mb-4">
       <select id="month" class="border rounded p-2">
         <option value="1">Januari</option>
@@ -36,130 +36,154 @@
 
       <select id="year" class="border rounded p-2"></select>
 
-      <select id="filterPangkalan" multiple></select>
-      <button id="togglePangkalan" class="bg-gray-200 rounded px-2 py-1 text-sm">Pilih Semua</button>
+      <select id="filterPangkalan" class="border rounded p-2" multiple size="5">
+        <!-- opsi akan di-populate -->
+      </select>
 
-      <select id="filterPT" multiple></select>
-      <button id="togglePT" class="bg-gray-200 rounded px-2 py-1 text-sm">Pilih Semua</button>
+      <select id="filterPT" class="border rounded p-2" multiple size="5">
+        <!-- opsi akan di-populate -->
+      </select>
 
       <button onclick="loadRekap()" class="bg-blue-500 hover:bg-blue-600 text-white rounded px-4 py-2">
         🔍 Tampilkan
       </button>
     </div>
 
+    <!-- Spinner -->
     <div id="spinner" class="text-center my-8 hidden">
       <div class="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
       <p class="text-gray-500 mt-2">Memuat data...</p>
     </div>
 
+    <!-- Container tabel -->
     <div id="tabel-container" class="scroll-container"></div>
   </div>
 
   <script>
     const endpoint = 'https://script.google.com/macros/s/AKfycbydoGomFeFuc6YNVN9UYyBNJCKUjsfoU-sBQyT7bnjoKgAPrTYridJN09wZlqS6JB52yw/exec';
 
-    // Tahun
+    // Dropdown tahun
     const yearSelect = document.getElementById('year');
     const currentYear = new Date().getFullYear();
-    for (let y = currentYear-2; y <= currentYear+1; y++) {
-      const opt = document.createElement('option'); opt.value = y; opt.textContent = y;
-      if(y===currentYear) opt.selected = true;
+    for (let y = currentYear - 2; y <= currentYear + 1; y++) {
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = y;
+      if (y === currentYear) opt.selected = true;
       yearSelect.appendChild(opt);
     }
-    document.getElementById('month').value = new Date().getMonth() +1;
+    document.getElementById('month').value = new Date().getMonth() + 1;
 
     const filterPangkalan = document.getElementById('filterPangkalan');
     const filterPT = document.getElementById('filterPT');
 
-    const choicesPangkalan = new Choices(filterPangkalan, { removeItemButton: true, searchEnabled:true });
-    const choicesPT = new Choices(filterPT, { removeItemButton: true, searchEnabled:true });
-
-    function populateFilters(data){
+    // Populate filter Pangkalan & PT dan default semua terpilih
+    function populateFilters(data) {
       const pangkalanSet = new Set();
       const ptSet = new Set();
-      data.forEach(r => { pangkalanSet.add(r.namaPangkalan); ptSet.add(r.namaPT); });
+      data.forEach(row => {
+        pangkalanSet.add(row.namaPangkalan);
+        ptSet.add(row.namaPT);
+      });
 
-      pangkalanSet.forEach(p => choicesPangkalan.setChoiceByValue(p) || choicesPangkalan.setChoices([{value:p,label:p,selected:true}], 'value','label',false));
-      ptSet.forEach(p => choicesPT.setChoiceByValue(p) || choicesPT.setChoices([{value:p,label:p,selected:true}], 'value','label',false));
+      pangkalanSet.forEach(p => {
+        const opt = new Option(p, p, true, true); // default selected semua
+        filterPangkalan.appendChild(opt);
+      });
+
+      ptSet.forEach(p => {
+        const opt = new Option(p, p, true, true); // default selected semua
+        filterPT.appendChild(opt);
+      });
     }
 
-    // Toggle pilih semua/deselect
-    document.getElementById('togglePangkalan').addEventListener('click', ()=>{
-      const allSelected = choicesPangkalan.getValue(true).length === choicesPangkalan._currentState.choices.length;
-      if(allSelected){
-        choicesPangkalan.removeActiveItems();
-        document.getElementById('togglePangkalan').textContent = "Pilih Semua";
-      }else{
-        choicesPangkalan.setChoiceByValue(choicesPangkalan._currentState.choices.map(c=>c.value));
-        document.getElementById('togglePangkalan').textContent = "Hapus Semua";
-      }
-    });
-
-    document.getElementById('togglePT').addEventListener('click', ()=>{
-      const allSelected = choicesPT.getValue(true).length === choicesPT._currentState.choices.length;
-      if(allSelected){
-        choicesPT.removeActiveItems();
-        document.getElementById('togglePT').textContent = "Pilih Semua";
-      }else{
-        choicesPT.setChoiceByValue(choicesPT._currentState.choices.map(c=>c.value));
-        document.getElementById('togglePT').textContent = "Hapus Semua";
-      }
-    });
-
-    function loadRekap(){
+    // Load rekap
+    function loadRekap() {
       const month = document.getElementById('month').value;
       const year = document.getElementById('year').value;
+
+      // Ambil multi-select values
+      const pangkalanArr = Array.from(filterPangkalan.selectedOptions).map(o => o.value);
+      const ptArr = Array.from(filterPT.selectedOptions).map(o => o.value);
+
       document.getElementById('spinner').classList.remove('hidden');
       document.getElementById('tabel-container').innerHTML = '';
+
       const script = document.createElement('script');
       script.src = `${endpoint}?action=getRekapGabungan&month=${month}&year=${year}&callback=renderTableJSONP`;
       document.body.appendChild(script);
     }
 
-    function renderTableJSONP(json){
+    function renderTableJSONP(json) {
       document.getElementById('spinner').classList.add('hidden');
-      if(json.status!=='ok'){document.getElementById('tabel-container').innerHTML=`<p class='text-red-500'>❌ ${json.message}</p>`;return;}
-      if(choicesPangkalan._currentState.choices.length===0) populateFilters(json.info.result);
+      if (json.status !== 'ok') {
+        document.getElementById('tabel-container').innerHTML = `<p class='text-red-500'>❌ ${json.message}</p>`;
+        return;
+      }
+
+      // populate filter options jika belum ada
+      if (filterPangkalan.options.length === 0) populateFilters(json.info.result);
+
       renderTable(json.info);
     }
 
-    function renderTable(info){
+    function renderTable(info) {
       const container = document.getElementById('tabel-container');
       const tanggalSet = info.tanggalSet || [];
       let data = info.result || [];
 
-      const selectedPangkalan = choicesPangkalan.getValue(true);
-      const selectedPT = choicesPT.getValue(true);
+      // Filter multi-select
+      const selectedPangkalan = Array.from(filterPangkalan.selectedOptions).map(o => o.value);
+      const selectedPT = Array.from(filterPT.selectedOptions).map(o => o.value);
 
-      if(selectedPangkalan.length) data = data.filter(r=>selectedPangkalan.includes(r.namaPangkalan));
-      if(selectedPT.length) data = data.filter(r=>selectedPT.includes(r.namaPT));
+      if (selectedPangkalan.length) data = data.filter(r => selectedPangkalan.includes(r.namaPangkalan));
+      if (selectedPT.length) data = data.filter(r => selectedPT.includes(r.namaPT));
 
-      if(tanggalSet.length===0||data.length===0){container.innerHTML=`<p class='text-gray-500'>Tidak ada data untuk filter ini.</p>`;return;}
+      if (tanggalSet.length === 0 || data.length === 0) {
+        container.innerHTML = `<p class='text-gray-500'>Tidak ada data untuk filter ini.</p>`;
+        return;
+      }
 
       let html = `<table>
-        <thead><tr><th rowspan="2">Nama Pangkalan</th><th rowspan="2">Nama PT</th>`;
-      tanggalSet.forEach(t=>html+=`<th colspan="3">${t}</th>`); html+=`</tr><tr>`;
-      tanggalSet.forEach(()=>html+=`<th>SA 📅</th><th>JH 📃</th><th>P 🚚</th>`); html+=`</tr></thead><tbody>`;
+        <thead>
+          <tr>
+            <th rowspan="2">Nama Pangkalan</th>
+            <th rowspan="2">Nama PT</th>`;
+      tanggalSet.forEach(tgl => html += `<th colspan="3">${tgl}</th>`);
+      html += `</tr><tr>`;
+      tanggalSet.forEach(() => html += `<th>SA 📅</th><th>JH 📃</th><th>P 🚚</th>`);
+      html += `</tr></thead><tbody>`;
 
-      const totalPerTanggal={}; tanggalSet.forEach(t=>{totalPerTanggal[t]={SA:0,JH:0,IS:0};});
+      // Total per tanggal
+      const totalPerTanggal = {};
+      tanggalSet.forEach(tgl => { totalPerTanggal[tgl] = { SA:0, JH:0, IS:0 }; });
 
-      data.forEach(r=>{
-        html+=`<tr><td>${r.namaPangkalan}</td><td>${r.namaPT}</td>`;
-        tanggalSet.forEach(t=>{
-          const isi=r.data[t]||{};
-          const valSA=isi.SA||0,valJH=isi.JH||0,valIS=isi.IS||0;
-          html+=`<td>${valSA}</td><td>${valJH}</td><td>${valIS?valIS+' 🚚':'-'}</td>`;
-          totalPerTanggal[t].SA+=Number(valSA); totalPerTanggal[t].JH+=Number(valJH); totalPerTanggal[t].IS+=Number(valIS);
+      data.forEach(row => {
+        html += `<tr><td>${row.namaPangkalan}</td><td>${row.namaPT}</td>`;
+        tanggalSet.forEach(tgl => {
+          const isi = row.data[tgl] || {};
+          const valSA = isi.SA || 0;
+          const valJH = isi.JH || 0;
+          const valIS = isi.IS || 0;
+
+          html += `<td>${valSA}</td><td>${valJH}</td><td>${valIS ? valIS + ' 🚚' : '-'}</td>`;
+
+          totalPerTanggal[tgl].SA += Number(valSA);
+          totalPerTanggal[tgl].JH += Number(valJH);
+          totalPerTanggal[tgl].IS += Number(valIS);
         });
-        html+=`</tr>`;
+        html += `</tr>`;
       });
 
-      html+=`<tr class="font-semibold bg-gray-200"><td colspan="2">TOTAL</td>`;
-      tanggalSet.forEach(t=>{
-        const ttot=totalPerTanggal[t];
-        html+=`<td>${ttot.SA}</td><td>${ttot.JH}</td><td>${ttot.IS?ttot.IS+' 🚚':'-'}</td>`;
+      // Baris TOTAL
+      html += `<tr class="font-semibold bg-gray-200"><td colspan="2">TOTAL</td>`;
+      tanggalSet.forEach(tgl => {
+        const t = totalPerTanggal[tgl];
+        html += `<td>${t.SA}</td><td>${t.JH}</td><td>${t.IS ? t.IS + ' 🚚' : '-'}</td>`;
       });
-      html+=`</tr></tbody></table>`;
+      html += `</tr>`;
+
+      html += `</tbody></table>`;
       container.innerHTML = html;
     }
 
