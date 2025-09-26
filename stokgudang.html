@@ -1,186 +1,94 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Rekap Multi-Sheet (MASTER_SA · JH · ISHIPPING)</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rekap Gabungan</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    table { border-collapse: collapse; }
-    th, td { border: 1px solid #e5e7eb; padding: 6px 8px; white-space: nowrap; }
-    thead th { position: sticky; top: 0; background: white; z-index: 10; }
-    .small { font-size: 11px; }
+    .scroll-container {
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    table {
+      border-collapse: collapse;
+      min-width: 100%;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px 10px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    th {
+      background: #f1f5f9;
+    }
   </style>
 </head>
-<body class="p-4 bg-gray-50">
-  <div class="max-w-full">
-    <div class="mb-4 flex gap-3 items-center">
-      <h1 class="text-xl font-semibold">Rekap Multi-Sheet</h1>
-      <div class="text-sm text-gray-600">(ambil data dari MASTER_SA, JH, dan ISHIPPING)</div>
+<body class="bg-gray-50">
+
+  <div class="p-4">
+    <h1 class="text-xl font-semibold mb-3">📊 Rekap Gabungan Harian</h1>
+
+    <!-- Spinner -->
+    <div id="spinner" class="text-center my-8 hidden">
+      <div class="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+      <p class="text-gray-500 mt-2">Memuat data...</p>
     </div>
 
-    <div class="mb-4 flex gap-2">
-      <input id="apiUrl" class="border p-2 rounded w-full" placeholder="Paste Apps Script URL (contoh: https://script.google.com/macros/s/XXX/exec)" />
-      <button id="btnLoad" class="bg-blue-600 text-white px-4 py-2 rounded">Load</button>
-    </div>
-
-    <div id="msg" class="text-sm text-gray-600 mb-3"></div>
-
-    <div id="tableWrap" class="overflow-auto border rounded bg-white">
-      <!-- table inserted here -->
-    </div>
+    <!-- Container tabel -->
+    <div id="tabel-container" class="scroll-container"></div>
   </div>
 
-<script>
-/*
-  Cara kerja (asumsi minimal):
-  - Frontend mengirim GET ke endpoint Apps Script dengan parameter `action`:
-      ?action=getMasterSA
-      ?action=getJH
-      ?action=getIshipping
-  - Masing-masing endpoint mengembalikan JSON sederhana:
-      { headers: ["NAMA PANGKALAN","NAMA PT","01/01/2025","02/01/2025",...],
-        data: [ ["AAN KARNAMAH","PT...", 0, 150, ...], [...], ... ] }
-  - Jika backend berbeda, sesuaikan nama action atau ubah fungsi fetchSheet() di bawah.
-*/
+  <script>
+    const endpoint = 'https://script.google.com/macros/s/AKfycby4qNoRzlEcZnkBmFw45LApooeG3bAAF_h3u1FUQMYv2QFid_HJz_DKsHzOKfrqGRxSEA/exec'; // ganti URL GAS lo
 
-const btn = document.getElementById('btnLoad');
-const apiUrlInput = document.getElementById('apiUrl');
-const msg = document.getElementById('msg');
-const tableWrap = document.getElementById('tableWrap');
+    async function loadRekap() {
+      document.getElementById('spinner').classList.remove('hidden');
+      try {
+        const res = await fetch(`${endpoint}?action=getRekapGabungan`);
+        const json = await res.json();
+        if (json.status !== 'ok') throw new Error(json.message);
 
-btn.addEventListener('click', async () => {
-  const API = apiUrlInput.value.trim();
-  if (!API) return alert('Masukin dulu URL Apps Script kamu.');
-  tableWrap.innerHTML = '<div class="p-6">Loading...</div>';
-  msg.textContent = '';
-
-  try {
-    const [master, jh, iship] = await Promise.all([
-      fetchSheet(API, 'getMasterSA'),
-      fetchSheet(API, 'getJH'),
-      fetchSheet(API, 'getIshipping')
-    ]);
-
-    const html = buildCombinedTable(master, jh, iship);
-    tableWrap.innerHTML = html;
-
-  } catch (err) {
-    console.error(err);
-    msg.textContent = 'Error: ' + (err.message || err);
-    tableWrap.innerHTML = '';
-  }
-});
-
-async function fetchSheet(api, actionName) {
-  // default GET to: API + ?action=xxx
-  const url = api + (api.includes('?') ? '&' : '?') + 'action=' + encodeURIComponent(actionName);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('Gagal fetch ' + actionName + ' — ' + res.status);
-  const j = await res.json();
-  // Expect { headers: [...], data: [...] }
-  if (!j.headers || !j.data) {
-    // try to normalize common alternate shape: rows array where first row is headers
-    if (Array.isArray(j) && j.length) {
-      return sheetFromRows(j);
+        renderTable(json.info);
+      } catch (err) {
+        document.getElementById('tabel-container').innerHTML = `<p class='text-red-500'>❌ ${err.message}</p>`;
+      } finally {
+        document.getElementById('spinner').classList.add('hidden');
+      }
     }
-    throw new Error('Format data tidak sesuai untuk ' + actionName);
-  }
-  return j;
-}
 
-function sheetFromRows(rows) {
-  const headers = rows[0];
-  const data = rows.slice(1);
-  return { headers, data };
-}
+    function renderTable(info) {
+      const container = document.getElementById('tabel-container');
+      const tanggalSet = new Set([...info.tanggalColsSA, ...info.tanggalColsJH, ...info.tanggalColsIS]);
 
-function buildCombinedTable(master, jh, iship) {
-  // normalize headers: find date columns (assume first 2 cols are Nama Pangkalan & Nama PT)
-  const keyCols = 2;
+      let html = `
+        <table class="text-sm">
+          <thead>
+            <tr>
+              <th rowspan="2">NAMA PANGKALAN</th>
+              <th rowspan="2">NAMA PT</th>
+      `;
 
-  // gather all dates from each sheet headers (skip first two columns)
-  const datesSet = new Set();
-  [master, jh, iship].forEach(s => {
-    if (!s) return;
-    s.headers.slice(keyCols).forEach(h => datesSet.add(h));
-  });
-  const dates = Array.from(datesSet);
-  dates.sort((a,b) => new Date(a.split('/').reverse().join('-')) - new Date(b.split('/').reverse().join('-')));
+      // Baris tanggal
+      tanggalSet.forEach(tgl => {
+        html += `<th colspan="3">${tgl}</th>`;
+      });
+      html += `</tr><tr>`;
+      // Subkolom
+      tanggalSet.forEach(() => {
+        html += `<th>MASTER_SA</th><th>JH</th><th>ISHIPPING</th>`;
+      });
+      html += `</tr></thead><tbody>`;
 
-  // map rows by pangkalan name for each sheet
-  const mapMaster = mapByName(master);
-  const mapJH = mapByName(jh);
-  const mapIship = mapByName(iship);
+      // Contoh data dummy (karena function lo baru return header)
+      html += `<tr><td colspan="${2 + tanggalSet.size * 3}" class="text-gray-500 italic">Data rekap akan tampil di sini setelah fungsi Apps Script digabungkan.</td></tr>`;
 
-  // union of all pangkalan names from master + jh + iship
-  const names = new Set([...Object.keys(mapMaster), ...Object.keys(mapJH), ...Object.keys(mapIship)]);
-  const rows = Array.from(names).sort((a,b)=> a.localeCompare(b));
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    }
 
-  // build table header
-  let html = '<table class="min-w-full small"><thead><tr>';
-  html += '<th rowspan="2">NAMA PANGKALAN</th>';
-  html += '<th rowspan="2">NAMA PT</th>';
-  dates.forEach(d => {
-    html += `<th colspan="3" class="text-center">${d}</th>`;
-  });
-  html += '</tr><tr>';
-  dates.forEach(() => { html += '<th class="text-center">MASTER_SA</th><th class="text-center">JH</th><th class="text-center">ISHIPPING</th>'; });
-  html += '</tr></thead><tbody>';
-
-  rows.forEach(name => {
-    const mRow = mapMaster[name];
-    const jRow = mapJH[name];
-    const iRow = mapIship[name];
-    const namaPT = (mRow && mRow.pt) || (jRow && jRow.pt) || (iRow && iRow.pt) || '';
-
-    html += '<tr>';
-    html += `<td>${escapeHtml(name)}</td>`;
-    html += `<td>${escapeHtml(namaPT)}</td>`;
-
-    dates.forEach(date => {
-      const mVal = getValueForDate(master, mRow, date) || 0;
-      const jVal = getValueForDate(jh, jRow, date) || 0;
-      const iVal = getValueForDate(iship, iRow, date) || 0;
-      html += `<td class="text-right">${mVal}</td><td class="text-right">${jVal}</td><td class="text-right">${iVal}</td>`;
-    });
-
-    html += '</tr>';
-  });
-
-  html += '</tbody></table>';
-  return html;
-}
-
-function mapByName(sheet) {
-  if (!sheet || !sheet.data) return {};
-  const out = {};
-  const headers = sheet.headers;
-  for (const r of sheet.data) {
-    const name = (r[0] || '').toString().trim();
-    const pt = (r[1] || '').toString().trim();
-    if (!name) continue;
-    // keep row data and a quick map of date->value
-    const dateMap = {};
-    headers.slice(2).forEach((h, idx) => {
-      dateMap[h] = r[2 + idx] === undefined || r[2 + idx] === null ? '' : r[2 + idx];
-    });
-    out[name] = { raw: r, pt, map: dateMap };
-  }
-  return out;
-}
-
-function getValueForDate(sheet, mappedRow, date) {
-  if (!sheet || !mappedRow) return '';
-  // mappedRow.map[date]
-  return mappedRow.map[date] || '';
-}
-
-function escapeHtml(s) {
-  if (s === null || s === undefined) return '';
-  return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-}
-
-</script>
+    loadRekap();
+  </script>
 </body>
 </html>
