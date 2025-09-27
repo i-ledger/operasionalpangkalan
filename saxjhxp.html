@@ -36,7 +36,6 @@
 
   td img { width: 40px; border-radius: 6px; }
 
-  /* Spinner biru fullscreen */
   #spinner {
     display: none;
     position: fixed; inset: 0; z-index: 50;
@@ -52,16 +51,13 @@
     margin-bottom: 10px;
   }
   @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
-
-  .info-box { background: #bfdbfe; padding: 0.5rem; border-radius: 0.5rem; text-align:center; font-size: 12px; }
 </style>
 </head>
 <body class="p-4">
 
 <h1 class="text-xl font-bold mb-4 text-Left text-blue-900">📊 Rekap SA Sim3lon, Jadwal Harian dan Pengiriman</h1>
 
-<!-- Filter Section -->
-<div class="flex flex-wrap gap-2 items-Left-Left mb-4">
+<div class="flex flex-wrap gap-2 mb-4">
   <select id="month" class="border rounded p-2 text-sm">
     <option value="1">Januari</option><option value="2">Februari</option>
     <option value="3">Maret</option><option value="4">April</option>
@@ -80,14 +76,11 @@
   </button>
 </div>
 
-
-<!-- Spinner -->
 <div id="spinner">
   <div class="spinner-circle"></div>
   <span class="text-white text-lg font-semibold">Memuat data...</span>
 </div>
 
-<!-- Table Section -->
 <div id="tabel-container" class="scroll-container"></div>
 
 <script>
@@ -115,8 +108,8 @@ function populateFilters(data){
 }
 
 function loadRekap(){
-  const month = document.getElementById('month').value;
-  const year = document.getElementById('year').value;
+  const month=document.getElementById('month').value;
+  const year=document.getElementById('year').value;
   document.getElementById('spinner').style.display='flex';
   document.getElementById('tabel-container').innerHTML='';
   const script=document.createElement('script');
@@ -126,7 +119,10 @@ function loadRekap(){
 
 function renderTableJSONP(json){
   document.getElementById('spinner').style.display='none';
-  if(json.status!=='ok'){document.getElementById('tabel-container').innerHTML=`<p class='text-red-500 text-center'>❌ ${json.message}</p>`;return;}
+  if(json.status!=='ok'){
+    document.getElementById('tabel-container').innerHTML=`<p class='text-red-500 text-center'>❌ ${json.message}</p>`;
+    return;
+  }
   if(filterPangkalan.options.length===0) populateFilters(json.info.result);
   renderTable(json.info);
 }
@@ -135,6 +131,7 @@ function renderTable(info){
   const container=document.getElementById('tabel-container');
   const tanggalSet=info.tanggalSet||[];
   let data=info.result||[];
+  const spbeData=info.spbe||[];
 
   const selectedPangkalan = Array.from(filterPangkalan.selectedOptions).map(o=>o.value);
   const selectedPT = Array.from(filterPT.selectedOptions).map(o=>o.value);
@@ -178,7 +175,22 @@ function renderTable(info){
     const t=totalPerTanggal[tgl];
     html+=`<td>${t.SA}</td><td>${t.JH}</td><td>${t.IS?t.IS+' 🚚':'-'}</td>`;
   });
-  html+=`</tr></tbody></table>`;
+  html+=`</tr>`;
+
+  // === Tambahan SPBE di bawah total ===
+  if(spbeData.length>0){
+    spbeData.forEach(sp=>{
+      html+=`<tr class="bg-yellow-50 font-semibold">
+        <td>${sp.namaSPBE}</td>
+        <td>${sp.namaPT}</td>`;
+      tanggalSet.forEach(tgl=>{
+        html+=`<td colspan="3" class="text-center">${sp.data[tgl]||0}</td>`;
+      });
+      html+=`</tr>`;
+    });
+  }
+
+  html+=`</tbody></table>`;
   container.innerHTML=html;
 }
 
