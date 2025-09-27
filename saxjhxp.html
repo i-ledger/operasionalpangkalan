@@ -143,6 +143,11 @@ function renderTable(info){
     spbeData = spbeData.filter(sp=>selectedPT.includes(sp.namaPT)); // <-- SPBE ikut filter PT juga
   }
 
+  // === Filter SPBE: hanya tampil kalau ada nilai > 0 di bulan tersebut ===
+  spbeData = spbeData.filter(sp=>{
+    return tanggalSet.some(tgl => Number(sp.data[tgl]||0) > 0);
+  });
+
   if(tanggalSet.length===0 || (data.length===0 && spbeData.length===0)){
     container.innerHTML=`<p class='text-gray-500 text-center'>Tidak ada data untuk filter ini.</p>`;
     return;
@@ -185,7 +190,6 @@ function renderTable(info){
 
   // === TAMBAHAN SPBE DI BAWAH TOTAL ===
   if(spbeData.length>0){
-    // hitung total SPBE dari data yang tampil saja
     const totalSPBE = {};
     tanggalSet.forEach(tgl=>totalSPBE[tgl]=0);
 
@@ -213,7 +217,6 @@ function renderTable(info){
   html+=`</tbody></table>`;
   container.innerHTML = html;
 }
-
 
 // AUTO LOAD SAAT AWAL
 loadRekap();
