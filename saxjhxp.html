@@ -170,6 +170,7 @@ function renderTable(info){
     html+=`</tr>`;
   });
 
+  // === TOTAL UTAMA ===
   html+=`<tr class="font-semibold bg-blue-100"><td colspan="2">TOTAL</td>`;
   tanggalSet.forEach(tgl=>{
     const t=totalPerTanggal[tgl];
@@ -177,29 +178,33 @@ function renderTable(info){
   });
   html+=`</tr>`;
 
-  // === Tambahan SPBE di bawah total ===
-if(spbeData.length>0){
-  spbeData.forEach(sp=>{
-    html+=`<tr class="bg-yellow-50 font-semibold">
-      <td>${sp.namaSPBE}</td>
-      <td>${sp.namaPT}</td>`;
+  // === TAMBAHAN SPBE DI BAWAH TOTAL ===
+  if(spbeData.length>0){
+    spbeData.forEach(sp=>{
+      html+=`<tr class="bg-yellow-50 font-semibold">
+        <td>${sp.namaSPBE}</td>
+        <td>${sp.namaPT||'-'}</td>`;
+      tanggalSet.forEach(tgl=>{
+        html+=`<td colspan="3" class="text-center">${sp.data[tgl]||0}</td>`;
+      });
+      html+=`</tr>`;
+    });
+
+    // === TOTAL SPBE ===
+    html+=`<tr class="bg-yellow-200 font-bold">
+      <td colspan="2">TOTAL SPBE</td>`;
     tanggalSet.forEach(tgl=>{
-      html+=`<td colspan="3" class="text-center">${sp.data[tgl]||0}</td>`;
+      const t = info.totalSPBE?.[tgl] || 0;
+      html+=`<td colspan="3" class="text-center">${t}</td>`;
     });
     html+=`</tr>`;
-  });
+  }
 
-  // === Total SPBE di bawah semua baris ===
-  html+=`<tr class="bg-yellow-200 font-bold">
-    <td colspan="2">TOTAL SPBE</td>`;
-  tanggalSet.forEach(tgl=>{
-    const t = info.totalSPBE?.[tgl] || 0;
-    html+=`<td colspan="3" class="text-center">${t}</td>`;
-  });
-  html+=`</tr>`;
+  html+=`</tbody></table>`;
+  container.innerHTML = html;
 }
 
-
+// AUTO LOAD SAAT AWAL
 loadRekap();
 </script>
 </body>
