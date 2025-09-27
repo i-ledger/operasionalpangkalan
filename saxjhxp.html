@@ -131,15 +131,19 @@ function renderTable(info){
   const container=document.getElementById('tabel-container');
   const tanggalSet=info.tanggalSet||[];
   let data=info.result||[];
-  const spbeData=info.spbe||[];
+  let spbeData=info.spbe||[]; // <-- ubah ke let supaya bisa di-filter
 
   const selectedPangkalan = Array.from(filterPangkalan.selectedOptions).map(o=>o.value);
   const selectedPT = Array.from(filterPT.selectedOptions).map(o=>o.value);
 
+  // === Filter utama ===
   if(selectedPangkalan.length) data = data.filter(r=>selectedPangkalan.includes(r.namaPangkalan));
-  if(selectedPT.length) data = data.filter(r=>selectedPT.includes(r.namaPT));
+  if(selectedPT.length) {
+    data = data.filter(r=>selectedPT.includes(r.namaPT));
+    spbeData = spbeData.filter(sp=>selectedPT.includes(sp.namaPT)); // <-- SPBE ikut filter PT juga
+  }
 
-  if(tanggalSet.length===0 || data.length===0){
+  if(tanggalSet.length===0 || (data.length===0 && spbeData.length===0)){
     container.innerHTML=`<p class='text-gray-500 text-center'>Tidak ada data untuk filter ini.</p>`;
     return;
   }
@@ -203,6 +207,7 @@ function renderTable(info){
   html+=`</tbody></table>`;
   container.innerHTML = html;
 }
+
 
 // AUTO LOAD SAAT AWAL
 loadRekap();
