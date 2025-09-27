@@ -175,7 +175,7 @@ function renderTable(info){
   });
 
   // === TOTAL UTAMA ===
-  html+=`<tr class="font-semibold bg-blue-100"><td colspan="1">TOTAL</td>`;
+  html+=`<tr class="font-semibold bg-blue-100"><td colspan="2">TOTAL</td>`;
   tanggalSet.forEach(tgl=>{
     const t=totalPerTanggal[tgl];
     html+=`<td>${t.SA}</td><td>${t.JH}</td><td>${t.IS?t.IS+' 🚚':'-'}</td>`;
@@ -196,7 +196,7 @@ function renderTable(info){
 
     // === TOTAL SPBE ===
     html+=`<tr class="bg-yellow-200 font-bold">
-      <td colspan="1">TOTAL SPBE</td>`;
+      <td colspan="2">TOTAL SPBE</td>`;
     tanggalSet.forEach(tgl=>{
       const t = info.totalSPBE?.[tgl] || 0;
       html+=`<td colspan="3" class="text-center">${t}</td>`;
