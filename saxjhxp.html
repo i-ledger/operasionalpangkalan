@@ -131,19 +131,17 @@ function renderTable(info){
   const container=document.getElementById('tabel-container');
   const tanggalSet=info.tanggalSet||[];
   let data=info.result||[];
-  let spbeData=info.spbe||[]; // <-- ubah ke let supaya bisa difilter
+  let spbeData=info.spbe||[];
 
   const selectedPangkalan = Array.from(filterPangkalan.selectedOptions).map(o=>o.value);
   const selectedPT = Array.from(filterPT.selectedOptions).map(o=>o.value);
 
-  // === Filter utama ===
   if(selectedPangkalan.length) data = data.filter(r=>selectedPangkalan.includes(r.namaPangkalan));
   if(selectedPT.length) {
     data = data.filter(r=>selectedPT.includes(r.namaPT));
-    spbeData = spbeData.filter(sp=>selectedPT.includes(sp.namaPT)); // <-- SPBE ikut filter PT juga
+    spbeData = spbeData.filter(sp=>selectedPT.includes(sp.namaPT));
   }
 
-  // === Filter SPBE: hanya tampil kalau ada nilai > 0 di bulan tersebut ===
   spbeData = spbeData.filter(sp=>{
     return tanggalSet.some(tgl => Number(sp.data[tgl]||0) > 0);
   });
@@ -164,7 +162,6 @@ function renderTable(info){
   const totalPerTanggal={};
   tanggalSet.forEach(tgl=>totalPerTanggal[tgl]={SA:0,JH:0,IS:0});
 
-  // === Data Pangkalan ===
   data.forEach(row=>{
     html+=`<tr><td>${row.namaPangkalan}</td><td>${row.namaPT}</td>`;
     tanggalSet.forEach(tgl=>{
@@ -188,7 +185,7 @@ function renderTable(info){
   });
   html+=`</tr>`;
 
-  // === TAMBAHAN SPBE DI BAWAH TOTAL ===
+  // === SPBE DAN SISA/STOK ===
   if(spbeData.length>0){
     const totalSPBE = {};
     tanggalSet.forEach(tgl=>totalSPBE[tgl]=0);
@@ -205,11 +202,24 @@ function renderTable(info){
       html+=`</tr>`;
     });
 
-    // === TOTAL SPBE HANYA DARI YANG TAMPIL ===
+    // === TOTAL SPBE ===
     html+=`<tr class="bg-yellow-200 font-bold">
       <td colspan="2">TOTAL SPBE</td>`;
     tanggalSet.forEach(tgl=>{
       html+=`<td colspan="3" class="text-center">${totalSPBE[tgl]}</td>`;
+    });
+    html+=`</tr>`;
+
+    // === SISA / STOK GUDANG ===
+    let sisaSebelumnya = 0;
+    html+=`<tr class="bg-green-100 font-bold">
+      <td colspan="2">SISA / STOK GUDANG</td>`;
+    tanggalSet.forEach((tgl,i)=>{
+      const totalP = totalPerTanggal[tgl].IS || 0;
+      const stokMasuk = totalSPBE[tgl] || 0;
+      const sisaSekarang = i===0 ? stokMasuk - totalP : (sisaSebelumnya + stokMasuk) - totalP;
+      sisaSebelumnya = sisaSekarang;
+      html+=`<td colspan="3" class="text-center">${sisaSekarang}</td>`;
     });
     html+=`</tr>`;
   }
@@ -218,7 +228,6 @@ function renderTable(info){
   container.innerHTML = html;
 }
 
-// AUTO LOAD SAAT AWAL
 loadRekap();
 </script>
 </body>
