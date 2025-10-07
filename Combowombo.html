@@ -439,7 +439,7 @@ function renderTable(info){
     });
 
     // TOTAL SPBE
-    html += `<tr class="spbe-total"><td colspan="2">TOTAL SPBE</td>`;
+    html += `<tr class="spbe-total"><td colspan="1">TOTAL SPBE</td>`;
     tanggalSet.forEach(t=>{
       html += `<td colspan="3">${totalSPBE[t]||0}</td>`;
     });
@@ -447,7 +447,7 @@ function renderTable(info){
 
     // SISA / STOK GUDANG
     let sisaPrev = 0;
-    html += `<tr class="sisa-row"><td colspan="2">SISA / STOK GUDANG</td>`;
+    html += `<tr class="sisa-row"><td colspan="1">SISA / STOK GUDANG</td>`;
     tanggalSet.forEach((t,i)=>{
       const totalP = totalPerTanggal[t].IS || 0;
       const masuk = totalSPBE[t] || 0;
