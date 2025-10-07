@@ -48,11 +48,13 @@
 
 /* ================= HEADER ================= */
 
+/* ================= HEADER ================= */
+
 /* baris pertama header (Nama Pangkalan / PT) */
 thead tr:first-child th {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20; /* paling atas untuk baris pertama */
   background: #0284c7;
   color: #fff;
 }
@@ -61,7 +63,7 @@ thead tr:first-child th {
 thead tr:nth-child(2) th {
   position: sticky;
   top: 34px; /* tinggi baris pertama */
-  z-index: 8;
+  z-index: 19; /* sedikit di bawah baris pertama */
   background: #0284c7;
   color: #fff;
 }
@@ -69,21 +71,19 @@ thead tr:nth-child(2) th {
 /* ================= KOLON STICKY ================= */
 
 /* kolom pertama (Nama Pangkalan) */
-tbody td:first-child,
-thead th:first-child {
+tbody td:first-child {
   position: sticky;
   left: 0;
-  z-index: 12; /* di bawah header tapi di atas sel biasa */
+  z-index: 18; /* di bawah header tapi di atas sel biasa */
   background: #0284c7;
   color: #fff;
 }
 
 /* kolom kedua (Nama PT) */
-tbody td:nth-child(2),
-thead th:nth-child(2) {
+tbody td:nth-child(2) {
   position: sticky;
   left: 160px; /* lebar kolom Nama Pangkalan */
-  z-index: 12;
+  z-index: 18;
   background: #0284c7;
   color: #fff;
 }
@@ -95,7 +95,10 @@ thead tr:first-child th:first-child,
 thead tr:first-child th:nth-child(2),
 thead tr:nth-child(2) th:first-child,
 thead tr:nth-child(2) th:nth-child(2) {
-  z-index: 15; /* paling atas supaya tidak tertutup apapun */
+  position: sticky;
+  top: 0;       /* untuk baris pertama tetap di atas */
+  left: 0;      /* untuk kolom pertama tetap di kiri */
+  z-index: 21;  /* paling atas, tidak tertutup scroll horizontal/vertikal */
   background: #0284c7;
   color: #fff;
 }
