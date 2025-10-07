@@ -185,14 +185,16 @@
   <div class="container">
     <div class="card">
       <div class="flex items-center justify-between gap-4 mb-4">
-        <div>
-          <h1 class="text-xl font-bold">📊 Rekap SA Sim3lon, Jadwal harian dan Pengiriman</h1>
-        </div>
-        <div class="flex gap-2 items-center">
-          <button class="btn small" onclick="downloadCSV()">⬇ Export CSV</button>
-          <button class="btn ghost small" onclick="clearFilters()">Reset</button>
-        </div>
-      </div>
+  <div>
+    <h1 class="text-xl font-bold">📊 Rekap SA Sim3lon, Jadwal harian dan Pengiriman</h1>
+  </div>
+  <div class="flex gap-2 items-center">
+    <button class="btn small" onclick="downloadCSV()">⬇ Export CSV</button>
+    <button class="btn ghost small" onclick="clearFilters()">Reset</button>
+    <button class="btn small" onclick="window.location.href='dashboard.html'">📊 Dashboard</button>
+  </div>
+</div>
+
 
       <!-- FILTERS -->
       <div class="flex filters-row gap-3 flex-wrap mb-3 items-center">
