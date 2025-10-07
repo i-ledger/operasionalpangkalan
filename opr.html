@@ -1,33 +1,34 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>📊 Rekap Operasional</title>
+<title>Rekap Operasional</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  /* Striping tabel */
+  /* Striping tabel biar ringan */
   #rekap-table tbody tr:nth-child(even){ background:#f9fafb; }
   #rekap-table tbody tr:nth-child(odd){ background:#fff; }
   #rekap-table th, #rekap-table td { white-space:nowrap; }
-
-  /* Custom multiple select tanpa Ctrl */
-  select[multiple] option {
-    cursor:pointer;
-  }
-  select[multiple] option.selected {
-    background-color:#3b82f6;
-    color:white;
-  }
 </style>
 </head>
 <body class="bg-blue-50 min-h-screen p-4 font-sans">
 <div class="max-w-5xl mx-auto">
 
   <!-- Header -->
-  <header class="flex flex-col md:flex-row items-center justify-between mb-4 bg-blue-200 p-3 rounded-xl shadow">
-    <h1 class="text-2xl font-bold text-blue-900 mb-2 md:mb-0">📊 Rekap Operasional</h1>
-    <button onclick="goDashboard()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg shadow hover:bg-blue-700 transition">🏠 Dashboard</button>
+  <header class="flex items-center justify-between mb-4 bg-blue-200 p-3 rounded-lg shadow">
+    <h1 class="text-xl font-bold text-blue-900">📊 Rekap Operasional</h1>
+    <div class="flex items-center gap-2">
+      <button onclick="goDashboard()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg shadow hover:bg-blue-700">🏠 Dashboard</button>
+      <div id="spinner" class="hidden fixed inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center z-50">
+        <svg class="animate-spin h-12 w-12 text-blue-400 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+        </svg>
+        <span class="text-white text-lg font-semibold">Loading...</span>
+      </div>
+    </div>
   </header>
 
   <!-- Filter Section -->
@@ -35,19 +36,19 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div>
         <label class="block text-sm font-medium text-blue-900">Nama PT</label>
-        <select id="select-pt" class="mt-1 block w-full rounded-lg border-gray-300 p-2"></select>
+        <select id="select-pt" class="mt-1 block w-full rounded-md border-gray-300"></select>
       </div>
       <div>
         <label class="block text-sm font-medium text-blue-900">Nama Pangkalan</label>
-        <select id="select-pangkalan" multiple size="5" class="mt-1 block w-full rounded-lg border-gray-300 p-2"></select>
+        <select id="select-pangkalan" multiple size="5" class="mt-1 block w-full rounded-md border-gray-300"></select>
       </div>
       <div>
         <label class="block text-sm font-medium text-blue-900">Bulan</label>
-        <select id="select-month" class="mt-1 block w-full rounded-lg border-gray-300 p-2"></select>
+        <select id="select-month" class="mt-1 block w-full rounded-md border-gray-300"></select>
       </div>
       <div>
         <label class="block text-sm font-medium text-blue-900">Tahun</label>
-        <select id="select-year" class="mt-1 block w-full rounded-lg border-gray-300 p-2"></select>
+        <select id="select-year" class="mt-1 block w-full rounded-md border-gray-300"></select>
       </div>
     </div>
 
@@ -80,10 +81,11 @@
     </div>
 
     <div class="mt-4 flex flex-wrap gap-2">
-      <button id="btn-load" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">🔎 Tampilkan Rekap</button>
-      <button id="btn-export-xlsx" class="px-4 py-2 border border-blue-400 text-blue-700 rounded-lg shadow hover:bg-blue-100 transition">📥 Export Excel</button>
+      <button id="btn-load" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">🔎 Tampilkan Rekap</button>
+      <button id="btn-export-xlsx" class="px-4 py-2 border border-blue-400 text-blue-700 rounded-lg shadow">📥 Export Excel</button>
+
       <div class="relative inline-block text-left">
-        <button onclick="toggleMenu()" class="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition">📤 Bagikan</button>
+        <button onclick="toggleMenu()" class="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700">📤 Bagikan</button>
         <div id="share-menu" class="hidden absolute mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
           <button onclick="shareRekapWA()" class="w-full text-left px-4 py-2 hover:bg-gray-100">📱 WhatsApp</button>
           <button onclick="downloadPDF()" class="w-full text-left px-4 py-2 hover:bg-gray-100">📄 Download PDF</button>
@@ -94,7 +96,7 @@
 
   <!-- Table Wrapper -->
   <section id="rekap-wrapper" class="bg-white p-4 rounded-xl shadow">
-    <div class="overflow-x-auto">
+    <div class="overflow-auto">
       <table id="rekap-table" class="min-w-full border border-gray-300">
         <thead class="bg-blue-200 text-blue-900 font-bold">
           <tr>
@@ -128,17 +130,11 @@
 </div>
 
 <script>
-/* Multiple select tanpa Ctrl */
-document.getElementById('select-pangkalan').addEventListener('mousedown', function(e){
-  e.preventDefault();
-  const option = e.target;
-  option.selected = !option.selected;
-  option.classList.toggle('selected', option.selected);
-});
+let namaPangkalan = '', bulanTahun='';
 
-/* Toggle menu, dashboard, goDashboard() dll tetap sama */
 function toggleMenu(){ document.getElementById("share-menu").classList.toggle("hidden"); }
 function goDashboard(){ window.location.href="dashboard.html"; }
+
 function formatRupiah(val){
   if(val==null || val==='' || Number(val)===0) return '-';
   const num = Number(val);
