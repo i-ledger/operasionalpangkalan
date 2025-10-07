@@ -46,11 +46,13 @@
 
 /* ================= HEADER ================= */
 
+/* ================= HEADER ================= */
+
 /* baris pertama header (Nama Pangkalan / PT) */
 thead tr:first-child th {
   position: sticky;
   top: 0;
-  z-index: 10; /* paling atas */
+  z-index: 10;
   background: #0284c7;
   color: #fff;
 }
@@ -59,7 +61,7 @@ thead tr:first-child th {
 thead tr:nth-child(2) th {
   position: sticky;
   top: 34px; /* tinggi baris pertama */
-  z-index: 9; /* di bawah baris pertama tapi di atas kolom */
+  z-index: 9;
   background: #0284c7;
   color: #fff;
 }
@@ -67,7 +69,8 @@ thead tr:nth-child(2) th {
 /* ================= KOLON STICKY ================= */
 
 /* kolom pertama (Nama Pangkalan) */
-tbody td:first-child, thead th:first-child {
+tbody td:first-child,
+thead th:first-child {
   position: sticky;
   left: 0;
   z-index: 8; /* di bawah header tapi di atas sel biasa */
@@ -76,22 +79,25 @@ tbody td:first-child, thead th:first-child {
 }
 
 /* kolom kedua (Nama PT) */
-tbody td:nth-child(2), thead th:nth-child(2) {
+tbody td:nth-child(2),
+thead th:nth-child(2) {
   position: sticky;
   left: 160px; /* lebar kolom Nama Pangkalan */
-  z-index: 8; /* sama seperti kolom pertama */
+  z-index: 8;
   background: #0284c7;
   color: #fff;
 }
 
 /* ================= INTERSEKSI HEADER + KOLON ================= */
 
-/* sel kiri atas (A1 / B1) yang sticky di header + kolom */
+/* sel yang sticky di header + kolom */
 thead tr:first-child th:first-child,
 thead tr:first-child th:nth-child(2),
 thead tr:nth-child(2) th:first-child,
 thead tr:nth-child(2) th:nth-child(2) {
-  z-index: 11; /* paling atas supaya tidak tertutup scroll horizontal/vertikal */
+  z-index: 12; /* paling atas supaya tidak tertutup apapun */
+  background: #0284c7;
+  color: #fff;
 }
 
   /* Hover effect */
