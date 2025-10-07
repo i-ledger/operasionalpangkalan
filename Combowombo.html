@@ -374,7 +374,7 @@ function renderTable(info){
     <th rowspan="2">Nama Pangkalan</th>
     <th rowspan="2">Nama PT</th>`;
   tanggalSet.forEach(tgl => html += `<th colspan="3">${escapeHtml(tgl)}</th>`);
-  html += `<th rowspan="2">Σ SA–JH</th><th rowspan="2">Σ JH–P</th></tr><tr>`;
+  html += `<th rowspan="2">Selisih Jadwal (SA–JH)</th><th rowspan="2">Selisih Pengiriman (JH–P)</th></tr><tr>`;
   tanggalSet.forEach(()=> html += `<th>SA</th><th>JH</th><th>P</th>`);
   html += `</tr></thead><tbody>`;
 
