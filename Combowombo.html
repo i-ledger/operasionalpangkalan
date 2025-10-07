@@ -6,15 +6,15 @@
 <title>📊 Rekap SA Sim3lon — Rekap & SPBE</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  :root{
+  :root {
     --card:#ffffff;
     --muted:#6b7280;
-    --accent:#0ea5e9; /* sky-500 */
+    --accent:#0284c7; /* solid sky-600 */
   }
 
-  body{
+  body {
     font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
-    background:linear-gradient(180deg,#f8fbff,#e6f2ff);
+    background-color:#f1f5f9;
     min-height:100vh;
     padding:18px;
   }
@@ -46,13 +46,13 @@
 
   /* Header freeze */
   thead th{
-    background:linear-gradient(90deg,#0369a1,#0ea5e9);
+    background:#0284c7;        /* solid blue — sama kaya tombol */
     color:#fff;
     position:sticky;
     top:0;
     z-index:5;
     font-weight:600;
-    border-bottom:2px solid #0284c7;
+    border-bottom:2px solid #0369a1;
   }
 
   /* === Freeze kolom kiri dua arah === */
@@ -68,7 +68,7 @@
 
   tbody td:nth-child(2), thead th:nth-child(2){
     position:sticky;
-    left:160px; /* jarak kolom pertama */
+    left:160px;
     background:#f0f9ff;
     z-index:5;
     text-align:left;
@@ -76,14 +76,12 @@
   }
 
   /* Hover effect */
-  tbody tr:hover td{
-    background:#f0f9ff;
-  }
+  tbody tr:hover td{ background:#f0f9ff; }
 
   /* ============ Warna Khusus ============ */
-  .spbe-row{background:#fff7e6;}      /* amber-50 */
+  .spbe-row{background:#fff7e6;}
   .spbe-total{background:#fef3c7;font-weight:700;}
-  .sisa-row{background:#ecfdf5;font-weight:700;} /* green-50 */
+  .sisa-row{background:#ecfdf5;font-weight:700;}
 
   /* ============ Buttons ============ */
   .btn{
@@ -103,7 +101,7 @@
     background:transparent;
     color:var(--accent);
     box-shadow:none;
-    border:1px solid rgba(14,165,233,0.14);
+    border:1px solid rgba(14,165,233,0.25);
   }
   .small{padding:6px 8px;border-radius:8px;font-size:13px;}
 
@@ -128,13 +126,7 @@
   }
 
   /* Checkbox list */
-  .chk-item{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:8px;
-    border-radius:8px;
-  }
+  .chk-item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;}
   .chk-item:hover{background:#f8fafc;}
 
   /* Spinner */
@@ -170,14 +162,10 @@
   .muted{color:var(--muted);}
   .green-ok{color:#059669;font-weight:700;}
   .red-bad{color:#b91c1c;font-weight:700;}
-
-  /* Animation */
   .fade-in{animation:fadeIn .18s ease;}
-  @keyframes fadeIn{
-    from{opacity:0;transform:translateY(6px);}
-    to{opacity:1;transform:none;}
-  }
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 </style>
+
 
 </head>
 <body>
