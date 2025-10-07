@@ -7,37 +7,75 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   body { font-family: 'Inter', sans-serif; background-color: #ebf8ff; }
-  .scroll-container { overflow-x: auto; overflow-y: auto; max-height: 80vh; -webkit-overflow-scrolling: touch; }
+
+  .scroll-container { 
+    overflow-x: auto; 
+    overflow-y: auto; 
+    max-height: 80vh; 
+    -webkit-overflow-scrolling: touch;
+  }
+
   table { border-collapse: collapse; min-width: 100%; font-size: 12px; }
   th, td { border: 1px solid #d1d5db; padding: 6px 8px; text-align: left; white-space: nowrap; }
-  thead th { background: #bfdbfe; position: sticky; top: 0; z-index: 3; }
-  tbody td:first-child, thead th:first-child {
-    position: sticky; left: 0; background: #bfdbfe; z-index: 2; border-right: 1px solid #d1d5db;
+
+  thead th { 
+    background: #bfdbfe; 
+    position: sticky; 
+    top: 0; 
+    z-index: 3; 
   }
+
+  tbody td:first-child,
+  thead th:first-child {
+    position: sticky;
+    left: 0;
+    background: #bfdbfe;
+    z-index: 2; 
+    border-right: 1px solid #d1d5db;
+  }
+
   td img { width: 40px; border-radius: 6px; }
+
   #spinner {
-    display: none; position: fixed; inset: 0; z-index: 50;
-    background: rgba(0,0,0,0.3); justify-content: center; align-items: center; flex-direction: column;
+    display: none;
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(0,0,0,0.3);
+    display: flex; justify-content: center; align-items: center; flex-direction: column;
   }
   .spinner-circle {
-    border: 4px solid #bfdbfe; border-top: 4px solid #3b82f6;
-    border-radius: 50%; width: 50px; height: 50px;
-    animation: spin 1s linear infinite; margin-bottom: 10px;
+    border: 4px solid #bfdbfe;
+    border-top: 4px solid #3b82f6;
+    border-radius: 50%;
+    width: 50px; height: 50px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
   }
   @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
 </style>
 </head>
 <body class="p-4">
 
-<h1 class="text-xl font-bold mb-4 text-Left text-blue-900">
-📊 Rekap SA Sim3lon, Jadwal Harian dan Pengiriman (Per Tanggal)
-</h1>
+<h1 class="text-xl font-bold mb-4 text-Left text-blue-900">📊 Rekap SA Sim3lon, Jadwal Harian dan Pengiriman</h1>
 
+<!-- 🔹 FILTER AREA -->
 <div class="flex flex-wrap gap-2 mb-4 items-center">
-  <label class="text-sm">Dari:</label>
-  <input type="date" id="startDate" class="border rounded p-2 text-sm" />
-  <label class="text-sm">Sampai:</label>
-  <input type="date" id="endDate" class="border rounded p-2 text-sm" />
+  <select id="month" class="border rounded p-2 text-sm">
+    <option value="1">Januari</option><option value="2">Februari</option>
+    <option value="3">Maret</option><option value="4">April</option>
+    <option value="5">Mei</option><option value="6">Juni</option>
+    <option value="7">Juli</option><option value="8">Agustus</option>
+    <option value="9">September</option><option value="10">Oktober</option>
+    <option value="11">November</option><option value="12">Desember</option>
+  </select>
+
+  <select id="year" class="border rounded p-2 text-sm"></select>
+
+  <!-- 🔹 Filter Tanggal -->
+  <label class="text-sm text-gray-700 ml-2">Dari:</label>
+  <input type="date" id="startDate" class="border rounded p-2 text-sm"/>
+
+  <label class="text-sm text-gray-700">Sampai:</label>
+  <input type="date" id="endDate" class="border rounded p-2 text-sm"/>
 
   <select id="filterPangkalan" class="border rounded p-2 text-sm" multiple size="3"></select>
   <select id="filterPT" class="border rounded p-2 text-sm" multiple size="3"></select>
@@ -47,7 +85,7 @@
   </button>
 </div>
 
-<div id="spinner" class="hidden">
+<div id="spinner">
   <div class="spinner-circle"></div>
   <span class="text-white text-lg font-semibold">Memuat data...</span>
 </div>
@@ -55,7 +93,18 @@
 <div id="tabel-container" class="scroll-container"></div>
 
 <script>
-const endpoint = 'https://script.google.com/macros/s/AKfycbzZ8SkD816O5c0q4LulVy5DK8PDTWvhSqlZjlEbSVYGbkQMhM0hZf1G_tVNhHakjRWzDA/exec';
+const endpoint = 'https://script.google.com/macros/s/AKfycbzZRnFI4CEjuie8_32Zusj2H8QbsVKROTrB1dIaZ_kuy1KxWGXZxZFHUHwMKjPfGPThWw/exec';
+
+const yearSelect = document.getElementById('year');
+const currentYear = new Date().getFullYear();
+for (let y = currentYear - 2; y <= currentYear + 1; y++) {
+  const opt = document.createElement('option');
+  opt.value = y; opt.textContent = y;
+  if (y === currentYear) opt.selected = true;
+  yearSelect.appendChild(opt);
+}
+document.getElementById('month').value = new Date().getMonth()+1;
+
 const filterPangkalan = document.getElementById('filterPangkalan');
 const filterPT = document.getElementById('filterPT');
 
@@ -68,15 +117,22 @@ function populateFilters(data){
 }
 
 function loadRekap(){
+  const month=document.getElementById('month').value;
+  const year=document.getElementById('year').value;
   const start=document.getElementById('startDate').value;
   const end=document.getElementById('endDate').value;
-  if(!start || !end){ alert("Pilih rentang tanggal dulu!"); return; }
 
   document.getElementById('spinner').style.display='flex';
   document.getElementById('tabel-container').innerHTML='';
   
+  // 🔹 Tambahkan parameter tanggal ke URL JSONP
+  let url = `${endpoint}?action=getRekapGabungan&month=${month}&year=${year}`;
+  if(start) url += `&startDate=${start}`;
+  if(end) url += `&endDate=${end}`;
+  url += `&callback=renderTableJSONP`;
+
   const script=document.createElement('script');
-  script.src=`${endpoint}?action=getRekapTanggalGabungan&start=${start}&end=${end}&callback=renderTableJSONP`;
+  script.src=url;
   document.body.appendChild(script);
 }
 
@@ -110,7 +166,7 @@ function renderTable(info){
   });
 
   if(tanggalSet.length===0 || (data.length===0 && spbeData.length===0)){
-    container.innerHTML=`<p class='text-gray-500 text-center'>Tidak ada data untuk rentang tanggal ini.</p>`;
+    container.innerHTML=`<p class='text-gray-500 text-center'>Tidak ada data untuk filter ini.</p>`;
     return;
   }
 
@@ -140,6 +196,7 @@ function renderTable(info){
     html+=`</tr>`;
   });
 
+  // === TOTAL UTAMA ===
   html+=`<tr class="font-semibold bg-blue-100"><td colspan="2">TOTAL</td>`;
   tanggalSet.forEach(tgl=>{
     const t=totalPerTanggal[tgl];
@@ -147,6 +204,7 @@ function renderTable(info){
   });
   html+=`</tr>`;
 
+  // === SPBE DAN SISA/STOK ===
   if(spbeData.length>0){
     const totalSPBE = {};
     tanggalSet.forEach(tgl=>totalSPBE[tgl]=0);
@@ -163,14 +221,17 @@ function renderTable(info){
       html+=`</tr>`;
     });
 
-    html+=`<tr class="bg-yellow-200 font-bold"><td colspan="2">TOTAL SPBE</td>`;
+    html+=`<tr class="bg-yellow-200 font-bold">
+      <td colspan="2">TOTAL SPBE</td>`;
     tanggalSet.forEach(tgl=>{
       html+=`<td colspan="3" class="text-center">${totalSPBE[tgl]}</td>`;
     });
     html+=`</tr>`;
 
+    // === SISA / STOK GUDANG ===
     let sisaSebelumnya = 0;
-    html+=`<tr class="bg-green-100 font-bold"><td colspan="2">SISA / STOK GUDANG</td>`;
+    html+=`<tr class="bg-green-100 font-bold">
+      <td colspan="2">SISA / STOK GUDANG</td>`;
     tanggalSet.forEach((tgl,i)=>{
       const totalP = totalPerTanggal[tgl].IS || 0;
       const stokMasuk = totalSPBE[tgl] || 0;
@@ -184,11 +245,6 @@ function renderTable(info){
   html+=`</tbody></table>`;
   container.innerHTML = html;
 }
-
-// set default date hari ini
-const today = new Date().toISOString().split('T')[0];
-document.getElementById('startDate').value = today;
-document.getElementById('endDate').value = today;
 
 loadRekap();
 </script>
