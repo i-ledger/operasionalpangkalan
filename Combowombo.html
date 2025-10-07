@@ -146,27 +146,28 @@ function renderTableJSONP(json){
   renderTable(json.info);
 }
 
-function renderTable(info){
-  const container=document.getElementById('tabel-container');
-  const tanggalSet=info.tanggalSet||[];
-  let data=info.result||[];
-  let spbeData=info.spbe||[];
+function renderTable(info) {
+  const container = document.getElementById('tabel-container');
+  const tanggalSet = info.tanggalSet || [];
+  let data = info.result || [];
+  let spbeData = info.spbe || [];
 
-  const selectedPangkalan = Array.from(filterPangkalan.selectedOptions).map(o=>o.value);
-  const selectedPT = Array.from(filterPT.selectedOptions).map(o=>o.value);
+  const selectedPangkalan = Array.from(filterPangkalan.selectedOptions).map(o => o.value);
+  const selectedPT = Array.from(filterPT.selectedOptions).map(o => o.value);
 
-  if(selectedPangkalan.length) data = data.filter(r=>selectedPangkalan.includes(r.namaPangkalan));
-  if(selectedPT.length) {
-    data = data.filter(r=>selectedPT.includes(r.namaPT));
-    spbeData = spbeData.filter(sp=>selectedPT.includes(sp.namaPT));
+  if (selectedPangkalan.length)
+    data = data.filter(r => selectedPangkalan.includes(r.namaPangkalan));
+  if (selectedPT.length) {
+    data = data.filter(r => selectedPT.includes(r.namaPT));
+    spbeData = spbeData.filter(sp => selectedPT.includes(sp.namaPT));
   }
 
-  spbeData = spbeData.filter(sp=>{
-    return tanggalSet.some(tgl => Number(sp.data[tgl]||0) > 0);
+  spbeData = spbeData.filter(sp => {
+    return tanggalSet.some(tgl => Number(sp.data[tgl] || 0) > 0);
   });
 
-  if(tanggalSet.length===0 || (data.length===0 && spbeData.length===0)){
-    container.innerHTML=`<p class='text-gray-500 text-center'>Tidak ada data untuk filter ini.</p>`;
+  if (tanggalSet.length === 0 || (data.length === 0 && spbeData.length === 0)) {
+    container.innerHTML = `<p class='text-gray-500 text-center'>Tidak ada data untuk filter ini.</p>`;
     return;
   }
 
@@ -174,71 +175,70 @@ function renderTable(info){
   let html = `<table><thead><tr>
     <th rowspan="2">Nama Pangkalan</th>
     <th rowspan="2">Nama PT</th>`;
-
-  // baris 1 (tanggal)
-  tanggalSet.forEach(tgl => {
-    html += `<th colspan="5">${tgl}</th>`;
-  });
-
-  html += `</tr><tr>`;
-
-  // baris 2 (subkolom)
-  tanggalSet.forEach(() => {
-    html += `
-      <th>SA 📅</th>
-      <th>JH 📃</th>
-      <th>P 🚚</th>
-      <th>Selisih Jadwal<br>(SA-JH)</th>
-      <th>Selisih Pengiriman<br>(JH-P)</th>
-    `;
-  });
-
+  tanggalSet.forEach(tgl => html += `<th colspan="3">${tgl}</th>`);
+  html += `<th rowspan="2">Selisih Jadwal<br>(Σ SA–JH)</th>
+           <th rowspan="2">Selisih Pengiriman<br>(Σ JH–P)</th></tr><tr>`;
+  tanggalSet.forEach(() => html += `
+    <th>SA 📅</th>
+    <th>JH 📃</th>
+    <th>P 🚚</th>`);
   html += `</tr></thead><tbody>`;
 
   const totalPerTanggal = {};
-  tanggalSet.forEach(tgl => totalPerTanggal[tgl] = { SA:0, JH:0, IS:0 });
+  tanggalSet.forEach(tgl => totalPerTanggal[tgl] = { SA: 0, JH: 0, IS: 0 });
 
   // === DATA PER PANGKALAN ===
   data.forEach(row => {
+    let totalSA = 0, totalJH = 0, totalIS = 0;
+
     html += `<tr><td>${row.namaPangkalan}</td><td>${row.namaPT}</td>`;
     tanggalSet.forEach(tgl => {
       const isi = row.data[tgl] || {};
       const valSA = Number(isi.SA || 0);
       const valJH = Number(isi.JH || 0);
       const valIS = Number(isi.IS || 0);
-      const selisihJadwal = valSA - valJH;
-      const selisihPengiriman = valJH - valIS;
+      totalSA += valSA;
+      totalJH += valJH;
+      totalIS += valIS;
 
       html += `
         <td>${valSA}</td>
         <td>${valJH}</td>
-        <td>${valIS ? valIS + ' 🚚' : '-'}</td>
-        <td class="text-center ${selisihJadwal!==0?'text-red-600 font-semibold':'text-green-600'}">${selisihJadwal}</td>
-        <td class="text-center ${selisihPengiriman!==0?'text-red-600 font-semibold':'text-green-600'}">${selisihPengiriman}</td>
-      `;
+        <td>${valIS ? valIS + ' 🚚' : '-'}</td>`;
 
       totalPerTanggal[tgl].SA += valSA;
       totalPerTanggal[tgl].JH += valJH;
       totalPerTanggal[tgl].IS += valIS;
     });
+
+    const selisihJadwal = totalSA - totalJH;
+    const selisihPengiriman = totalJH - totalIS;
+    html += `
+      <td class="text-center ${selisihJadwal !== 0 ? 'text-red-600 font-semibold' : ''}">${selisihJadwal}</td>
+      <td class="text-center ${selisihPengiriman !== 0 ? 'text-red-600 font-semibold' : ''}">${selisihPengiriman}</td>
+    `;
     html += `</tr>`;
   });
 
   // === TOTAL UTAMA ===
   html += `<tr class="font-semibold bg-blue-100"><td colspan="2">TOTAL</td>`;
+  let grandSA = 0, grandJH = 0, grandIS = 0;
   tanggalSet.forEach(tgl => {
     const t = totalPerTanggal[tgl];
-    const selJadwal = t.SA - t.JH;
-    const selPengiriman = t.JH - t.IS;
+    grandSA += t.SA;
+    grandJH += t.JH;
+    grandIS += t.IS;
     html += `
       <td>${t.SA}</td>
       <td>${t.JH}</td>
-      <td>${t.IS ? t.IS + ' 🚚' : '-'}</td>
-      <td class="text-center ${selJadwal!==0?'text-red-600 font-semibold':'text-green-600'}">${selJadwal}</td>
-      <td class="text-center ${selPengiriman!==0?'text-red-600 font-semibold':'text-green-600'}">${selPengiriman}</td>
-    `;
+      <td>${t.IS ? t.IS + ' 🚚' : '-'}</td>`;
   });
-  html += `</tr>`;
+  const totalSelisihJadwal = grandSA - grandJH;
+  const totalSelisihPengiriman = grandJH - grandIS;
+  html += `
+    <td class="text-center ${totalSelisihJadwal !== 0 ? 'text-red-600 font-semibold' : ''}">${totalSelisihJadwal}</td>
+    <td class="text-center ${totalSelisihPengiriman !== 0 ? 'text-red-600 font-semibold' : ''}">${totalSelisihPengiriman}</td>
+  </tr>`;
 
   // === SPBE DAN SISA/STOK ===
   if (spbeData.length > 0) {
@@ -247,40 +247,36 @@ function renderTable(info){
 
     spbeData.forEach(sp => {
       html += `<tr class="bg-yellow-50 font-semibold">
-        <td>${sp.namaSPBE}</td>
-        <td>${sp.namaPT || '-'}</td>`;
+        <td>${sp.namaSPBE}</td><td>${sp.namaPT || '-'}</td>`;
       tanggalSet.forEach(tgl => {
         const val = Number(sp.data[tgl] || 0);
         totalSPBE[tgl] += val;
-        html += `<td colspan="5" class="text-center">${val}</td>`;
+        html += `<td colspan="3" class="text-center">${val}</td>`;
       });
-      html += `</tr>`;
+      html += `<td colspan="2"></td></tr>`;
     });
 
-    html += `<tr class="bg-yellow-200 font-bold">
-      <td colspan="2">TOTAL SPBE</td>`;
-    tanggalSet.forEach(tgl => {
-      html += `<td colspan="5" class="text-center">${totalSPBE[tgl]}</td>`;
-    });
-    html += `</tr>`;
+    html += `<tr class="bg-yellow-200 font-bold"><td colspan="2">TOTAL SPBE</td>`;
+    tanggalSet.forEach(tgl => html += `<td colspan="3" class="text-center">${totalSPBE[tgl]}</td>`);
+    html += `<td colspan="2"></td></tr>`;
 
-    // === SISA / STOK GUDANG ===
+    // === SISA/STOK GUDANG ===
     let sisaSebelumnya = 0;
-    html += `<tr class="bg-green-100 font-bold">
-      <td colspan="2">SISA / STOK GUDANG</td>`;
+    html += `<tr class="bg-green-100 font-bold"><td colspan="2">SISA / STOK GUDANG</td>`;
     tanggalSet.forEach((tgl, i) => {
       const totalP = totalPerTanggal[tgl].IS || 0;
       const stokMasuk = totalSPBE[tgl] || 0;
       const sisaSekarang = i === 0 ? stokMasuk - totalP : (sisaSebelumnya + stokMasuk) - totalP;
       sisaSebelumnya = sisaSekarang;
-      html += `<td colspan="5" class="text-center">${sisaSekarang}</td>`;
+      html += `<td colspan="3" class="text-center">${sisaSekarang}</td>`;
     });
-    html += `</tr>`;
+    html += `<td colspan="2"></td></tr>`;
   }
 
   html += `</tbody></table>`;
   container.innerHTML = html;
 }
+
 
 loadRekap();
 </script>
