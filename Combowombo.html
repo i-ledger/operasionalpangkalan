@@ -165,8 +165,6 @@
   </div>
 </div>
 
-<script>
-// ==== Script sama seperti sebelumnya ====
 const endpoint = 'https://script.google.com/macros/s/AKfycby44Vx6YH0Nh3IncvJ91z4nhBwHVNI-i61NdqyK5EgpEQtKtTLGtz1b2_Fz5r1PA2g1Pw/exec';
 const yearSelect = document.getElementById('year');
 const currentYear = new Date().getFullYear();
@@ -176,139 +174,177 @@ for(let y=currentYear-2;y<=currentYear+1;y++){
 }
 document.getElementById('month').value = new Date().getMonth()+1;
 
-let allPangkalan=[], allPT=[], modalType='';
+let allPangkalan=[], allPT=[];
+let modalType = '';
 
 function populateFilters(data, spbeArr){
-  const pangkalanSet=new Set();
-  const ptSet=new Set();
-  data.forEach(row=>{ if(row.namaPangkalan) pangkalanSet.add(row.namaPangkalan); if(row.namaPT) ptSet.add(row.namaPT); });
-  (spbeArr||[]).forEach(s => { if(s.namaPT) ptSet.add(s.namaPT); });
-  allPangkalan = Array.from(pangkalanSet).sort();
-  allPT = Array.from(ptSet).sort();
+  const pangkalanSet=new Set(), ptSet=new Set();
+  data.forEach(row=>{
+    if(row.namaPangkalan) pangkalanSet.add(row.namaPangkalan);
+    if(row.namaPT) ptSet.add(row.namaPT);
+  });
+  (spbeArr||[]).forEach(s=>{ if(s.namaPT) ptSet.add(s.namaPT); });
+  allPangkalan=Array.from(pangkalanSet).sort();
+  allPT=Array.from(ptSet).sort();
 }
 
 function openModal(type){
-  modalType = type;
-  const title = document.getElementById('modalTitle');
-  const list = document.getElementById('modalList'); list.innerHTML = '';
-  title.textContent = type==='pangkalan' ? 'Pilih Pangkalan' : 'Pilih PT';
-  const arr = type==='pangkalan' ? allPangkalan : allPT;
+  modalType=type;
+  const title=document.getElementById('modalTitle');
+  const list=document.getElementById('modalList');
+  list.innerHTML='';
+  title.textContent=type==='pangkalan'?'Pilih Pangkalan':'Pilih PT';
+  const arr=type==='pangkalan'?allPangkalan:allPT;
   arr.forEach(v=>{
-    const id = `opt-${type}-${hashCode(v)}`;
-    const div = document.createElement('div'); div.className = 'chk-item';
-    div.innerHTML = `<label style="display:flex;align-items:center;gap:10px;width:100%">
-      <input id="${id}" type="checkbox" class="option-${type}" value="${escapeHtml(v)}" />
-      <span style="flex:1">${escapeHtml(v)}</span>
-    </label>`;
-    list.appendChild(div);
+    const id=`opt-${type}-${hashCode(v)}`;
+    list.innerHTML+=`<div class="chk-item">
+      <label style="display:flex;align-items:center;gap:10px;width:100%">
+        <input id="${id}" type="checkbox" class="option-${type}" value="${escapeHtml(v)}"/>
+        <span style="flex:1">${escapeHtml(v)}</span>
+      </label>
+    </div>`;
   });
-  document.getElementById('modal').style.display = 'flex';
+  document.getElementById('modal').style.display='flex';
 }
-function closeModal(){ document.getElementById('modal').style.display='none'; }
-function checkAll(){ document.querySelectorAll(`.option-${modalType}`).forEach(c=>c.checked=true); }
-function uncheckAll(){ document.querySelectorAll(`.option-${modalType}`).forEach(c=>c.checked=false); }
+function closeModal(){document.getElementById('modal').style.display='none';}
+function checkAll(){document.querySelectorAll(`.option-${modalType}`).forEach(c=>c.checked=true);}
+function uncheckAll(){document.querySelectorAll(`.option-${modalType}`).forEach(c=>c.checked=false);}
 
 function loadRekap(){
   const month=document.getElementById('month').value;
   const year=document.getElementById('year').value;
   const start=document.getElementById('startDate').value;
   const end=document.getElementById('endDate').value;
+
   document.getElementById('spinner').style.display='flex';
   document.getElementById('tabel-container').innerHTML='';
-  let url = `${endpoint}?action=getRekapGabungan&month=${month}&year=${year}`;
-  if(start) url += `&startDate=${start}`;
-  if(end) url += `&endDate=${end}`;
-  url += `&callback=renderTableJSONP`;
-  const script = document.createElement('script'); script.src = url;
-  document.body.appendChild(script);
+
+  let url=`${endpoint}?action=getRekapGabungan&month=${month}&year=${year}`;
+  if(start)url+=`&startDate=${start}`;
+  if(end)url+=`&endDate=${end}`;
+  url+=`&callback=renderTableJSONP`;
+
+  const script=document.createElement('script');
+  script.src=url;document.body.appendChild(script);
 }
 
 function renderTableJSONP(json){
   document.getElementById('spinner').style.display='none';
-  if(json.status !== 'ok'){
-    document.getElementById('tabel-container').innerHTML = `<div class="card" style="padding:16px"><p class="muted">❌ ${escapeHtml(json.message||'Error')}</p></div>`;
+  if(json.status!=='ok'){
+    document.getElementById('tabel-container').innerHTML=`<div class="card" style="padding:16px"><p class="muted">❌ ${escapeHtml(json.message||'Error')}</p></div>`;
     return;
   }
-  const info = json.info || {};
-  populateFilters(info.result || [], info.spbe || []);
+  const info=json.info||{};
+  populateFilters(info.result||[], info.spbe||[]);
   renderTable(info);
 }
 
-function escapeHtml(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-function hashCode(str){ let h=0; for(let i=0;i<str.length;i++){h=(h<<5)-h+str.charCodeAt(i);h|=0;} return Math.abs(h); }
+function escapeHtml(s){return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');}
+function hashCode(str){let h=0;for(let i=0;i<str.length;i++){h=(h<<5)-h+str.charCodeAt(i);h|=0;}return Math.abs(h);}
 
 function renderTable(info){
-  const container = document.getElementById('tabel-container');
-  const tanggalSet = info.tanggalSet || [];
-  let data = (info.result || []).slice();
-  let spbeData = (info.spbe || []).slice();
+  const container=document.getElementById('tabel-container');
+  const tanggalSet=info.tanggalSet||[];
+  let data=(info.result||[]).slice();
+  let spbeData=(info.spbe||[]).slice();
 
-  const checkedPangkalan = Array.from(document.querySelectorAll('.option-pangkalan:checked')).map(i=>i.value);
-  const checkedPT = Array.from(document.querySelectorAll('.option-pt:checked')).map(i=>i.value);
-  if(checkedPangkalan.length) data = data.filter(r=>checkedPangkalan.includes(r.namaPangkalan));
-  if(checkedPT.length){ data = data.filter(r=>checkedPT.includes(r.namaPT)); spbeData = spbeData.filter(s=>checkedPT.includes(s.namaPT)); }
-  spbeData = spbeData.filter(sp=>tanggalSet.some(tgl => Number(sp.data[tgl]||0) > 0));
+  const checkedPangkalan=Array.from(document.querySelectorAll('.option-pangkalan:checked')).map(i=>i.value);
+  const checkedPT=Array.from(document.querySelectorAll('.option-pt:checked')).map(i=>i.value);
+  if(checkedPangkalan.length)data=data.filter(r=>checkedPangkalan.includes(r.namaPangkalan));
+  if(checkedPT.length){data=data.filter(r=>checkedPT.includes(r.namaPT));spbeData=spbeData.filter(s=>checkedPT.includes(s.namaPT));}
+  spbeData=spbeData.filter(sp=>tanggalSet.some(tgl=>Number(sp.data[tgl]||0)>0));
 
-  if(tanggalSet.length===0 || (data.length===0 && spbeData.length===0)){
-    container.innerHTML = `<div class="card" style="padding:18px;text-align:center"><p class="muted">Tidak ada data untuk filter ini.</p></div>`;
+  if(tanggalSet.length===0||(data.length===0&&spbeData.length===0)){
+    container.innerHTML=`<div class="card" style="padding:18px;text-align:center"><p class="muted">Tidak ada data untuk filter ini.</p></div>`;
     return;
   }
 
-  let html = `<table><thead><tr>
+  let html=`<table><thead><tr>
     <th rowspan="2">Nama Pangkalan</th>
     <th rowspan="2">Nama PT</th>`;
-  tanggalSet.forEach(tgl => html += `<th colspan="3">${escapeHtml(tgl)}</th>`);
-  html += `<th rowspan="2">Σ SA–JH</th><th rowspan="2">Σ JH–P</th></tr><tr>`;
-  tanggalSet.forEach(()=> html += `<th>SA</th><th>JH</th><th>P</th>`); html += `</tr></thead><tbody>`;
+  tanggalSet.forEach(tgl=>html+=`<th colspan="3">${escapeHtml(tgl)}</th>`);
+  html+=`<th rowspan="2">Σ SA–JH</th><th rowspan="2">Σ JH–P</th></tr><tr>`;
+  tanggalSet.forEach(()=>html+=`<th>SA</th><th>JH</th><th>P</th>`);
+  html+=`</tr></thead><tbody>`;
 
-  const totalPerTanggal = {}; tanggalSet.forEach(t=> totalPerTanggal[t]={SA:0,JH:0,IS:0});
-
+  const totalPerTanggal={};tanggalSet.forEach(t=>totalPerTanggal[t]={SA:0,JH:0,IS:0});
   data.forEach(row=>{
     let totalSA=0,totalJH=0,totalIS=0;
-    html += `<tr><td style="text-align:left">${escapeHtml(row.namaPangkalan)}</td><td style="text-align:left">${escapeHtml(row.namaPT)}</td>`;
+    html+=`<tr><td>${escapeHtml(row.namaPangkalan)}</td><td>${escapeHtml(row.namaPT)}</td>`;
     tanggalSet.forEach(tgl=>{
       const isi=row.data[tgl]||{};
-      const valSA=Number(isi.SA||0), valJH=Number(isi.JH||0), valIS=Number(isi.IS||0);
-      totalSA+=valSA; totalJH+=valJH; totalIS+=valIS;
-      totalPerTanggal[tgl].SA+=valSA; totalPerTanggal[tgl].JH+=valJH; totalPerTanggal[tgl].IS+=valIS;
+      const valSA=Number(isi.SA||0);
+      const valJH=Number(isi.JH||0);
+      const valIS=Number(isi.IS||0);
+      totalSA+=valSA;totalJH+=valJH;totalIS+=valIS;
+      totalPerTanggal[tgl].SA+=valSA;totalPerTanggal[tgl].JH+=valJH;totalPerTanggal[tgl].IS+=valIS;
       html+=`<td>${valSA||'-'}</td><td>${valJH||'-'}</td><td>${valIS?valIS+' 🚚':'-'}</td>`;
     });
-    const sj = totalSA - totalJH; const sp = totalJH - totalIS;
-    html += `<td class="${sj!==0?'red-bad':'green-ok'}">${sj}</td><td class="${sp!==0?'red-bad':'green-ok'}">${sp}</td></tr>`;
+    const sj=totalSA-totalJH;const sp=totalJH-totalIS;
+    html+=`<td class="${sj!==0?'red-bad':'green-ok'}">${sj}</td><td class="${sp!==0?'red-bad':'green-ok'}">${sp}</td></tr>`;
   });
 
-  html += `<tr style="background:#eef7ff;font-weight:700"><td colspan="2">TOTAL</td>`;
+  html+=`<tr class="card" style="background:#eef7ff;font-weight:700"><td colspan="2">TOTAL</td>`;
   let grandSA=0,grandJH=0,grandIS=0;
   tanggalSet.forEach(t=>{
-    const tTotals=totalPerTanggal[t]; grandSA+=tTotals.SA; grandJH+=tTotals.JH; grandIS+=tTotals.IS;
-    html+=`<td>${tTotals.SA||0}</td><td>${tTotals.JH||0}</td><td>${tTotals.IS? tTotals.IS+' 🚚':'-'}</td>`;
+    const tTotals=totalPerTanggal[t];
+    grandSA+=tTotals.SA;grandJH+=tTotals.JH;grandIS+=tTotals.IS;
+    html+=`<td>${tTotals.SA||0}</td><td>${tTotals.JH||0}</td><td>${tTotals.IS?tTotals.IS+' 🚚':'-'}</td>`;
   });
-  const totalSJ=grandSA-grandJH; const totalSP=grandJH-grandIS;
+  const totalSJ=grandSA-grandJH;const totalSP=grandJH-grandIS;
   html+=`<td class="${totalSJ!==0?'red-bad':'green-ok'}">${totalSJ}</td><td class="${totalSP!==0?'red-bad':'green-ok'}">${totalSP}</td></tr>`;
 
-  if(spbeData.length>0){
-    const totalSPBE={}; tanggalSet.forEach(t=> totalSPBE[t]=0);
+  if(spbeData.length){
+    const totalSPBE={};tanggalSet.forEach(t=>totalSPBE[t]=0);
     spbeData.forEach(sp=>{
-      html+=`<tr class="spbe-row"><td style="text-align:left">${escapeHtml(sp.namaSPBE)}</td><td style="text-align:left">${escapeHtml(sp.namaPT||'-')}</td>`;
-      tanggalSet.forEach(t=>{ const v=Number(sp.data[t]||0); totalSPBE[t]+=v; html+=`<td colspan="3">${v||'-'}</td>`; });
-      html+=`<td colspan="2"></td></tr>`;
+      html+=`<tr class="spbe-row"><td>${escapeHtml(sp.namaSPBE)}</td><td>${escapeHtml(sp.namaPT)}</td>`;
+      tanggalSet.forEach(tgl=>{
+        const val=Number(sp.data[tgl]||0);
+        totalSPBE[tgl]+=val;
+        html+=`<td colspan="3">${val}</td>`;
+      });
+      html+=`<td colspan="2">-</td></tr>`;
     });
     html+=`<tr class="spbe-total"><td colspan="2">TOTAL SPBE</td>`;
-    tanggalSet.forEach(t=> html+=`<td colspan="3">${totalSPBE[t]}</td>`); html+=`<td colspan="2"></td></tr>`;
+    tanggalSet.forEach(tgl=>html+=`<td colspan="3">${totalSPBE[tgl]}</td>`);
+    html+=`<td colspan="2">-</td></tr>`;
+    let sisaSebelumnya=0;
+    html+=`<tr class="sisa-row"><td colspan="2">SISA / STOK GUDANG</td>`;
+    tanggalSet.forEach((tgl,i)=>{
+      const totalP=totalPerTanggal[tgl].IS||0;
+      const stokMasuk=totalSPBE[tgl]||0;
+      const sisaSekarang=i===0?stokMasuk-totalP:(sisaSebelumnya+stokMasuk)-totalP;
+      sisaSebelumnya=sisaSekarang;
+      html+=`<td colspan="3">${sisaSekarang}</td>`;
+    });
+    html+=`<td colspan="2">-</td></tr>`;
   }
 
-  html += `</tbody></table>`;
-  container.innerHTML = html;
+  html+=`</tbody></table>`;
+  container.innerHTML=html;
 }
 
-function downloadCSV(){ alert('CSV download belum diimplementasikan.'); }
 function clearFilters(){
-  document.getElementById('startDate').value=''; document.getElementById('endDate').value='';
-  document.querySelectorAll('.option-pangkalan, .option-pt').forEach(c=>c.checked=false);
-  loadRekap();
+  document.querySelectorAll('.option-pangkalan,.option-pt').forEach(c=>c.checked=false);
+  document.getElementById('startDate').value='';
+  document.getElementById('endDate').value='';
+  document.getElementById('tabel-container').innerHTML='<p class="muted text-center p-4">Filter direset. Silakan pilih lagi.</p>';
 }
 
-loadRekap();
+function downloadCSV(){
+  const table=document.querySelector('#tabel-container table');
+  if(!table)return alert('Tidak ada data untuk diunduh');
+  let csv='';
+  table.querySelectorAll('tr').forEach(tr=>{
+    const cols=Array.from(tr.querySelectorAll('th,td')).map(td=>'"'+td.innerText.replace(/"/g,'""')+'"');
+    csv+=cols.join(',')+'\n';
+  });
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='rekap_sim3lon.csv';
+  a.click();
+}
 </script>
 </body>
 </html>
