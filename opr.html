@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>📊 Rekap Operasional</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  /* Striping tabel */
+  #rekap-table tbody tr:nth-child(even){ background:#f9fafb; }
+  #rekap-table tbody tr:nth-child(odd){ background:#fff; }
+  #rekap-table th, #rekap-table td { white-space:nowrap; }
+
+  /* Custom multiple select tanpa Ctrl */
+  select[multiple] option {
+    cursor:pointer;
+  }
+  select[multiple] option.selected {
+    background-color:#3b82f6;
+    color:white;
+  }
+</style>
+</head>
+<body class="bg-blue-50 min-h-screen p-4 font-sans">
+<div class="max-w-5xl mx-auto">
+
+  <!-- Header -->
+  <header class="flex flex-col md:flex-row items-center justify-between mb-4 bg-blue-200 p-3 rounded-xl shadow">
+    <h1 class="text-2xl font-bold text-blue-900 mb-2 md:mb-0">📊 Rekap Operasional</h1>
+    <button onclick="goDashboard()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg shadow hover:bg-blue-700 transition">🏠 Dashboard</button>
+  </header>
+
+  <!-- Filter Section -->
+  <section class="bg-white p-4 rounded-xl shadow mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-blue-900">Nama PT</label>
+        <select id="select-pt" class="mt-1 block w-full rounded-lg border-gray-300 p-2"></select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-blue-900">Nama Pangkalan</label>
+        <select id="select-pangkalan" multiple size="5" class="mt-1 block w-full rounded-lg border-gray-300 p-2"></select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-blue-900">Bulan</label>
+        <select id="select-month" class="mt-1 block w-full rounded-lg border-gray-300 p-2"></select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-blue-900">Tahun</label>
+        <select id="select-year" class="mt-1 block w-full rounded-lg border-gray-300 p-2"></select>
+      </div>
+    </div>
+
+    <!-- Info Box -->
+    <div class="mt-4 grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
+      <div class="bg-blue-100 p-3 rounded-lg shadow">
+        <div class="text-xs text-gray-600">DO yang dimiliki</div>
+        <div id="do-owned" class="text-lg font-semibold">-</div>
+      </div>
+      <div class="bg-blue-100 p-3 rounded-lg shadow">
+        <div class="text-xs text-gray-600">Harga Tabung</div>
+        <div id="price" class="text-lg font-semibold">-</div>
+      </div>
+      <div class="bg-blue-100 p-3 rounded-lg shadow">
+        <div class="text-xs text-gray-600">Harga Bagi Hasil</div>
+        <div id="harga-bagi-hasil" class="text-lg font-semibold">-</div>
+      </div>
+      <div class="bg-blue-100 p-3 rounded-lg shadow">
+        <div class="text-xs text-gray-600">Total Penerimaan</div>
+        <div id="total-penerimaan" class="text-lg font-semibold">-</div>
+      </div>
+      <div class="bg-blue-100 p-3 rounded-lg shadow">
+        <div class="text-xs text-gray-600">Tabung Kerjasama</div>
+        <div id="tabung-kerjasama" class="text-lg font-semibold">-</div>
+      </div>
+      <div class="bg-blue-100 p-3 rounded-lg shadow">
+        <div class="text-xs text-gray-600">Sisa Bagi Hasil</div>
+        <div id="sisa-bagi-hasil" class="text-lg font-semibold">-</div>
+      </div>
+    </div>
+
+    <div class="mt-4 flex flex-wrap gap-2">
+      <button id="btn-load" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">🔎 Tampilkan Rekap</button>
+      <button id="btn-export-xlsx" class="px-4 py-2 border border-blue-400 text-blue-700 rounded-lg shadow hover:bg-blue-100 transition">📥 Export Excel</button>
+      <div class="relative inline-block text-left">
+        <button onclick="toggleMenu()" class="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition">📤 Bagikan</button>
+        <div id="share-menu" class="hidden absolute mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
+          <button onclick="shareRekapWA()" class="w-full text-left px-4 py-2 hover:bg-gray-100">📱 WhatsApp</button>
+          <button onclick="downloadPDF()" class="w-full text-left px-4 py-2 hover:bg-gray-100">📄 Download PDF</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Table Wrapper -->
+  <section id="rekap-wrapper" class="bg-white p-4 rounded-xl shadow">
+    <div class="overflow-x-auto">
+      <table id="rekap-table" class="min-w-full border border-gray-300">
+        <thead class="bg-blue-200 text-blue-900 font-bold">
+          <tr>
+            <th class="px-3 py-2 border">Tanggal</th>
+            <th class="px-3 py-2 border">Laporan Driver</th>
+            <th class="px-3 py-2 border">Retur</th>
+            <th class="px-3 py-2 border">Dikirim</th>
+            <th class="px-3 py-2 border">SA Pangkalan</th>
+            <th class="px-3 py-2 border">Pengiriman</th>
+            <th class="px-3 py-2 border">Nominal Dibayar</th>
+            <th class="px-3 py-2 border">Brimola Oleh</th>
+            <th class="px-3 py-2 border">Bayar Brimola</th>
+            <th class="px-3 py-2 border">Bukti TF</th>
+            <th class="px-3 py-2 border">Bagi Hasil</th>
+            <th class="px-3 py-2 border text-blue-900">Total Tbg</th>
+          </tr>
+        </thead>
+        <tbody id="rekap-body" class="bg-white"></tbody>
+        <tfoot class="bg-blue-100 font-semibold">
+          <tr>
+            <td colspan="5" class="px-3 py-2 text-right border">TOTAL</td>
+            <td id="total-pengiriman" class="px-3 py-2 border text-right whitespace-nowrap">0</td>
+            <td></td><td></td><td></td><td></td>
+            <td id="total-bagi-hasil" class="px-3 py-2 border text-right whitespace-nowrap">0</td>
+            <td id="grand-total" class="px-3 py-2 border text-right whitespace-nowrap text-blue-800">0</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+/* Multiple select tanpa Ctrl */
+document.getElementById('select-pangkalan').addEventListener('mousedown', function(e){
+  e.preventDefault();
+  const option = e.target;
+  option.selected = !option.selected;
+  option.classList.toggle('selected', option.selected);
+});
+
+/* Toggle menu, dashboard, goDashboard() dll tetap sama */
+function toggleMenu(){ document.getElementById("share-menu").classList.toggle("hidden"); }
+function goDashboard(){ window.location.href="dashboard.html"; }
+/*... kode JS lain tetap seperti sebelumnya ...*/
+</script>
+</body>
+</html>
