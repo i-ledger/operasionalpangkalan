@@ -243,6 +243,7 @@
 </div>
 
 <script>
+<script>
 /* ---------- CONFIG ---------- */
 const endpoint = 'https://script.google.com/macros/s/AKfycby44Vx6YH0Nh3IncvJ91z4nhBwHVNI-i61NdqyK5EgpEQtKtTLGtz1b2_Fz5r1PA2g1Pw/exec';
 
@@ -351,7 +352,7 @@ function renderTable(info){
   let html = `<table><thead><tr>
     <th rowspan="2">Nama Pangkalan</th>
     <th rowspan="2">Nama PT</th>`;
-  tanggalSet.forEach(tgl => html += `<th colspan="2">${escapeHtml(tgl)}</th>`);
+  tanggalSet.forEach(tgl => html += `<th colspan="3">${escapeHtml(tgl)}</th>`);
   html += `<th rowspan="2">Σ SA–JH</th><th rowspan="2">Σ JH–P</th></tr><tr>`;
   tanggalSet.forEach(()=> html += `<th>SA</th><th>JH</th><th>P</th>`);
   html += `</tr></thead><tbody>`;
@@ -390,13 +391,13 @@ function renderTable(info){
       html += `<tr class="spbe-row"><td style="text-align:left">${escapeHtml(sp.namaSPBE)}</td><td style="text-align:left">${escapeHtml(sp.namaPT||'-')}</td>`;
       tanggalSet.forEach(t=>{
         const v=Number(sp.data[t]||0); totalSPBE[t]+=v;
-        html += `<td colspan="2">${v||'-'}</td>`;
+        html += `<td colspan="3">${v||'-'}</td>`;
       });
       html += `<td colspan="2"></td></tr>`;
     });
 
     html += `<tr class="spbe-total"><td colspan="2">TOTAL SPBE</td>`;
-    tanggalSet.forEach(t=> html += `<td colspan="2">${totalSPBE[t]||0}</td>`);
+    tanggalSet.forEach(t=> html += `<td colspan="3">${totalSPBE[t]||0}</td>`);
     html += `<td colspan="2"></td></tr>`;
 
     let sisaPrev=0;
@@ -406,7 +407,7 @@ function renderTable(info){
       const masuk = totalSPBE[t] || 0;
       const sisaNow = i===0 ? masuk-totalP : (sisaPrev+masuk)-totalP;
       sisaPrev = sisaNow;
-      html += `<td colspan="2">${sisaNow}</td>`;
+      html += `<td colspan="3">${sisaNow}</td>`;
     });
     html += `<td colspan="2"></td></tr>`;
   }
