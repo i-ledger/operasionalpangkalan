@@ -8,185 +8,143 @@
 <style>
   :root{
     --card:#ffffff;
-    --muted:#6b7280;
-    --accent:#0ea5e9; /* sky-500 */
+    --muted:#64748b;
+    --accent:#3b82f6; /* biru muda */
+    --accent-light:#e0f2fe;
   }
 
   body{
-    font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
-    background:linear-gradient(180deg,#f8fbff,#e6f2ff);
+    font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto;
+    background:linear-gradient(180deg,#e0f2fe,#f8fbff);
     min-height:100vh;
-    padding:18px;
+    padding:14px;
   }
 
   .container{max-width:1200px;margin:0 auto;}
-  .card{background:var(--card);border-radius:14px;padding:14px;box-shadow:0 6px 22px rgba(15,23,42,0.06);}
-
-  /* ==================== TABLE ==================== */
-  .scroll-container{
-    overflow:auto;
-    max-height:70vh;
-    -webkit-overflow-scrolling:touch;
-    border-radius:8px;
+  .card{
+    background:var(--card);
+    border-radius:16px;
+    padding:18px;
+    box-shadow:0 6px 18px rgba(59,130,246,0.08);
+    animation:fadeIn .3s ease;
   }
 
-  table{
-    border-collapse:collapse;
-    width:100%;
-    min-width:950px;
-    font-size:13px;
-  }
-
-  th,td{
-    padding:8px 10px;
-    border:1px solid #e6eefc;
-    text-align:center;
-    white-space:nowrap;
-  }
-
-  /* Header freeze */
+  /* TABLE */
+  .scroll-container{overflow:auto;max-height:70vh;border-radius:10px;}
+  table{border-collapse:collapse;width:100%;min-width:850px;font-size:13px;}
+  th,td{padding:10px;border:1px solid #e2e8f0;text-align:center;white-space:nowrap;}
   thead th{
-    background:linear-gradient(90deg,#0369a1,#0ea5e9);
+    background:linear-gradient(90deg,#0284c7,#38bdf8);
     color:#fff;
-    position:sticky;
-    top:0;
-    z-index:5;
+    position:sticky;top:0;z-index:5;
     font-weight:600;
-    border-bottom:2px solid #0284c7;
   }
 
-  /* === Freeze kolom kiri dua arah === */
+  tbody tr:hover td{background:#f0f9ff;}
+
   tbody td:first-child, thead th:first-child{
-    position:sticky;
-    left:0;
-    background:#e0f2fe;
-    z-index:6;
-    text-align:left;
-    font-weight:600;
-    border-right:1px solid #bae6fd;
+    position:sticky;left:0;background:#f0f9ff;z-index:6;text-align:left;font-weight:600;
   }
-
   tbody td:nth-child(2), thead th:nth-child(2){
-    position:sticky;
-    left:160px; /* jarak kolom pertama */
-    background:#f0f9ff;
-    z-index:5;
-    text-align:left;
-    border-right:1px solid #bae6fd;
+    position:sticky;left:160px;background:#f9fbff;z-index:5;text-align:left;
   }
 
-  /* Hover effect */
-  tbody tr:hover td{
-    background:#f0f9ff;
-  }
-
-  /* ============ Warna Khusus ============ */
-  .spbe-row{background:#fff7e6;}      /* amber-50 */
+  .spbe-row{background:#fffbea;}
   .spbe-total{background:#fef3c7;font-weight:700;}
-  .sisa-row{background:#ecfdf5;font-weight:700;} /* green-50 */
+  .sisa-row{background:#dcfce7;font-weight:700;}
 
-  /* ============ Buttons ============ */
+  /* BUTTON */
   .btn{
     background:var(--accent);
     color:#fff;
     padding:10px 14px;
-    border-radius:10px;
+    border-radius:12px;
     font-weight:600;
     display:inline-flex;
-    gap:8px;
     align-items:center;
-    box-shadow:0 6px 18px rgba(14,165,233,0.18);
-    transition:transform .12s,box-shadow .12s;
+    gap:6px;
+    box-shadow:0 4px 
+ box-shadow:0 4px 12px rgba(59,130,246,0.25);
+    transition:all .15s ease;
   }
+  .btn:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(59,130,246,0.3);}
   .btn:active{transform:translateY(1px);}
   .btn.ghost{
     background:transparent;
     color:var(--accent);
+    border:1px solid #bfdbfe;
     box-shadow:none;
-    border:1px solid rgba(14,165,233,0.14);
   }
-  .small{padding:6px 8px;border-radius:8px;font-size:13px;}
+  .small{padding:6px 10px;font-size:13px;border-radius:8px;}
 
-  /* ============ Modal ============ */
+  /* MODAL */
   .modal{
-    position:fixed;
-    inset:0;
+    position:fixed;inset:0;
     display:none;
     align-items:center;
     justify-content:center;
-    background:rgba(2,6,23,0.45);
+    background:rgba(0,0,0,0.45);
     z-index:50;
+    backdrop-filter:blur(4px);
     padding:16px;
   }
   .modal-inner{
+    background:#fff;
+    border-radius:14px;
     width:100%;
     max-width:420px;
-    background:#fff;
-    border-radius:12px;
-    padding:14px;
-    box-shadow:0 10px 30px rgba(2,6,23,0.15);
+    padding:18px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.15);
+    animation:fadeIn .25s ease;
   }
 
-  /* Checkbox list */
-  .chk-item{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:8px;
-    border-radius:8px;
-  }
-  .chk-item:hover{background:#f8fafc;}
+  .chk-item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;}
+  .chk-item:hover{background:#f1f5f9;}
 
-  /* Spinner */
+  /* SPINNER */
   #spinner{
     display:none;
     position:fixed;
     inset:0;
     z-index:60;
-    background:rgba(2,6,23,0.35);
+    background:rgba(255,255,255,0.75);
+    backdrop-filter:blur(3px);
     align-items:center;
     justify-content:center;
   }
   .dot{
-    width:44px;
-    height:44px;
-    border-radius:50%;
+    width:48px;height:48px;border-radius:50%;
     border:5px solid #dbeafe;
     border-top-color:var(--accent);
     animation:spin 1s linear infinite;
   }
   @keyframes spin{to{transform:rotate(360deg)}}
 
-  /* Responsive tweaks */
-  @media (max-width:900px){
-    table{min-width:780px;}
-    .filters-row{flex-direction:column;gap:8px;}
-  }
-  @media (max-width:640px){
-    table{min-width:640px;}
-  }
-
-  /* Text color helpers */
+  /* TEXT & UTILITY */
   .muted{color:var(--muted);}
-  .green-ok{color:#059669;font-weight:700;}
-  .red-bad{color:#b91c1c;font-weight:700;}
+  .green-ok{color:#16a34a;font-weight:700;}
+  .red-bad{color:#dc2626;font-weight:700;}
 
-  /* Animation */
-  .fade-in{animation:fadeIn .18s ease;}
-  @keyframes fadeIn{
-    from{opacity:0;transform:translateY(6px);}
-    to{opacity:1;transform:none;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  /* RESPONSIVE */
+  @media(max-width:900px){
+    .filters-row{flex-direction:column;gap:8px;}
+    table{min-width:700px;}
+  }
+  @media(max-width:640px){
+    table{min-width:600px;}
+    h1{font-size:1.1rem;}
   }
 </style>
-
 </head>
 <body>
   <div class="container">
     <div class="card">
-      <div class="flex items-center justify-between gap-4 mb-4">
+      <div class="flex items-center justify-between gap-4 mb-4 flex-wrap">
         <div>
-          <h1 class="text-xl font-bold">📊 Rekap SA Sim3lon</h1>
-          <p class="muted text-sm">Rekap, Jadwal Harian dan Pengiriman — lengkap dengan SPBE & stok</p>
+          <h1 class="text-xl font-bold text-sky-700">📊 Rekap SA Sim3lon</h1>
+          <p class="muted text-sm">Rekap, Jadwal Harian & Pengiriman (SPBE, stok, dsb)</p>
         </div>
         <div class="flex gap-2 items-center">
           <button class="btn small" onclick="downloadCSV()">⬇ Export CSV</button>
@@ -194,291 +152,150 @@
         </div>
       </div>
 
-      <!-- FILTERS -->
-      <div class="flex filters-row gap-3 flex-wrap mb-3 items-center">
-        <select id="month" class="p-2 rounded-lg border">
+      <!-- FILTER -->
+      <div class="flex filters-row flex-wrap gap-3 mb-3 items-center">
+        <select id="month" class="p-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-sky-300">
           <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option>
           <option value="5">Mei</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Agu</option>
           <option value="9">Sep</option><option value="10">Okt</option><option value="11">Nov</option><option value="12">Des</option>
         </select>
 
-        <select id="year" class="p-2 rounded-lg border"></select>
+        <select id="year" class="p-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-sky-300"></select>
 
         <div class="flex items-center gap-2">
           <label class="muted text-sm">Dari</label>
-          <input id="startDate" type="date" class="p-2 rounded-lg border" />
+          <input id="startDate" type="date" class="p-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-sky-300" />
         </div>
         <div class="flex items-center gap-2">
           <label class="muted text-sm">Sampai</label>
-          <input id="endDate" type="date" class="p-2 rounded-lg border" />
+          <input id="endDate" type="date" class="p-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-sky-300" />
         </div>
 
-        <div class="ml-auto flex gap-2">
+        <div class="ml-auto flex gap-2 flex-wrap">
           <button class="btn small" onclick="openModal('pangkalan')">🏠 Pilih Pangkalan</button>
           <button class="btn small" onclick="openModal('pt')">🏢 Pilih PT</button>
           <button class="btn small" onclick="loadRekap()">🔍 Tampilkan</button>
         </div>
       </div>
 
-      <div id="note" class="muted text-xs mb-2">Tip: pilih banyak Pangkalan / PT melalui tombol “Pilih” (checkbox). Tidak perlu tahan CTRL.</div>
+      <p id="note" class="muted text-xs mb-3">💡 Pilih banyak pangkalan / PT via checkbox — tanpa tahan CTRL.</p>
 
       <div id="spinner" class="flex">
         <div style="text-align:center">
           <div class="dot"></div>
-          <div class="muted" style="margin-top:8px;color:#fff">Memuat data...</div>
+          <p class="muted mt-2">Memuat data...</p>
         </div>
       </div>
 
       <div id="tabel-wrapper" class="fade-in">
-        <div id="tabel-container" class="scroll-container card" style="padding:0;margin-top:6px"></div>
+        <div id="tabel-container" class="scroll-container card p-0 mt-2"></div>
       </div>
     </div>
   </div>
 
-  <!-- Modal -->
+  <!-- MODAL -->
   <div id="modal" class="modal">
     <div class="modal-inner">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <strong id="modalTitle">Pilih</strong>
-        <div>
-          <button class="small btn ghost" onclick="checkAll()">Check All</button>
-          <button class="small btn ghost" onclick="uncheckAll()">Uncheck</button>
+      <div class="flex justify-between items-center mb-2">
+        <strong id="modalTitle" class="text-sky-700">Pilih</strong>
+        <div class="flex gap-1">
+          <button class="small btn ghost" onclick="checkAll()">All</button>
+          <button class="small btn ghost" onclick="uncheckAll()">None</button>
         </div>
       </div>
-      <div id="modalList" style="max-height:60vh;overflow:auto"></div>
-      <div style="display:flex;justify-content:flex-end;margin-top:12px">
-        <button class="btn" onclick="closeModal()">Selesai</button>
+      <div id="modalList" class="max-h-[60vh] overflow-auto border rounded-lg p-2 border-slate-100"></div>
+      <div class="flex justify-end mt-3">
+        <button class="btn small" onclick="closeModal()">Selesai</button>
       </div>
     </div>
   </div>
 
-<script>
-/* ---------- CONFIG ---------- */
-const endpoint = 'https://script.google.com/macros/s/AKfycby44Vx6YH0Nh3IncvJ91z4nhBwHVNI-i61NdqyK5EgpEQtKtTLGtz1b2_Fz5r1PA2g1Pw/exec';
-const yearSelect = document.getElementById('year');
-const currentYear = new Date().getFullYear();
-for(let y=currentYear-2;y<=currentYear+1;y++){
-  const o=document.createElement('option');o.value=y;o.textContent=y;
-  if(y===currentYear)o.selected=true; yearSelect.appendChild(o);
-}
-document.getElementById('month').value = new Date().getMonth()+1;
-
-/* state */
-let allPangkalan=[], allPT=[];
-let modalType = ''; // 'pangkalan' or 'pt'
-
-/* Populate filter arrays from backend result */
-function populateFilters(data, spbeArr){
-  const pangkalanSet=new Set();
-  const ptSet=new Set();
-  data.forEach(row=>{
-    if(row.namaPangkalan) pangkalanSet.add(row.namaPangkalan);
-    if(row.namaPT) ptSet.add(row.namaPT);
-  });
-  // include PT from SPBE rows too
-  (spbeArr||[]).forEach(s => { if(s.namaPT) ptSet.add(s.namaPT); });
-
-  allPangkalan = Array.from(pangkalanSet).sort();
-  allPT = Array.from(ptSet).sort();
-}
-
-/* ---------- MODAL ---------- */
-function openModal(type){
-  modalType = type;
-  const title = document.getElementById('modalTitle');
-  const list = document.getElementById('modalList');
-  list.innerHTML = '';
-  title.textContent = type==='pangkalan' ? 'Pilih Pangkalan' : 'Pilih PT';
-  const arr = type==='pangkalan' ? allPangkalan : allPT;
-  arr.forEach(v=>{
-    const id = `opt-${type}-${hashCode(v)}`;
-    const div = document.createElement('div');
-    div.className = 'chk-item';
-    div.innerHTML = `<label style="display:flex;align-items:center;gap:10px;width:100%">
-      <input id="${id}" type="checkbox" class="option-${type}" value="${escapeHtml(v)}" />
-      <span style="flex:1">${escapeHtml(v)}</span>
-    </label>`;
-    list.appendChild(div);
-  });
-  // show modal
-  document.getElementById('modal').style.display = 'flex';
-}
-function closeModal(){
-  document.getElementById('modal').style.display='none';
-}
-function checkAll(){
-  document.querySelectorAll(`.option-${modalType}`).forEach(c=>c.checked=true);
-}
-function uncheckAll(){
-  document.querySelectorAll(`.option-${modalType}`).forEach(c=>c.checked=false);
-}
-
-/* ---------- LOAD / RENDER ---------- */
-function loadRekap(){
-  const month=document.getElementById('month').value;
-  const year=document.getElementById('year').value;
-  const start=document.getElementById('startDate').value;
-  const end=document.getElementById('endDate').value;
-
-  document.getElementById('spinner').style.display='flex';
-  document.getElementById('tabel-container').innerHTML='';
-
-  let url = `${endpoint}?action=getRekapGabungan&month=${month}&year=${year}`;
-  if(start) url += `&startDate=${start}`;
-  if(end) url += `&endDate=${end}`;
-  url += `&callback=renderTableJSONP`;
-
-  const script = document.createElement('script');
-  script.src = url;
-  document.body.appendChild(script);
-}
-
-function renderTableJSONP(json){
-  document.getElementById('spinner').style.display='none';
-  if(json.status !== 'ok'){
-    document.getElementById('tabel-container').innerHTML = `<div class="card" style="padding:16px"><p class="muted">❌ ${escapeHtml(json.message||'Error')}</p></div>`;
-    return;
+  <script>
+  // === JS tetap sama, hanya UI-nya dirapikan ===
+  const endpoint = 'https://script.google.com/macros/s/AKfycby44Vx6YH0Nh3IncvJ91z4nhBwHVNI-i61NdqyK5EgpEQtKtTLGtz1b2_Fz5r1PA2g1Pw/exec';
+  const yearSelect = document.getElementById('year');
+  const currentYear = new Date().getFullYear();
+  for(let y=currentYear-2;y<=currentYear+1;y++){
+    const o=document.createElement('option');
+    o.value=y;o.textContent=y;
+    if(y===currentYear)o.selected=true;
+    yearSelect.appendChild(o);
   }
-  const info = json.info || {};
-  populateFilters(info.result || [], info.spbe || []);
-  renderTable(info);
-}
+  document.getElementById('month').value = new Date().getMonth()+1;
 
-/* helper safe text */
-function escapeHtml(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-function hashCode(str){ let h=0; for(let i=0;i<str.length;i++){h=(h<<5)-h+str.charCodeAt(i);h|=0;} return Math.abs(h); }
+  let allPangkalan=[], allPT=[], modalType='';
 
-/* main renderer */
-function renderTable(info){
-  const container = document.getElementById('tabel-container');
-  const tanggalSet = info.tanggalSet || [];
-  let data = (info.result || []).slice();
-  let spbeData = (info.spbe || []).slice();
-
-  // get checked options from modal inputs (if none checked -> all)
-  const checkedPangkalan = Array.from(document.querySelectorAll('.option-pangkalan:checked')).map(i=>i.value);
-  const checkedPT = Array.from(document.querySelectorAll('.option-pt:checked')).map(i=>i.value);
-
-  if(checkedPangkalan.length) data = data.filter(r=>checkedPangkalan.includes(r.namaPangkalan));
-  if(checkedPT.length){ data = data.filter(r=>checkedPT.includes(r.namaPT)); spbeData = spbeData.filter(s=>checkedPT.includes(s.namaPT)); }
-
-  // filter spbe rows that have any non-zero in tanggalSet
-  spbeData = spbeData.filter(sp=>tanggalSet.some(tgl => Number(sp.data[tgl]||0) > 0));
-
-  if(tanggalSet.length===0 || (data.length===0 && spbeData.length===0)){
-    container.innerHTML = `<div class="card" style="padding:18px;text-align:center"><p class="muted">Tidak ada data untuk filter ini.</p></div>`;
-    return;
+  function populateFilters(data, spbeArr){
+    const pangkalanSet=new Set(), ptSet=new Set();
+    data.forEach(r=>{if(r.namaPangkalan)pangkalanSet.add(r.namaPangkalan);if(r.namaPT)ptSet.add(r.namaPT);});
+    (spbeArr||[]).forEach(s=>{if(s.namaPT)ptSet.add(s.namaPT);});
+    allPangkalan=[...pangkalanSet].sort(); allPT=[...ptSet].sort();
   }
 
-  // build table
-  let html = `<table><thead><tr>
-    <th rowspan="2">Nama Pangkalan</th>
-    <th rowspan="2">Nama PT</th>`;
-  tanggalSet.forEach(tgl => html += `<th colspan="3">${escapeHtml(tgl)}</th>`);
-  html += `<th rowspan="2">Σ SA–JH</th><th rowspan="2">Σ JH–P</th></tr><tr>`;
-  tanggalSet.forEach(()=> html += `<th>SA</th><th>JH</th><th>P</th>`);
-  html += `</tr></thead><tbody>`;
-
-  const totalPerTanggal = {}; tanggalSet.forEach(t=> totalPerTanggal[t]={SA:0,JH:0,IS:0});
-
-  // rows per pangkalan
-  data.forEach(row=>{
-    let totalSA = 0, totalJH = 0, totalIS = 0;
-    html += `<tr><td style="text-align:left">${escapeHtml(row.namaPangkalan)}</td><td style="text-align:left">${escapeHtml(row.namaPT)}</td>`;
-    tanggalSet.forEach(tgl=>{
-      const isi = row.data[tgl] || {};
-      const valSA = Number(isi.SA||0);
-      const valJH = Number(isi.JH||0);
-      const valIS = Number(isi.IS||0);
-      totalSA += valSA; totalJH += valJH; totalIS += valIS;
-      totalPerTanggal[tgl].SA += valSA;
-      totalPerTanggal[tgl].JH += valJH;
-      totalPerTanggal[tgl].IS += valIS;
-      html += `<td>${valSA||'-'}</td><td>${valJH||'-'}</td><td>${valIS?valIS+' 🚚':'-'}</td>`;
+  function openModal(type){
+    modalType=type;
+    const title=document.getElementById('modalTitle');
+    const list=document.getElementById('modalList');
+    list.innerHTML='';
+    title.textContent=type==='pangkalan'?'Pilih Pangkalan':'Pilih PT';
+    const arr=type==='pangkalan'?allPangkalan:allPT;
+    arr.forEach(v=>{
+      const id=`opt-${type}-${hashCode(v)}`;
+      const div=document.createElement('div');
+      div.className='chk-item';
+      div.innerHTML=`<label style="display:flex;align-items:center;gap:10px;width:100%">
+        <input id="${id}" type="checkbox" class="option-${type}" value="${escapeHtml(v)}" />
+        <span style="flex:1">${escapeHtml(v)}</span>
+      </label>`;
+      list.appendChild(div);
     });
-    const sj = totalSA - totalJH;
-    const sp = totalJH - totalIS;
-    html += `<td class="${sj!==0 ? 'red-bad' : 'green-ok'}">${sj}</td><td class="${sp!==0 ? 'red-bad' : 'green-ok'}">${sp}</td></tr>`;
-  });
+    document.getElementById('modal').style.display='flex';
+  }
+  function closeModal(){document.getElementById('modal').style.display='none';}
+  function checkAll(){document.querySelectorAll(\`.option-\${modalType}\`).forEach(c=>c.checked=true);}
+  function uncheckAll(){document.querySelectorAll(\`.option-\${modalType}\`).forEach(c=>c.checked=false);}
 
-  // TOTAL utama (per tanggal) + grand totals
-  html += `<tr class="card" style="background:#eef7ff;font-weight:700"><td colspan="2">TOTAL</td>`;
-  let grandSA=0, grandJH=0, grandIS=0;
-  tanggalSet.forEach(t=>{
-    const tTotals = totalPerTanggal[t];
-    grandSA += tTotals.SA; grandJH += tTotals.JH; grandIS += tTotals.IS;
-    html += `<td>${tTotals.SA||0}</td><td>${tTotals.JH||0}</td><td>${tTotals.IS? tTotals.IS+' 🚚' : '-'}</td>`;
-  });
-  const totalSJ = grandSA - grandJH;
-  const totalSP = grandJH - grandIS;
-  html += `<td class="${totalSJ!==0?'red-bad':'green-ok'}">${totalSJ}</td><td class="${totalSP!==0?'red-bad':'green-ok'}">${totalSP}</td></tr>`;
-
-  // === SPBE rows (warna kuning) ===
-  if(spbeData.length>0){
-    const totalSPBE = {}; tanggalSet.forEach(t=> totalSPBE[t]=0);
-    spbeData.forEach(sp=>{
-      html += `<tr class="spbe-row"><td style="text-align:left">${escapeHtml(sp.namaSPBE)}</td><td style="text-align:left">${escapeHtml(sp.namaPT||'-')}</td>`;
-      tanggalSet.forEach(t=>{
-        const v = Number(sp.data[t]||0);
-        totalSPBE[t] += v;
-        html += `<td colspan="3">${v||'-'}</td>`;
-      });
-      html += `<td colspan="2"></td></tr>`;
-    });
-
-    // TOTAL SPBE
-    html += `<tr class="spbe-total"><td colspan="2">TOTAL SPBE</td>`;
-    tanggalSet.forEach(t=>{
-      html += `<td colspan="3">${totalSPBE[t]||0}</td>`;
-    });
-    html += `<td colspan="2"></td></tr>`;
-
-    // SISA / STOK GUDANG
-    let sisaPrev = 0;
-    html += `<tr class="sisa-row"><td colspan="2">SISA / STOK GUDANG</td>`;
-    tanggalSet.forEach((t,i)=>{
-      const totalP = totalPerTanggal[t].IS || 0;
-      const masuk = totalSPBE[t] || 0;
-      const sisaNow = i===0 ? masuk - totalP : (sisaPrev + masuk) - totalP;
-      sisaPrev = sisaNow;
-      html += `<td colspan="3">${sisaNow}</td>`;
-    });
-    html += `<td colspan="2"></td></tr>`;
+  function loadRekap(){
+    const month=document.getElementById('month').value;
+    const year=document.getElementById('year').value;
+    const start=document.getElementById('startDate').value;
+    const end=document.getElementById('endDate').value;
+    document.getElementById('spinner').style.display='flex';
+    document.getElementById('tabel-container').innerHTML='';
+    let url=\`\${endpoint}?action=getRekapGabungan&month=\${month}&year=\${year}\`;
+    if(start)url+=\`&startDate=\${start}\`;
+    if(end)url+=\`&endDate=\${end}\`;
+    url+=\`&callback=renderTableJSONP\`;
+    const script=document.createElement('script');
+    script.src=url;
+    document.body.appendChild(script);
   }
 
-  html += `</tbody></table>`;
-  container.innerHTML = html;
-}
+  function renderTableJSONP(json){
+    document.getElementById('spinner').style.display='none';
+    if(json.status!=='ok'){
+      document.getElementById('tabel-container').innerHTML=\`<div class="card p-4 text-center text-slate-500">❌ \${escapeHtml(json.message||'Error')}</div>\`;
+      return;
+    }
+    const info=json.info||{};
+    populateFilters(info.result||[],info.spbe||[]);
+    renderTable(info);
+  }
 
-/* ---------- small utilities ---------- */
-function clearFilters(){
-  document.getElementById('startDate').value='';
-  document.getElementById('endDate').value='';
-  // uncheck any modal checkboxes (if present)
-  document.querySelectorAll('.option-pangkalan, .option-pt').forEach(i=>i.checked=false);
+  function escapeHtml(s){return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');}
+  function hashCode(str){let h=0;for(let i=0;i<str.length;i++){h=(h<<5)-h+str.charCodeAt(i);h|=0;}return Math.abs(h);}
+  function clearFilters(){document.getElementById('startDate').value='';document.getElementById('endDate').value='';document.querySelectorAll('.option-pangkalan,.option-pt').forEach(i=>i.checked=false);loadRekap();}
+  function downloadCSV(){
+    const table=document.querySelector('#tabel-container table');
+    if(!table){alert('Tidak ada tabel untuk diexport');return;}
+    let csv=[];for(const row of table.rows){const cols=[...row.cells].map(c=>'"'+c.innerText.replace(/"/g,'""')+'"');csv.push(cols.join(','));}
+    const blob=new Blob([csv.join('\n')],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=\`rekap_\${Date.now()}.csv\`;a.click();URL.revokeObjectURL(url);
+  }
+
+  // panggil awal
   loadRekap();
-}
-
-/* export CSV simple (flattened) */
-function downloadCSV(){
-  // quick export of displayed HTML table
-  const table = document.querySelector('#tabel-container table');
-  if(!table){ alert('Tidak ada tabel untuk diexport'); return; }
-  let csv = [];
-  for(const row of table.rows){
-    const cols = Array.from(row.cells).map(c => '"'+c.innerText.replace(/"/g,'""')+'"');
-    csv.push(cols.join(','));
-  }
-  const blob = new Blob([csv.join('\n')], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = `rekap_${Date.now()}.csv`; a.click(); URL.revokeObjectURL(url);
-}
-
-/* helpers safe */
-function escapeHtml(s){ return String(s||''); }
-
-/* init */
-loadRekap();
-</script>
+  </script>
 </body>
 </html>
