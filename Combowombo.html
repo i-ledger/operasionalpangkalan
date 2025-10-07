@@ -50,22 +50,27 @@
 
 /* ================= HEADER ================= */
 
-/* baris pertama header (Nama Pangkalan / PT) */
-thead tr:first-child th {
-  position: sticky;
-  top: 0;
-  z-index: 26; /* paling atas untuk baris pertama */
-  background: #0284c7;
-  color: #fff;
+/* ================= INTERSEKSI HEADER + KOLON ================= */
+
+/* baris pertama + kolom pertama & kedua */
+thead tr:first-child th:first-child,
+thead tr:first-child th:nth-child(2) {
+  top: 0;       /* tetap di atas */
+  left: auto;   /* biarkan default atau sesuai kolom */
+  z-index: 30;
 }
 
-/* baris kedua header (Tanggal + SA/JH/P) */
-thead tr:nth-child(2) th {
-  position: sticky;
-  top: 34px; /* tinggi baris pertama */
-  z-index: 25; /* sedikit di bawah baris pertama */
-  background: #0284c7;
-  color: #fff;
+/* baris kedua + kolom pertama & kedua */
+thead tr:nth-child(2) th:first-child {
+  top: 34px;    /* tetap di bawah baris pertama */
+  left: 0;      /* kolom pertama sticky kiri */
+  z-index: 29;
+}
+
+thead tr:nth-child(2) th:nth-child(2) {
+  top: 34px;    /* tetap di bawah baris pertama */
+  left: 160px;  /* kolom kedua sticky kiri */
+  z-index: 29;
 }
 
 /* ================= KOLON STICKY ================= */
