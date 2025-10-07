@@ -447,7 +447,7 @@ function renderTable(info){
 
     // SISA / STOK GUDANG
     let sisaPrev = 0;
-    html += `<tr class="sisa-row"><td colspan="1">SISA / STOK GUDANG</td>`;
+    html += `<tr class="sisa-row"><td colspan="2">SISA / STOK GUDANG</td>`;
     tanggalSet.forEach((t,i)=>{
       const totalP = totalPerTanggal[t].IS || 0;
       const masuk = totalSPBE[t] || 0;
