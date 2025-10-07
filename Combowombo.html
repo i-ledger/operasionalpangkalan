@@ -44,20 +44,20 @@
     white-space:nowrap;
   }
 
-/* baris pertama header (Nama Pangkalan / PT) */
+/* baris pertama header */
 thead tr:first-child th {
   position: sticky;
   top: 0;
-  z-index: 6;
+  z-index: 9; /* lebih tinggi */
   background: #0284c7;
   color: #fff;
 }
 
-/* baris kedua header (Tanggal + SA/JH/P) */
+/* baris kedua header */
 thead tr:nth-child(2) th {
   position: sticky;
-  top: 34px; /* tinggi baris pertama, sesuaikan dengan padding */
-  z-index: 5;
+  top: 34px;
+  z-index: 8; /* lebih tinggi dari kolom */
   background: #0284c7;
   color: #fff;
 }
@@ -66,7 +66,7 @@ thead tr:nth-child(2) th {
 tbody td:first-child, thead th:first-child {
   position: sticky;
   left: 0;
-  z-index: 7;
+  z-index: 5; /* lebih rendah dari header */
   background: #0284c7;
   color: #fff;
 }
@@ -74,8 +74,8 @@ tbody td:first-child, thead th:first-child {
 /* kolom kedua (Nama PT) */
 tbody td:nth-child(2), thead th:nth-child(2) {
   position: sticky;
-  left: 160px; /* sesuaikan dengan lebar kolom Nama Pangkalan */
-  z-index: 7;
+  left: 160px;
+  z-index: 5; /* lebih rendah dari header */
   background: #0284c7;
   color: #fff;
 }
