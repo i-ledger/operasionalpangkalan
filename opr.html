@@ -135,9 +135,10 @@ document.getElementById('select-pangkalan').addEventListener('mousedown', functi
   option.selected = !option.selected;
   option.classList.toggle('selected', option.selected);
 });
+
+/* Toggle menu, dashboard, goDashboard() dll tetap sama */
 function toggleMenu(){ document.getElementById("share-menu").classList.toggle("hidden"); }
 function goDashboard(){ window.location.href="dashboard.html"; }
-
 function formatRupiah(val){
   if(val==null || val==='' || Number(val)===0) return '-';
   const num = Number(val);
