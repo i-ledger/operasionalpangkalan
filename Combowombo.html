@@ -1,1 +1,159 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rekap SA Sim3lon (Filter Tanggal)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Inter', sans-serif; background-color: #ebf8ff; }
+  .scroll-container { overflow-x: auto; overflow-y: auto; max-height: 80vh; }
+  table { border-collapse: collapse; min-width: 100%; font-size: 12px; }
+  th, td { border: 1px solid #d1d5db; padding: 6px 8px; text-align: left; white-space: nowrap; }
+  thead th { background: #bfdbfe; position: sticky; top: 0; z-index: 3; }
+  tbody td:first-child, thead th:first-child { position: sticky; left: 0; background: #bfdbfe; z-index: 2; }
+  td img { width: 40px; border-radius: 6px; }
+  #spinner {
+    display: none; position: fixed; inset: 0; z-index: 50;
+    background: rgba(0,0,0,0.3);
+    display: flex; justify-content: center; align-items: center; flex-direction: column;
+  }
+  .spinner-circle {
+    border: 4px solid #bfdbfe;
+    border-top: 4px solid #3b82f6;
+    border-radius: 50%;
+    width: 50px; height: 50px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+  }
+  @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
+</style>
+</head>
+<body class="p-4">
+
+<h1 class="text-xl font-bold mb-4 text-blue-900">📅 Rekap SA Sim3lon Berdasarkan Tanggal</h1>
+
+<div class="flex flex-wrap gap-2 mb-4 items-center">
+  <label class="text-sm font-semibold text-gray-700">Dari:</label>
+  <input type="date" id="startDate" class="border rounded p-2 text-sm" />
+
+  <label class="text-sm font-semibold text-gray-700">Sampai:</label>
+  <input type="date" id="endDate" class="border rounded p-2 text-sm" />
+
+  <select id="filterPangkalan" class="border rounded p-2 text-sm" multiple size="3"></select>
+  <select id="filterPT" class="border rounded p-2 text-sm" multiple size="3"></select>
+
+  <button onclick="loadRekap()" class="bg-blue-500 hover:bg-blue-600 text-white rounded px-4 py-2 text-sm">
+    🔍 Tampilkan
+  </button>
+</div>
+
+<div id="spinner">
+  <div class="spinner-circle"></div>
+  <span class="text-white text-lg font-semibold">Memuat data...</span>
+</div>
+
+<div id="tabel-container" class="scroll-container"></div>
+
+<script>
+const endpoint = 'https://script.google.com/macros/s/AKfycbzZRnFI4CEjuie8_32Zusj2H8QbsVKROTrB1dIaZ_kuy1KxWGXZxZFHUHwMKjPfGPThWw/exec';
+
+const filterPangkalan = document.getElementById('filterPangkalan');
+const filterPT = document.getElementById('filterPT');
+
+// Set default tanggal: hari ini
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('startDate').value = today;
+document.getElementById('endDate').value = today;
+
+function populateFilters(data){
+  const pangkalanSet=new Set();
+  const ptSet=new Set();
+  data.forEach(row=>{pangkalanSet.add(row.namaPangkalan); ptSet.add(row.namaPT)});
+  pangkalanSet.forEach(p=>filterPangkalan.appendChild(new Option(p,p,true,true)));
+  ptSet.forEach(p=>filterPT.appendChild(new Option(p,p,true,true)));
+}
+
+function loadRekap(){
+  const start=document.getElementById('startDate').value;
+  const end=document.getElementById('endDate').value;
+  if(!start || !end){ alert('Pilih tanggal awal dan akhir terlebih dahulu!'); return; }
+
+  document.getElementById('spinner').style.display='flex';
+  document.getElementById('tabel-container').innerHTML='';
+
+  const script=document.createElement('script');
+  script.src=`${endpoint}?action=getRekapGabunganTanggal&start=${start}&end=${end}&callback=renderTableJSONP`;
+  document.body.appendChild(script);
+}
+
+function renderTableJSONP(json){
+  document.getElementById('spinner').style.display='none';
+  if(json.status!=='ok'){
+    document.getElementById('tabel-container').innerHTML=`<p class='text-red-500 text-center'>❌ ${json.message}</p>`;
+    return;
+  }
+  if(filterPangkalan.options.length===0) populateFilters(json.info.result);
+  renderTable(json.info);
+}
+
+function renderTable(info){
+  const container=document.getElementById('tabel-container');
+  const tanggalSet=info.tanggalSet||[];
+  let data=info.result||[];
+  let spbeData=info.spbe||[];
+
+  const selectedPangkalan = Array.from(filterPangkalan.selectedOptions).map(o=>o.value);
+  const selectedPT = Array.from(filterPT.selectedOptions).map(o=>o.value);
+
+  if(selectedPangkalan.length) data = data.filter(r=>selectedPangkalan.includes(r.namaPangkalan));
+  if(selectedPT.length) {
+    data = data.filter(r=>selectedPT.includes(r.namaPT));
+    spbeData = spbeData.filter(sp=>selectedPT.includes(sp.namaPT));
+  }
+
+  if(tanggalSet.length===0 || (data.length===0 && spbeData.length===0)){
+    container.innerHTML=`<p class='text-gray-500 text-center'>Tidak ada data untuk tanggal tersebut.</p>`;
+    return;
+  }
+
+  let html=`<table><thead><tr>
+    <th rowspan="2">Nama Pangkalan</th>
+    <th rowspan="2">Nama PT</th>`;
+  tanggalSet.forEach(tgl=>html+=`<th colspan="3">${tgl}</th>`);
+  html+=`</tr><tr>`;
+  tanggalSet.forEach(()=>html+=`<th>SA 📅</th><th>JH 📃</th><th>P 🚚</th>`);
+  html+=`</tr></thead><tbody>`;
+
+  const totalPerTanggal={};
+  tanggalSet.forEach(tgl=>totalPerTanggal[tgl]={SA:0,JH:0,IS:0});
+
+  data.forEach(row=>{
+    html+=`<tr><td>${row.namaPangkalan}</td><td>${row.namaPT}</td>`;
+    tanggalSet.forEach(tgl=>{
+      const isi=row.data[tgl]||{};
+      const valSA=isi.SA||0;
+      const valJH=isi.JH||0;
+      const valIS=isi.IS||0;
+      html+=`<td>${valSA}</td><td>${valJH}</td><td>${valIS?valIS+' 🚚':'-'}</td>`;
+      totalPerTanggal[tgl].SA+=Number(valSA);
+      totalPerTanggal[tgl].JH+=Number(valJH);
+      totalPerTanggal[tgl].IS+=Number(valIS);
+    });
+    html+=`</tr>`;
+  });
+
+  html+=`<tr class="font-semibold bg-blue-100"><td colspan="2">TOTAL</td>`;
+  tanggalSet.forEach(tgl=>{
+    const t=totalPerTanggal[tgl];
+    html+=`<td>${t.SA}</td><td>${t.JH}</td><td>${t.IS?t.IS+' 🚚':'-'}</td>`;
+  });
+  html+=`</tr></tbody></table>`;
+  container.innerHTML = html;
+}
+
+loadRekap();
+</script>
+</body>
+</html>
 
