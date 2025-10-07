@@ -1,46 +1,35 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Rekap SA Sim3lon, Jadwal Harian dan Pengiriman</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📊 Rekap SA Sim3lon</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  body { font-family: 'Inter', sans-serif; background-color: #ebf8ff; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(180deg, #f0f9ff, #dbeafe);
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
 
-  .scroll-container { 
-    overflow-x: auto; 
-    overflow-y: auto; 
-    max-height: 80vh; 
+  .scroll-container {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 80vh;
     -webkit-overflow-scrolling: touch;
   }
 
   table { border-collapse: collapse; min-width: 100%; font-size: 12px; }
-  th, td { border: 1px solid #d1d5db; padding: 6px 8px; text-align: left; white-space: nowrap; }
-
-  thead th { 
-    background: #bfdbfe; 
-    position: sticky; 
-    top: 0; 
-    z-index: 3; 
-  }
-
-  tbody td:first-child,
-  thead th:first-child {
-    position: sticky;
-    left: 0;
-    background: #bfdbfe;
-    z-index: 2; 
-    border-right: 1px solid #d1d5db;
-  }
-
+  th, td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: center; white-space: nowrap; }
+  thead th { background: #3b82f6; color: white; position: sticky; top: 0; z-index: 3; }
   td img { width: 40px; border-radius: 6px; }
 
   #spinner {
     display: none;
     position: fixed; inset: 0; z-index: 50;
     background: rgba(0,0,0,0.3);
-    display: flex; justify-content: center; align-items: center; flex-direction: column;
+    justify-content: center; align-items: center; flex-direction: column;
   }
   .spinner-circle {
     border: 4px solid #bfdbfe;
@@ -51,15 +40,45 @@
     margin-bottom: 10px;
   }
   @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
+
+  /* Custom button look */
+  .btn {
+    @apply bg-blue-600 text-white font-semibold rounded-lg px-4 py-2 transition duration-200;
+  }
+  .btn:hover {
+    @apply bg-blue-700 shadow-md;
+  }
+
+  /* Modal style */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-content {
+    background: white;
+    border-radius: 1rem;
+    padding: 1rem;
+    width: 90%;
+    max-width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
 </style>
 </head>
 <body class="p-4">
 
-<h1 class="text-xl font-bold mb-4 text-Left text-blue-900">📊 Rekap SA Sim3lon, Jadwal Harian dan Pengiriman</h1>
+<h1 class="text-2xl font-bold mb-4 text-blue-900 text-center">
+  📊 Rekap SA Sim3lon, Jadwal Harian & Pengiriman
+</h1>
 
-<!-- 🔹 FILTER AREA -->
-<div class="flex flex-wrap gap-2 mb-4 items-center">
-  <select id="month" class="border rounded p-2 text-sm">
+<!-- FILTER AREA -->
+<div class="bg-white shadow-md rounded-xl p-4 mb-4 flex flex-wrap gap-3 justify-center">
+  <select id="month" class="border rounded-lg p-2 text-sm">
     <option value="1">Januari</option><option value="2">Februari</option>
     <option value="3">Maret</option><option value="4">April</option>
     <option value="5">Mei</option><option value="6">Juni</option>
@@ -68,35 +87,47 @@
     <option value="11">November</option><option value="12">Desember</option>
   </select>
 
-  <select id="year" class="border rounded p-2 text-sm"></select>
+  <select id="year" class="border rounded-lg p-2 text-sm"></select>
 
-  <!-- 🔹 Filter Tanggal -->
-  <label class="text-sm text-gray-700 ml-2">Dari:</label>
-  <input type="date" id="startDate" class="border rounded p-2 text-sm"/>
+  <div class="flex items-center gap-2">
+    <label class="text-sm text-gray-600">Dari:</label>
+    <input type="date" id="startDate" class="border rounded-lg p-2 text-sm">
+    <label class="text-sm text-gray-600">Sampai:</label>
+    <input type="date" id="endDate" class="border rounded-lg p-2 text-sm">
+  </div>
 
-  <label class="text-sm text-gray-700">Sampai:</label>
-  <input type="date" id="endDate" class="border rounded p-2 text-sm"/>
-
-  <select id="filterPangkalan" class="border rounded p-2 text-sm" multiple size="3"></select>
-  <select id="filterPT" class="border rounded p-2 text-sm" multiple size="3"></select>
-
-  <button onclick="loadRekap()" class="bg-blue-500 hover:bg-blue-600 text-white rounded px-4 py-2 text-sm">
-    🔍 Tampilkan
-  </button>
+  <button onclick="openModal('pangkalan')" class="btn">🏠 Pilih Pangkalan</button>
+  <button onclick="openModal('pt')" class="btn">🏢 Pilih PT</button>
+  <button onclick="loadRekap()" class="btn">🔍 Tampilkan</button>
 </div>
 
-<div id="spinner">
+<!-- SPINNER -->
+<div id="spinner" class="flex">
   <div class="spinner-circle"></div>
   <span class="text-white text-lg font-semibold">Memuat data...</span>
 </div>
 
-<div id="tabel-container" class="scroll-container"></div>
+<!-- TABLE -->
+<div id="tabel-container" class="scroll-container bg-white rounded-xl shadow-md p-3"></div>
+
+<!-- MODAL PANGKALAN/PT -->
+<div id="modal" class="modal flex">
+  <div class="modal-content">
+    <h2 id="modalTitle" class="text-lg font-semibold text-blue-700 mb-2"></h2>
+    <div id="modalList" class="space-y-1"></div>
+    <div class="mt-3 flex justify-end">
+      <button class="btn" onclick="closeModal()">Selesai</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const endpoint = 'https://script.google.com/macros/s/AKfycby44Vx6YH0Nh3IncvJ91z4nhBwHVNI-i61NdqyK5EgpEQtKtTLGtz1b2_Fz5r1PA2g1Pw/exec';
-
+const filterPangkalan = document.createElement('select');
+const filterPT = document.createElement('select');
 const yearSelect = document.getElementById('year');
 const currentYear = new Date().getFullYear();
+
 for (let y = currentYear - 2; y <= currentYear + 1; y++) {
   const opt = document.createElement('option');
   opt.value = y; opt.textContent = y;
@@ -105,15 +136,39 @@ for (let y = currentYear - 2; y <= currentYear + 1; y++) {
 }
 document.getElementById('month').value = new Date().getMonth()+1;
 
-const filterPangkalan = document.getElementById('filterPangkalan');
-const filterPT = document.getElementById('filterPT');
+let allPangkalan = [];
+let allPT = [];
+
+function openModal(type) {
+  const modal = document.getElementById('modal');
+  const modalList = document.getElementById('modalList');
+  const title = document.getElementById('modalTitle');
+  modalList.innerHTML = '';
+
+  const list = type === 'pangkalan' ? allPangkalan : allPT;
+  title.textContent = type === 'pangkalan' ? 'Pilih Pangkalan' : 'Pilih PT';
+
+  list.forEach(item => {
+    const div = document.createElement('div');
+    div.innerHTML = `<label class="flex items-center gap-2">
+      <input type="checkbox" class="option-${type}" value="${item}">
+      <span>${item}</span>
+    </label>`;
+    modalList.appendChild(div);
+  });
+
+  modal.style.display = 'flex';
+}
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+}
 
 function populateFilters(data){
   const pangkalanSet=new Set();
   const ptSet=new Set();
   data.forEach(row=>{pangkalanSet.add(row.namaPangkalan); ptSet.add(row.namaPT)});
-  pangkalanSet.forEach(p=>filterPangkalan.appendChild(new Option(p,p,true,true)));
-  ptSet.forEach(p=>filterPT.appendChild(new Option(p,p,true,true)));
+  allPangkalan = Array.from(pangkalanSet);
+  allPT = Array.from(ptSet);
 }
 
 function loadRekap(){
@@ -124,8 +179,7 @@ function loadRekap(){
 
   document.getElementById('spinner').style.display='flex';
   document.getElementById('tabel-container').innerHTML='';
-  
-  // 🔹 Tambahkan parameter tanggal ke URL JSONP
+
   let url = `${endpoint}?action=getRekapGabungan&month=${month}&year=${year}`;
   if(start) url += `&startDate=${start}`;
   if(end) url += `&endDate=${end}`;
@@ -142,7 +196,7 @@ function renderTableJSONP(json){
     document.getElementById('tabel-container').innerHTML=`<p class='text-red-500 text-center'>❌ ${json.message}</p>`;
     return;
   }
-  if(filterPangkalan.options.length===0) populateFilters(json.info.result);
+  if(allPangkalan.length===0) populateFilters(json.info.result);
   renderTable(json.info);
 }
 
@@ -152,8 +206,9 @@ function renderTable(info) {
   let data = info.result || [];
   let spbeData = info.spbe || [];
 
-  const selectedPangkalan = Array.from(filterPangkalan.selectedOptions).map(o => o.value);
-  const selectedPT = Array.from(filterPT.selectedOptions).map(o => o.value);
+  // ambil pilihan user dari modal
+  const selectedPangkalan = Array.from(document.querySelectorAll('.option-pangkalan:checked')).map(c=>c.value);
+  const selectedPT = Array.from(document.querySelectorAll('.option-pt:checked')).map(c=>c.value);
 
   if (selectedPangkalan.length)
     data = data.filter(r => selectedPangkalan.includes(r.namaPangkalan));
@@ -162,35 +217,25 @@ function renderTable(info) {
     spbeData = spbeData.filter(sp => selectedPT.includes(sp.namaPT));
   }
 
-  spbeData = spbeData.filter(sp => {
-    return tanggalSet.some(tgl => Number(sp.data[tgl] || 0) > 0);
-  });
-
   if (tanggalSet.length === 0 || (data.length === 0 && spbeData.length === 0)) {
     container.innerHTML = `<p class='text-gray-500 text-center'>Tidak ada data untuk filter ini.</p>`;
     return;
   }
 
-  // === HEADER ===
+  // HEADER
   let html = `<table><thead><tr>
     <th rowspan="2">Nama Pangkalan</th>
     <th rowspan="2">Nama PT</th>`;
   tanggalSet.forEach(tgl => html += `<th colspan="3">${tgl}</th>`);
-  html += `<th rowspan="2">Selisih Jadwal<br>(Σ SA–JH)</th>
-           <th rowspan="2">Selisih Pengiriman<br>(Σ JH–P)</th></tr><tr>`;
-  tanggalSet.forEach(() => html += `
-    <th>SA 📅</th>
-    <th>JH 📃</th>
-    <th>P 🚚</th>`);
+  html += `<th rowspan="2">Σ SA–JH</th><th rowspan="2">Σ JH–P</th></tr><tr>`;
+  tanggalSet.forEach(() => html += `<th>SA</th><th>JH</th><th>P</th>`);
   html += `</tr></thead><tbody>`;
 
   const totalPerTanggal = {};
   tanggalSet.forEach(tgl => totalPerTanggal[tgl] = { SA: 0, JH: 0, IS: 0 });
 
-  // === DATA PER PANGKALAN ===
   data.forEach(row => {
     let totalSA = 0, totalJH = 0, totalIS = 0;
-
     html += `<tr><td>${row.namaPangkalan}</td><td>${row.namaPT}</td>`;
     tanggalSet.forEach(tgl => {
       const isi = row.data[tgl] || {};
@@ -200,83 +245,20 @@ function renderTable(info) {
       totalSA += valSA;
       totalJH += valJH;
       totalIS += valIS;
-
-      html += `
-        <td>${valSA}</td>
-        <td>${valJH}</td>
-        <td>${valIS ? valIS + ' 🚚' : '-'}</td>`;
-
+      html += `<td>${valSA}</td><td>${valJH}</td><td>${valIS}</td>`;
       totalPerTanggal[tgl].SA += valSA;
       totalPerTanggal[tgl].JH += valJH;
       totalPerTanggal[tgl].IS += valIS;
     });
-
-    const selisihJadwal = totalSA - totalJH;
-    const selisihPengiriman = totalJH - totalIS;
-    html += `
-      <td class="text-center ${selisihJadwal !== 0 ? 'text-red-600 font-semibold' : ''}">${selisihJadwal}</td>
-      <td class="text-center ${selisihPengiriman !== 0 ? 'text-red-600 font-semibold' : ''}">${selisihPengiriman}</td>
-    `;
-    html += `</tr>`;
+    const sj = totalSA - totalJH;
+    const sp = totalJH - totalIS;
+    html += `<td class="${sj!=0?'text-red-600 font-bold':''}">${sj}</td>
+             <td class="${sp!=0?'text-red-600 font-bold':''}">${sp}</td></tr>`;
   });
-
-  // === TOTAL UTAMA ===
-  html += `<tr class="font-semibold bg-blue-100"><td colspan="2">TOTAL</td>`;
-  let grandSA = 0, grandJH = 0, grandIS = 0;
-  tanggalSet.forEach(tgl => {
-    const t = totalPerTanggal[tgl];
-    grandSA += t.SA;
-    grandJH += t.JH;
-    grandIS += t.IS;
-    html += `
-      <td>${t.SA}</td>
-      <td>${t.JH}</td>
-      <td>${t.IS ? t.IS + ' 🚚' : '-'}</td>`;
-  });
-  const totalSelisihJadwal = grandSA - grandJH;
-  const totalSelisihPengiriman = grandJH - grandIS;
-  html += `
-    <td class="text-center ${totalSelisihJadwal !== 0 ? 'text-red-600 font-semibold' : ''}">${totalSelisihJadwal}</td>
-    <td class="text-center ${totalSelisihPengiriman !== 0 ? 'text-red-600 font-semibold' : ''}">${totalSelisihPengiriman}</td>
-  </tr>`;
-
-  // === SPBE DAN SISA/STOK ===
-  if (spbeData.length > 0) {
-    const totalSPBE = {};
-    tanggalSet.forEach(tgl => totalSPBE[tgl] = 0);
-
-    spbeData.forEach(sp => {
-      html += `<tr class="bg-yellow-50 font-semibold">
-        <td>${sp.namaSPBE}</td><td>${sp.namaPT || '-'}</td>`;
-      tanggalSet.forEach(tgl => {
-        const val = Number(sp.data[tgl] || 0);
-        totalSPBE[tgl] += val;
-        html += `<td colspan="3" class="text-center">${val}</td>`;
-      });
-      html += `<td colspan="2"></td></tr>`;
-    });
-
-    html += `<tr class="bg-yellow-200 font-bold"><td colspan="2">TOTAL SPBE</td>`;
-    tanggalSet.forEach(tgl => html += `<td colspan="3" class="text-center">${totalSPBE[tgl]}</td>`);
-    html += `<td colspan="2"></td></tr>`;
-
-    // === SISA/STOK GUDANG ===
-    let sisaSebelumnya = 0;
-    html += `<tr class="bg-green-100 font-bold"><td colspan="2">SISA / STOK GUDANG</td>`;
-    tanggalSet.forEach((tgl, i) => {
-      const totalP = totalPerTanggal[tgl].IS || 0;
-      const stokMasuk = totalSPBE[tgl] || 0;
-      const sisaSekarang = i === 0 ? stokMasuk - totalP : (sisaSebelumnya + stokMasuk) - totalP;
-      sisaSebelumnya = sisaSekarang;
-      html += `<td colspan="3" class="text-center">${sisaSekarang}</td>`;
-    });
-    html += `<td colspan="2"></td></tr>`;
-  }
 
   html += `</tbody></table>`;
   container.innerHTML = html;
 }
-
 
 loadRekap();
 </script>
