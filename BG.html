@@ -31,14 +31,13 @@
         <thead class="bg-blue-600 text-white">
           <tr>
             <th class="p-3">No.</th>
+            <th class="p-3">Tanggal</th>
+            <th class="p-3">Nama Driver</th>
             <th class="p-3">Nama Pangkalan</th>
             <th class="p-3">Nama PT</th>
-            <th class="p-3">DO yang dimiliki</th>
-            <th class="p-3">Harga Refill</th>
-            <th class="p-3">Harga Bagi Hasil</th>
-            <th class="p-3">ID Brimola</th>
-            <th class="p-3">Password</th>
-            <th class="p-3">Aksi</th>
+            <th class="p-3">Refill (5,5 Kg)</th>
+            <th class="p-3">Refill (12 Kg)</th>
+            <th class="p-3">Refill (50 Kg)</th>
           </tr>
         </thead>
         <tbody class="bg-white"></tbody>
@@ -52,6 +51,18 @@
     const loggedIn = localStorage.getItem("loggedIn");
     if (!id_spreadsheet || loggedIn !== "true") {
       window.location.href = "login.html";
+    }
+    function formatTanggalIndonesia(datetimeStr) {
+      const date = new Date(datetimeStr);
+      if (isNaN(date)) return datetimeStr;
+      const pad = n => n.toString().padStart(2, '0');
+      const hari = pad(date.getDate());
+      const bulan = pad(date.getMonth() + 1);
+      const tahun = date.getFullYear();
+      const jam = pad(date.getHours());
+      const menit = pad(date.getMinutes());
+      const detik = pad(date.getSeconds());
+      return `${hari}/${bulan}/${tahun} ${jam}:${menit}:${detik}`;
     }
 
     let dataPOS = [];
@@ -67,7 +78,7 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
               <td class="p-3">${i + 1}</td>
-              <td class="p-3">${item.uraian}</td>
+              <td class="p-3">${formatTanggalIndonesia(item.uraian)}</td>
               <td class="p-3">${item.pos}</td>
               <td class="p-3">${item.doyangdimiliki}</td>
               <td class="p-3">${item.hargarefill}</td>
@@ -84,85 +95,7 @@
         .catch(err => alert("❌ Gagal load data: " + err.message));
     }
 
-    function tambahPos() {
-      const uraian = document.getElementById("uraianInput").value.trim().toUpperCase();
-      const pos = document.getElementById("posInput").value.trim().toUpperCase();
-      const doyangdimiliki = document.getElementById("doyangdimilikiInput").value.trim();
-      const hargarefill = document.getElementById("hargarefillInput").value.trim();
-      const hargabagihasil = document.getElementById("hargabagihasilInput").value.trim();
-      const id_brimola = document.getElementById("id_brimolaInput").value.trim();
-      const password = document.getElementById("passwordInput").value.trim();
-      if (!uraian || !pos) return alert("Minimal isi Nama Pangkalan dan Nama PT.");
-
-      fetch(getAPIUrl("add"), {
-        method: 'POST',
-        body: JSON.stringify({
-          sheet: "BG",
-          action: "add",
-          payload: {
-            values: [uraian, pos, doyangdimiliki, hargarefill, hargabagihasi,id_brimola,password]
-          }
-        })
-      })
-      .then(res => res.json())
-      .then(() => {
-        document.querySelectorAll("input").forEach(i => i.value = "");
-        loadPOS();
-      })
-      .catch(err => alert("❌ Gagal tambah data: " + err.message));
-    }
-
-    function editPos(index) {
-      const current = dataPOS[index];
-      const newUraian = prompt("Edit Nama Pangkalan:", current.uraian);
-      if (newUraian === null) return;
-      const newPos = prompt("Edit Nama PT:", current.pos);
-      if (newPos === null) return;
-      const newDo = prompt("Edit DO:", current.doyangdimiliki);
-      const newRefill = prompt("Edit Harga Refill:", current.hargarefill);
-      const newBagi = prompt("Edit Harga Bagi Hasil:", current.hargabagihasil);
-      const newidbrimola = prompt("Edit Id Brimola:", current.id_brimola);
-      const newpassword = prompt("Edit Password:", current.password);
-      
-
-      fetch(getAPIUrl("edit"), {
-        method: 'POST',
-        body: JSON.stringify({
-          sheet: "BG",
-          action: "edit",
-          payload: {
-            row: index + 2,
-            values: [
-              newUraian.trim().toUpperCase(),
-              newPos.trim().toUpperCase(),
-              newDo,
-              newRefill,
-              newBagi,
-              newidbrimola,
-              newpassword
-            ]
-          }
-        })
-      })
-      .then(res => res.json())
-      .then(loadPOS)
-      .catch(err => alert("❌ Gagal edit data: " + err.message));
-    }
-
-    function hapusPos(row) {
-      if (!confirm("Yakin ingin menghapus baris " + row + "?")) return;
-      fetch(getAPIUrl("delete"), {
-        method: 'POST',
-        body: JSON.stringify({
-          sheet: "BG",
-          action: "delete",
-          payload: { row }
-        })
-      })
-      .then(res => res.json())
-      .then(loadPOS)
-      .catch(err => alert("❌ Gagal hapus data: " + err.message));
-    }
+    
 
     loadPOS();
 
