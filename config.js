@@ -1,6 +1,6 @@
 // config.js
 
-const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbxyW07kNot1GMBUi_l8aGEQZFgk8tQJUXsLuR2LCOd2i8E9u-bhPqPKKR3M0tyFpbj29g/exec";
+const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbwAQGOSegHQEozlGSL-KK85Wm76FER-_xNxiqLX_kp7CrQVia_RctmM4NWPa2qpxRqYkg/exec";
 
 function getAPIUrl(action) {
   const id = localStorage.getItem("id_spreadsheet");
