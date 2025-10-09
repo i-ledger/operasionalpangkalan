@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kelola Pangkalan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-cyan-100 to-blue-200 min-h-screen p-2 sm:p-4">
+  <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-md p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-blue-600">Kelola Data Pangkalan </h2>
+      <a href="dashboard.html" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow">Dashboard</a>
+    </div>
+
+    <!-- Input -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+      <input id="uraianInput" placeholder="Nama Pangkalan" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
+      <input id="posInput" placeholder="Nama PT" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
+      <input id="doyangdimilikiInput" placeholder="DO yang dimiliki" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
+      <input id="hargarefillInput" placeholder="Harga Refill" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
+      <input id="hargabagihasilInput" placeholder="Harga Bagi Hasil" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
+      <input id="id_brimola" placeholder="ID Brimola" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
+      <input id="password" placeholder="Password" class="border border-gray-300 rounded-md px-3 py-2 w-full" />
+      <button onclick="tambahPos()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md px-4 py-2 col-span-1">Tambah</button>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-auto rounded-lg border border-gray-200">
+      <table id="posTable" class="w-full text-sm text-left text-gray-700">
+        <thead class="bg-blue-600 text-white">
+          <tr>
+            <th class="p-3">No.</th>
+            <th class="p-3">Nama Pangkalan</th>
+            <th class="p-3">Nama PT</th>
+            <th class="p-3">DO yang dimiliki</th>
+            <th class="p-3">Harga Refill</th>
+            <th class="p-3">Harga Bagi Hasil</th>
+            <th class="p-3">ID Brimola</th>
+            <th class="p-3">Password</th>
+            <th class="p-3">Aksi</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    const id_spreadsheet = localStorage.getItem("id_spreadsheet");
+    const loggedIn = localStorage.getItem("loggedIn");
+    if (!id_spreadsheet || loggedIn !== "true") {
+      window.location.href = "login.html";
+    }
+
+    let dataPOS = [];
+
+    function loadPOS() {
+      fetch(getAPIUrl("BG"))
+        .then(res => res.json())
+        .then(data => {
+          dataPOS = data;
+          const tbody = document.querySelector("#posTable tbody");
+          tbody.innerHTML = '';
+          dataPOS.forEach((item, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td class="p-3">${i + 1}</td>
+              <td class="p-3">${item.uraian}</td>
+              <td class="p-3">${item.pos}</td>
+              <td class="p-3">${item.doyangdimiliki}</td>
+              <td class="p-3">${item.hargarefill}</td>
+              <td class="p-3">${item.hargabagihasil}</td>
+              <td class="p-3">${item.id_brimola}</td>
+              <td class="p-3">${item.password}</td>
+              <td class="p-3">
+                <button class="bg-yellow-400 text-black px-3 py-1 rounded-md text-sm mr-2" onclick="editPos(${i})">✏️ Edit</button>
+                <button class="bg-red-500 text-white px-3 py-1 rounded-md text-sm" onclick="hapusPos(${i + 2})">🗑️ Hapus</button>
+              </td>`;
+            tbody.appendChild(tr);
+          });
+        })
+        .catch(err => alert("❌ Gagal load data: " + err.message));
+    }
+
+    function tambahPos() {
+      const uraian = document.getElementById("uraianInput").value.trim().toUpperCase();
+      const pos = document.getElementById("posInput").value.trim().toUpperCase();
+      const doyangdimiliki = document.getElementById("doyangdimilikiInput").value.trim();
+      const hargarefill = document.getElementById("hargarefillInput").value.trim();
+      const hargabagihasil = document.getElementById("hargabagihasilInput").value.trim();
+      const id_brimola = document.getElementById("id_brimolaInput").value.trim();
+      const password = document.getElementById("passwordInput").value.trim();
+      if (!uraian || !pos) return alert("Minimal isi Nama Pangkalan dan Nama PT.");
+
+      fetch(getAPIUrl("add"), {
+        method: 'POST',
+        body: JSON.stringify({
+          sheet: "BG",
+          action: "add",
+          payload: {
+            values: [uraian, pos, doyangdimiliki, hargarefill, hargabagihasi,id_brimola,password]
+          }
+        })
+      })
+      .then(res => res.json())
+      .then(() => {
+        document.querySelectorAll("input").forEach(i => i.value = "");
+        loadPOS();
+      })
+      .catch(err => alert("❌ Gagal tambah data: " + err.message));
+    }
+
+    function editPos(index) {
+      const current = dataPOS[index];
+      const newUraian = prompt("Edit Nama Pangkalan:", current.uraian);
+      if (newUraian === null) return;
+      const newPos = prompt("Edit Nama PT:", current.pos);
+      if (newPos === null) return;
+      const newDo = prompt("Edit DO:", current.doyangdimiliki);
+      const newRefill = prompt("Edit Harga Refill:", current.hargarefill);
+      const newBagi = prompt("Edit Harga Bagi Hasil:", current.hargabagihasil);
+      const newidbrimola = prompt("Edit Id Brimola:", current.id_brimola);
+      const newpassword = prompt("Edit Password:", current.password);
+      
+
+      fetch(getAPIUrl("edit"), {
+        method: 'POST',
+        body: JSON.stringify({
+          sheet: "BG",
+          action: "edit",
+          payload: {
+            row: index + 2,
+            values: [
+              newUraian.trim().toUpperCase(),
+              newPos.trim().toUpperCase(),
+              newDo,
+              newRefill,
+              newBagi,
+              newidbrimola,
+              newpassword
+            ]
+          }
+        })
+      })
+      .then(res => res.json())
+      .then(loadPOS)
+      .catch(err => alert("❌ Gagal edit data: " + err.message));
+    }
+
+    function hapusPos(row) {
+      if (!confirm("Yakin ingin menghapus baris " + row + "?")) return;
+      fetch(getAPIUrl("delete"), {
+        method: 'POST',
+        body: JSON.stringify({
+          sheet: "BG",
+          action: "delete",
+          payload: { row }
+        })
+      })
+      .then(res => res.json())
+      .then(loadPOS)
+      .catch(err => alert("❌ Gagal hapus data: " + err.message));
+    }
+
+    loadPOS();
+
+    // Auto logout
+    setTimeout(() => {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }, 5 * 60 * 1000);
+  </script>
+</body>
+</html>
