@@ -96,6 +96,7 @@
 
   <!-- Table Wrapper -->
   <section id="rekap-wrapper" class="bg-white p-4 rounded-xl shadow">
+    <!-- ID "table-scroll-container" ini penting untuk kontrol saat screenshot -->
     <div id="table-scroll-container" class="overflow-auto max-h-[65vh]">
       <table id="rekap-table" class="min-w-full border border-gray-300 relative">
         <thead class="bg-blue-200 text-blue-900 font-bold sticky top-0 shadow z-10">
@@ -366,7 +367,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 });
 
 // =====================================================
-// ==== FUNGSI SCREENSHOT & EXPORT OPTIMAL ====
+// ==== FUNGSI EXPORT & KANVAS ANTI KEPOTONG ====
 // =====================================================
 
 async function loadLib(url){
@@ -380,31 +381,45 @@ async function loadLib(url){
   }
 }
 
-// Fungsi utama agar kanvas me-render full halaman walau terscroll
+// Fungsi Kanvas Tingkat Dewa agar 100% full (Tidak terpotong bawah maupun samping)
 async function getFullCanvas() {
   await loadLib("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js");
   
   const wrapper = document.getElementById("rekap-wrapper");
   const innerScroll = document.getElementById("table-scroll-container");
   
-  // 1. Lepas paksa limitasi scroll agar elemen memanjang penuh ke bawah
-  const originalMaxH = innerScroll.style.maxHeight;
-  const originalOverflow = innerScroll.style.overflow;
+  // 1. Simpan posisi layar saat ini (agar web tidak lompat-lompat setelah selesai)
+  const currentScrollX = window.scrollX;
+  const currentScrollY = window.scrollY;
   
-  innerScroll.style.maxHeight = 'none';
-  innerScroll.style.overflow = 'visible';
+  // 2. Gulung paksa ke paling ujung KIRI dan ATAS (Ini bugfix paling utama html2canvas)
+  window.scrollTo(0, 0);
+  
+  // 3. Lepas class Tailwind yang bikin tabel punya SCROLLING
+  innerScroll.classList.remove("max-h-[65vh]", "overflow-auto");
+  
+  // 4. Paksa wadah tabel agar memelar mengikuti dimensi tabel sejatinya
+  const originalWidth = wrapper.style.width;
+  wrapper.style.width = "max-content"; // Paksa melebar ke kanan
+  
+  // Beri waktu 300ms agar browser selesai menggambar wujud baru tabelnya
+  await new Promise(r => setTimeout(r, 300));
 
-  // 2. Render Canvas (Tunggu 200ms supaya Browser menyesuaikan DOM)
-  await new Promise(r => setTimeout(r, 200));
+  // 5. Tangkap Layar!
   const canvas = await html2canvas(wrapper, { 
     scale: 2, 
     useCORS: true,
-    backgroundColor: '#ffffff'
+    backgroundColor: '#ffffff',
+    scrollY: 0,
+    scrollX: 0,
+    windowWidth: document.documentElement.scrollWidth,
+    windowHeight: document.documentElement.scrollHeight
   });
 
-  // 3. Kembalikan limitasi scroll
-  innerScroll.style.maxHeight = originalMaxH;
-  innerScroll.style.overflow = originalOverflow;
+  // 6. Kembalikan tabel dan posisi scroll seperti semula seolah tidak terjadi apa-apa
+  innerScroll.classList.add("max-h-[65vh]", "overflow-auto");
+  wrapper.style.width = originalWidth;
+  window.scrollTo(currentScrollX, currentScrollY);
   
   return canvas;
 }
@@ -438,7 +453,7 @@ async function shareRekapWA(){
     if(navigator.canShare && navigator.canShare({files:[file]})){
       await navigator.share({files:[file],title:`Rekap Operasional ${namaPangkalan} ${bulanTahun}`});
     } else { 
-      // Fallback jika browser PC tidak support Share API
+      // Download otomatis jika browser laptop (karena PC jarang support share)
       const a = document.createElement("a");
       a.href = dataUrl;
       a.download = `rekap_${namaPangkalan}_${bulanTahun}.png`;
@@ -464,17 +479,18 @@ async function downloadPDF(){
     const imgW_px = canvas.width;
     const imgH_px = canvas.height;
 
-    // Lebar A4 Landscape (842)
+    // Pakai lebar Kertas A4 Landscape (842)
     const pdfW = 842; 
     const margin = 20;
     const contentW = pdfW - (margin * 2);
-    // Hitung proporsi tinggi agar tidak gepeng
+    
+    // Hitung proporsi tinggi agar tabel tidak gepeng
     const contentH = (imgH_px * contentW) / imgW_px; 
     
-    // Custom Tinggi Kertas agar muat semua tabel tanpa jadi kecil!
-    const pdfH = contentH + 80;
+    // Tinggi kertas OTOMATIS menyesuaikan panjang data. Supaya tidak mengecil jika datanya 1 bulan full!
+    const pdfH = contentH + 80; 
 
-    // Buat PDF dengan ukuran "Custom" (bukan A4 pakem, tapi ukurannya ngikutin isi tabel)
+    // Ukuran kertas "Custom", bukan A4 standar
     const pdf = new jsPDF("l", "pt", [pdfW, Math.max(pdfH, 595)]); 
     
     pdf.setFontSize(14);
