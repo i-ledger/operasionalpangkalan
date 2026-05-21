@@ -19,6 +19,8 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+    /* Mencegah teks terpotong */
+    th, td { white-space: nowrap; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 p-4 sm:p-6">
@@ -42,13 +44,13 @@
         <select id="selYear" class="w-full border rounded p-2 text-sm"></select>
       </div>
       <div class="flex flex-wrap gap-2 sm:col-span-2">
-        <button id="btnLoad" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow text-sm">
+        <button id="btnLoad" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow text-sm transition-opacity">
           Muat Rekap
         </button>
         <button id="btnCSV" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow text-sm">
           Download CSV
         </button>
-        <div id="spinner" class="hidden flex items-center gap-2 text-gray-500 text-sm">
+        <div id="spinner" class="hidden flex items-center gap-2 text-blue-600 text-sm font-semibold">
           <div class="spinner"></div>
           <span>Loading...</span>
         </div>
@@ -57,9 +59,9 @@
 
     <!-- Table -->
     <div class="bg-white rounded shadow p-2 sm:p-4">
-      <div class="overflow-x-auto">
-        <table id="tbl" class="min-w-full table-auto border-collapse text-sm sm:text-base">
-          <thead>
+      <div class="overflow-x-auto max-h-[70vh]">
+        <table id="tbl" class="min-w-full table-auto border-collapse text-sm sm:text-base relative">
+          <thead class="sticky top-0 shadow z-10">
             <tr class="bg-slate-100 text-left">
               <th class="p-2 border">#</th>
               <th class="p-2 border">Nama Pangkalan</th>
@@ -73,9 +75,11 @@
             </tr>
           </thead>
           <tbody id="tbody">
-            <!-- rows -->
+            <tr>
+              <td colspan="9" class="text-center py-4 text-gray-500">Memuat data otomatis...</td>
+            </tr>
           </tbody>
-          <tfoot>
+          <tfoot class="sticky bottom-0 shadow-sm border-t-2 border-slate-300 z-10">
             <tr class="bg-slate-50 font-semibold">
               <td colspan="3" class="p-2 border">TOTAL</td>
               <td id="totalPenerimaan" class="p-2 border text-right">0</td>
@@ -95,7 +99,7 @@
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx6WyDQyjEUhjLc2SBo6BilevF2CRxjHubwszk1Hu72zyjh0iMhSl94x4UHC8hZNfwHoQ/exec';
 const $ = sel => document.querySelector(sel);
 const money = v => {
-  if (v === null || v === undefined) return 'Rp 0';
+  if (v === null || v === undefined || Number(v) === 0) return 'Rp 0';
   const n = Number(v) || 0;
   return n.toLocaleString('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0});
 };
@@ -105,100 +109,156 @@ const numberFmt = v => (Number(v) || 0);
 (function initMonthYear(){
   const selM = $('#selMonth'), selY = $('#selYear');
   const now = new Date();
+  
+  let htmlM = '';
   for (let m=1;m<=12;m++){
-    const opt=document.createElement('option');
-    opt.value=m;
-    opt.textContent=m.toString().padStart(2,'0');
-    if(m===(now.getMonth()+1)) opt.selected=true;
-    selM.appendChild(opt);
+    const selected = (m === (now.getMonth()+1)) ? 'selected' : '';
+    htmlM += `<option value="${m}" ${selected}>${m.toString().padStart(2,'0')}</option>`;
   }
-  const startYear=now.getFullYear()-3;
+  selM.innerHTML = htmlM;
+
+  let htmlY = '';
+  const startYear = now.getFullYear()-3;
   for (let y=startYear;y<=now.getFullYear()+1;y++){
-    const opt=document.createElement('option');
-    opt.value=y; opt.textContent=y;
-    if(y===now.getFullYear()) opt.selected=true;
-    selY.appendChild(opt);
+    const selected = (y === now.getFullYear()) ? 'selected' : '';
+    htmlY += `<option value="${y}" ${selected}>${y}</option>`;
   }
+  selY.innerHTML = htmlY;
 })();
 
 async function fetchRekap(month, year){
-  $('#spinner').classList.remove('hidden');
+  const spinner = $('#spinner');
+  const btnLoad = $('#btnLoad');
+  const tbody = $('#tbody');
+  
+  // Nonaktifkan tombol saat loading agar tidak dispam klik
+  spinner.classList.remove('hidden');
+  btnLoad.disabled = true;
+  btnLoad.classList.add('opacity-50', 'cursor-not-allowed');
+  tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-blue-600 font-semibold animate-pulse">Mengambil data pangkalan...</td></tr>`;
+
   return new Promise((resolve, reject)=>{
     try{
       const cbName='cbRekap'+Date.now();
       window[cbName]=(data)=>{
-        resolve(data && data.rows?data.rows:[]);
-        delete window[cbName]; script.remove();
-        $('#spinner').classList.add('hidden');
+        resolve(data && data.rows ? data.rows : []);
+        delete window[cbName]; 
+        script.remove();
+        
+        // Kembalikan tombol ke semula
+        spinner.classList.add('hidden');
+        btnLoad.disabled = false;
+        btnLoad.classList.remove('opacity-50', 'cursor-not-allowed');
       };
+      
       const url=BACKEND_URL+'?action=getRekapSemuaPangkalan&month='+month+'&year='+year+'&callback='+cbName;
       const script=document.createElement('script');
       script.src=url;
-      script.onerror=()=>{reject(new Error('Gagal load JSONP'));$('#spinner').classList.add('hidden');};
+      script.onerror=()=>{
+        reject(new Error('Gagal load JSONP'));
+        spinner.classList.add('hidden');
+        btnLoad.disabled = false;
+        btnLoad.classList.remove('opacity-50', 'cursor-not-allowed');
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-red-500">Gagal mengambil data jaringan.</td></tr>`;
+      };
       document.body.appendChild(script);
-    }catch(err){$('#spinner').classList.add('hidden');reject(err);}
+    }catch(err){
+      spinner.classList.add('hidden');
+      btnLoad.disabled = false;
+      btnLoad.classList.remove('opacity-50', 'cursor-not-allowed');
+      reject(err);
+    }
   });
 }
 
 function renderTable(rows){
-  const tbody=$('#tbody'); tbody.innerHTML='';
+  const tbody=$('#tbody');
+  
+  if(!rows || rows.length === 0){
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-gray-500">Tidak ada data di periode ini.</td></tr>`;
+    $('#totalPenerimaan').textContent = '0';
+    $('#totalBrimola').textContent = 'Rp 0';
+    $('#totalLuar').textContent = 'Rp 0';
+    $('#totalBagi').textContent = 'Rp 0';
+    $('#totalSisaRefill').textContent = 'Rp 0';
+    $('#totalSisaBagi').textContent = 'Rp 0';
+    return;
+  }
+
   let totPenerimaan=0, totBrim=0, totLuar=0, totBagi=0, totSisaRefill=0, totSisaBagi=0;
+  let htmlRows = ''; // Gunakan string pembungkus (ini yang mencegah lag)
+
   rows.forEach((r,i)=>{
-    const tr=document.createElement('tr');
-    tr.className=i%2===0?'':'bg-slate-50';
-    const penerimaan=numberFmt(r.penerimaan);
-    const b=numberFmt(r.total_brimola), l=numberFmt(r.total_luar_brimola),
-          bh=numberFmt(r.total_bagi_hasil), sr=numberFmt(r.sisa_refill), sb=numberFmt(r.sisa_bagi_hasil);
-    totPenerimaan+=penerimaan; totBrim+=b; totLuar+=l; totBagi+=bh; totSisaRefill+=sr; totSisaBagi+=sb;
-    tr.innerHTML=`
-      <td class="p-2 border">${i+1}</td>
-      <td class="p-2 border">${r.nama_pangkalan||'-'}</td>
-      <td class="p-2 border">${r.nama_pt||'-'}</td>
-      <td class="p-2 border text-right">${penerimaan}</td>
-      <td class="p-2 border text-right">${money(b)}</td>
-      <td class="p-2 border text-right">${money(l)}</td>
-      <td class="p-2 border text-right">${money(bh)}</td>
-      <td class="p-2 border text-right">${money(sr)}</td>
-      <td class="p-2 border text-right">${money(sb)}</td>`;
-    tbody.appendChild(tr);
+    const bgClass = i%2 === 0 ? '' : 'bg-slate-50';
+    const penerimaan = numberFmt(r.penerimaan);
+    const b = numberFmt(r.total_brimola), l = numberFmt(r.total_luar_brimola),
+          bh = numberFmt(r.total_bagi_hasil), sr = numberFmt(r.sisa_refill), sb = numberFmt(r.sisa_bagi_hasil);
+    
+    totPenerimaan += penerimaan; totBrim += b; totLuar += l; totBagi += bh; totSisaRefill += sr; totSisaBagi += sb;
+    
+    htmlRows += `
+      <tr class="${bgClass} hover:bg-blue-50 transition-colors">
+        <td class="p-2 border text-center">${i+1}</td>
+        <td class="p-2 border">${r.nama_pangkalan||'-'}</td>
+        <td class="p-2 border">${r.nama_pt||'-'}</td>
+        <td class="p-2 border text-right">${penerimaan}</td>
+        <td class="p-2 border text-right">${money(b)}</td>
+        <td class="p-2 border text-right">${money(l)}</td>
+        <td class="p-2 border text-right">${money(bh)}</td>
+        <td class="p-2 border text-right">${money(sr)}</td>
+        <td class="p-2 border text-right">${money(sb)}</td>
+      </tr>`;
   });
+  
+  // Render ke DOM hanya 1 kali
+  tbody.innerHTML = htmlRows;
+
   $('#totalPenerimaan').textContent=totPenerimaan;
   $('#totalBrimola').textContent=money(totBrim);
   $('#totalLuar').textContent=money(totLuar);
   $('#totalBagi').textContent=money(totBagi);
   $('#totalSisaRefill').textContent=money(totSisaRefill);
   $('#totalSisaBagi').textContent=money(totSisaBagi);
-  window.__rekap_last=rows||[];
+  
+  window.__rekap_last = rows || [];
 }
 
 function rowsToCSV(rows){
   const header=['Nama Pangkalan','Nama PT','Penerimaan Bulan Ini','Total Brimola','Total Luar Brimola','Total Bagi Hasil','Sisa Refill','Sisa Bagi Hasil'];
   const lines=[header.join(',')];
   rows.forEach(r=>{
-    const line=[`"${(r.nama_pangkalan||'').replace(/"/g,'""')}"`,`"${(r.nama_pt||'').replace(/"/g,'""')}"`,
-      Number(r.penerimaan)||0,Number(r.total_brimola)||0,Number(r.total_luar_brimola)||0,
-      Number(r.total_bagi_hasil)||0,Number(r.sisa_refill)||0,Number(r.sisa_bagi_hasil)||0].join(',');
+    const line=[
+      `"${(r.nama_pangkalan||'').replace(/"/g,'""')}"`,
+      `"${(r.nama_pt||'').replace(/"/g,'""')}"`,
+      Number(r.penerimaan)||0,
+      Number(r.total_brimola)||0,
+      Number(r.total_luar_brimola)||0,
+      Number(r.total_bagi_hasil)||0,
+      Number(r.sisa_refill)||0,
+      Number(r.sisa_bagi_hasil)||0
+    ].join(',');
     lines.push(line);
   });
   return lines.join('\n');
 }
 
-$('#btnLoad').addEventListener('click',async()=>{
-  const rows=await fetchRekap($('#selMonth').value,$('#selYear').value);
+$('#btnLoad').addEventListener('click', async()=>{
+  const rows = await fetchRekap($('#selMonth').value,$('#selYear').value);
   renderTable(rows);
 });
 
 $('#btnCSV').addEventListener('click',()=>{
-  const rows=window.__rekap_last||[];
+  const rows = window.__rekap_last||[];
   if(!rows.length){alert('Belum ada data. Klik "Muat Rekap" dulu.');return;}
-  const csv=rowsToCSV(rows), blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob), a=document.createElement('a');
-  a.href=url; a.download=`rekap_pangkalan_${$('#selYear').value}_${$('#selMonth').value}.csv`;
+  const csv = rowsToCSV(rows), blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = `rekap_pangkalan_${$('#selYear').value}_${$('#selMonth').value}.csv`;
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 });
 
+// Auto load saat pertama kali dibuka
 (async function autoLoad(){
-  const rows=await fetchRekap($('#selMonth').value,$('#selYear').value);
+  const rows = await fetchRekap($('#selMonth').value,$('#selYear').value);
   renderTable(rows);
 })();
 </script>
