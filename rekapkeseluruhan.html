@@ -36,18 +36,18 @@
     <!-- Filter -->
     <div class="bg-white p-4 rounded shadow mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
       <div>
-        <label class="block text-sm mb-1">Bulan</label>
+        <label class="block text-sm mb-1 font-medium">Bulan</label>
         <select id="selMonth" class="w-full border rounded p-2 text-sm"></select>
       </div>
       <div>
-        <label class="block text-sm mb-1">Tahun</label>
+        <label class="block text-sm mb-1 font-medium">Tahun</label>
         <select id="selYear" class="w-full border rounded p-2 text-sm"></select>
       </div>
       <div class="flex flex-wrap gap-2 sm:col-span-2">
-        <button id="btnLoad" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow text-sm transition-opacity">
+        <button id="btnLoad" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow text-sm transition-opacity font-medium">
           Muat Rekap
         </button>
-        <button id="btnCSV" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow text-sm">
+        <button id="btnCSV" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow text-sm font-medium">
           Download CSV
         </button>
         <div id="spinner" class="hidden flex items-center gap-2 text-blue-600 text-sm font-semibold">
@@ -76,7 +76,7 @@
           </thead>
           <tbody id="tbody">
             <tr>
-              <td colspan="9" class="text-center py-4 text-gray-500">Memuat data otomatis...</td>
+              <td colspan="9" class="text-center py-8 text-gray-500 bg-slate-50">Silakan pilih <b>Bulan</b> dan <b>Tahun</b>, lalu klik <b>Muat Rekap</b>.</td>
             </tr>
           </tbody>
           <tfoot class="sticky bottom-0 shadow-sm border-t-2 border-slate-300 z-10">
@@ -186,7 +186,7 @@ function renderTable(rows){
   }
 
   let totPenerimaan=0, totBrim=0, totLuar=0, totBagi=0, totSisaRefill=0, totSisaBagi=0;
-  let htmlRows = ''; // Gunakan string pembungkus (ini yang mencegah lag)
+  let htmlRows = ''; // Gunakan string pembungkus (ini yang mencegah lag browser)
 
   rows.forEach((r,i)=>{
     const bgClass = i%2 === 0 ? '' : 'bg-slate-50';
@@ -255,12 +255,6 @@ $('#btnCSV').addEventListener('click',()=>{
   a.href = url; a.download = `rekap_pangkalan_${$('#selYear').value}_${$('#selMonth').value}.csv`;
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 });
-
-// Auto load saat pertama kali dibuka
-(async function autoLoad(){
-  const rows = await fetchRekap($('#selMonth').value,$('#selYear').value);
-  renderTable(rows);
-})();
 </script>
 </body>
 </html>
