@@ -21,12 +21,12 @@
     <h1 class="text-xl font-bold text-blue-900">📊 Rekap Operasional</h1>
     <div class="flex items-center gap-2">
       <button onclick="goDashboard()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg shadow hover:bg-blue-700 transition-colors">🏠 Dashboard</button>
-      <div id="spinner" class="hidden fixed inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center z-50">
+      <div id="spinner" class="hidden fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-50">
         <svg class="animate-spin h-12 w-12 text-blue-400 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
         </svg>
-        <span class="text-white text-lg font-semibold">Memuat Data...</span>
+        <span id="spinner-text" class="text-white text-lg font-semibold">Memuat Data...</span>
       </div>
     </div>
   </header>
@@ -96,7 +96,7 @@
 
   <!-- Table Wrapper -->
   <section id="rekap-wrapper" class="bg-white p-4 rounded-xl shadow">
-    <div class="overflow-auto max-h-[65vh]">
+    <div id="table-scroll-container" class="overflow-auto max-h-[65vh]">
       <table id="rekap-table" class="min-w-full border border-gray-300 relative">
         <thead class="bg-blue-200 text-blue-900 font-bold sticky top-0 shadow z-10">
           <tr>
@@ -160,13 +160,14 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbyo30yRIjzBMBz-IhhBop3H
 const SPINNER = document.getElementById('spinner');
 const btnLoad = document.getElementById('btn-load');
 
-function showSpinner(){ 
+function showSpinner(text = "Memuat Data..."){ 
+  document.getElementById('spinner-text').textContent = text;
   SPINNER.classList.remove('hidden'); 
-  btnLoad.disabled = true;
+  if(btnLoad) btnLoad.disabled = true;
 }
 function hideSpinner(){ 
   SPINNER.classList.add('hidden'); 
-  btnLoad.disabled = false;
+  if(btnLoad) btnLoad.disabled = false;
 }
 
 async function fetchJSON(url){
@@ -220,7 +221,6 @@ async function loadPTs(){
   });
   sel.innerHTML = html;
   
-  // Trigger perubahan untuk meload pangkalan
   sel.dispatchEvent(new Event('change'));
 }
 
@@ -264,7 +264,6 @@ async function loadRekap(){
 
   tbody.innerHTML = `<tr><td colspan="12" class="text-center py-8 text-blue-600 font-semibold animate-pulse">Menarik rekap operasional dari server...</td></tr>`;
 
-  // Update variabel global untuk export
   namaPangkalan = (pangkalans[0] === 'ALL' || pangkalans.length > 1) ? "Banyak_Pangkalan" : pangkalans[0].replace(/\s+/g, '_');
   bulanTahun = `${month}-${year}`;
 
@@ -298,7 +297,7 @@ function renderTable(rows){
   }
 
   let grandTotal = 0, totalPengiriman=0, totalBagiHasil=0;
-  let htmlRows = ''; // Optimasi String gabungan
+  let htmlRows = ''; 
 
   rows.forEach(r => {
     const bayarBrimola = Number(r.bayar_lewat_brimola) || 0;
@@ -307,14 +306,12 @@ function renderTable(rows){
     const pengiriman = Number(r.pengiriman) || 0;
     const bagiHasil = Number(r.bagi_hasil) || 0;
     
-    // Asumsi rumus: total TBG = (Bayar Brimola - Nominal Harus Dibayar) + Bukti TF
     const totalTBG = bayarBrimola - nominalHarusDibayar + buktiTransfer;
 
     grandTotal += totalTBG;
     totalPengiriman += pengiriman;
     totalBagiHasil += bagiHasil;
 
-    // wrap Brimola Oleh
     const brimolaStr = r.brimola_oleh || '';
     const brimolaHTML = brimolaStr ? brimolaStr.split(';').map(s => s.trim()).filter(Boolean).join('<br>') : '';
 
@@ -336,7 +333,6 @@ function renderTable(rows){
     `;
   });
 
-  // Suntik HTML sekaligus ke tabel
   tbody.innerHTML = htmlRows;
 
   document.getElementById('total-pengiriman').textContent = totalPengiriman;
@@ -364,22 +360,14 @@ function hitungTabungKerjasama(data){
 window.addEventListener('DOMContentLoaded',()=>{
   makeMonthOptions();
   makeYearOptions();
-  loadPTs(); // Akan trigger loadPangkalanForPT
+  loadPTs();
   document.getElementById('select-pt').addEventListener('change', e=> loadPangkalanForPT(e.target.value));
   document.getElementById('btn-load').addEventListener('click', loadRekap);
 });
 
 // =====================================================
-// ==== Export Excel / WA / PDF ====
-document.getElementById('btn-export-xlsx').addEventListener('click', async ()=>{
-  if(!window.XLSX){ await loadLib("https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"); }
-  const wb = XLSX.utils.book_new();
-  const table = document.getElementById('rekap-table');
-  const ws = XLSX.utils.table_to_sheet(table);
-  XLSX.utils.sheet_add_aoa(ws, [[`Rekap Operasional — ${namaPangkalan} — ${bulanTahun}`]], {origin:"A1"});
-  XLSX.utils.book_append_sheet(wb, ws, "Rekap");
-  XLSX.writeFile(wb, `rekap_${namaPangkalan}_${bulanTahun}.xlsx`);
-});
+// ==== FUNGSI SCREENSHOT & EXPORT OPTIMAL ====
+// =====================================================
 
 async function loadLib(url){
   if(!document.querySelector(`script[src="${url}"]`)){
@@ -392,50 +380,112 @@ async function loadLib(url){
   }
 }
 
-async function shareRekapWA(){
+// Fungsi utama agar kanvas me-render full halaman walau terscroll
+async function getFullCanvas() {
   await loadLib("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js");
-  const wrapper=document.getElementById("rekap-wrapper");
   
-  // Sembunyikan scrollbar agar rapi di screenshot
-  wrapper.style.maxHeight = 'none';
-  const canvas=await html2canvas(wrapper,{scale:2});
-  wrapper.style.maxHeight = '65vh'; // Kembalikan ke asal
+  const wrapper = document.getElementById("rekap-wrapper");
+  const innerScroll = document.getElementById("table-scroll-container");
+  
+  // 1. Lepas paksa limitasi scroll agar elemen memanjang penuh ke bawah
+  const originalMaxH = innerScroll.style.maxHeight;
+  const originalOverflow = innerScroll.style.overflow;
+  
+  innerScroll.style.maxHeight = 'none';
+  innerScroll.style.overflow = 'visible';
 
-  const dataUrl=canvas.toDataURL("image/png");
-  const blob=await (await fetch(dataUrl)).blob();
-  const file=new File([blob],`rekap_${namaPangkalan}_${bulanTahun}.png`,{type:"image/png"});
+  // 2. Render Canvas (Tunggu 200ms supaya Browser menyesuaikan DOM)
+  await new Promise(r => setTimeout(r, 200));
+  const canvas = await html2canvas(wrapper, { 
+    scale: 2, 
+    useCORS: true,
+    backgroundColor: '#ffffff'
+  });
+
+  // 3. Kembalikan limitasi scroll
+  innerScroll.style.maxHeight = originalMaxH;
+  innerScroll.style.overflow = originalOverflow;
   
-  if(navigator.canShare && navigator.canShare({files:[file]})){
-    await navigator.share({files:[file],title:`Rekap Operasional ${namaPangkalan} ${bulanTahun}`});
-  } else { 
-    alert("Browser/Perangkat Anda tidak mendukung Web Share API untuk file gambar."); 
+  return canvas;
+}
+
+document.getElementById('btn-export-xlsx').addEventListener('click', async ()=>{
+  showSpinner("Membuat File Excel...");
+  try {
+    if(!window.XLSX){ await loadLib("https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"); }
+    const wb = XLSX.utils.book_new();
+    const table = document.getElementById('rekap-table');
+    const ws = XLSX.utils.table_to_sheet(table);
+    XLSX.utils.sheet_add_aoa(ws, [[`Rekap Operasional — ${namaPangkalan} — ${bulanTahun}`]], {origin:"A1"});
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap");
+    XLSX.writeFile(wb, `rekap_${namaPangkalan}_${bulanTahun}.xlsx`);
+  } catch (error) {
+    alert("Gagal Export Excel");
   }
+  hideSpinner();
+});
+
+async function shareRekapWA(){
   document.getElementById("share-menu").classList.add("hidden");
+  showSpinner("Menyiapkan Gambar WA...");
+  
+  try {
+    const canvas = await getFullCanvas();
+    const dataUrl = canvas.toDataURL("image/png");
+    const blob = await (await fetch(dataUrl)).blob();
+    const file = new File([blob], `rekap_${namaPangkalan}_${bulanTahun}.png`, {type:"image/png"});
+    
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:`Rekap Operasional ${namaPangkalan} ${bulanTahun}`});
+    } else { 
+      // Fallback jika browser PC tidak support Share API
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `rekap_${namaPangkalan}_${bulanTahun}.png`;
+      a.click();
+    }
+  } catch (error) {
+    alert("Gagal memproses gambar.");
+  }
+  
+  hideSpinner();
 }
 
 async function downloadPDF(){
-  await loadLib("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js");
-  await loadLib("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
-  
-  const { jsPDF } = window.jspdf;
-  const wrapper = document.getElementById("rekap-wrapper");
-  
-  wrapper.style.maxHeight = 'none';
-  const canvas = await html2canvas(wrapper,{scale:2});
-  wrapper.style.maxHeight = '65vh';
-
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF("l","pt","a4");
-  const pageW = pdf.internal.pageSize.getWidth();
-  const imgW = pageW - 40;
-  const imgH = canvas.height * imgW / canvas.width;
-  
-  pdf.setFontSize(14);
-  pdf.text(`Rekap Operasional — ${namaPangkalan} — ${bulanTahun}`, pageW/2, 30, {align:"center"});
-  pdf.addImage(imgData,"PNG",20,50,imgW,imgH);
-  pdf.save(`rekap_${namaPangkalan}_${bulanTahun}.pdf`);
-  
   document.getElementById("share-menu").classList.add("hidden");
+  showSpinner("Membuat File PDF...");
+  
+  try {
+    const canvas = await getFullCanvas();
+    await loadLib("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+    const { jsPDF } = window.jspdf;
+
+    const imgData = canvas.toDataURL("image/png");
+    const imgW_px = canvas.width;
+    const imgH_px = canvas.height;
+
+    // Lebar A4 Landscape (842)
+    const pdfW = 842; 
+    const margin = 20;
+    const contentW = pdfW - (margin * 2);
+    // Hitung proporsi tinggi agar tidak gepeng
+    const contentH = (imgH_px * contentW) / imgW_px; 
+    
+    // Custom Tinggi Kertas agar muat semua tabel tanpa jadi kecil!
+    const pdfH = contentH + 80;
+
+    // Buat PDF dengan ukuran "Custom" (bukan A4 pakem, tapi ukurannya ngikutin isi tabel)
+    const pdf = new jsPDF("l", "pt", [pdfW, Math.max(pdfH, 595)]); 
+    
+    pdf.setFontSize(14);
+    pdf.text(`Rekap Operasional — ${namaPangkalan} — ${bulanTahun}`, pdfW/2, 30, {align:"center"});
+    pdf.addImage(imgData, "PNG", margin, 50, contentW, contentH);
+    pdf.save(`rekap_${namaPangkalan}_${bulanTahun}.pdf`);
+  } catch (error) {
+    alert("Gagal memproses PDF.");
+  }
+  
+  hideSpinner();
 }
 </script>
 </body>
